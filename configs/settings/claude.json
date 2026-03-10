@@ -105,7 +105,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/m332023/Repos/acsync/configs/hooks/notify-claude-stop.js\""
+            "command": "node \"/Users/m332023/Repos/acsync/configs/hooks/notify-claude-stop.js\"",
+            "async": true
           }
         ]
       }
@@ -117,7 +118,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/m332023/Repos/acsync/configs/hooks/notify-claude.js\""
+            "command": "node \"/Users/m332023/Repos/acsync/configs/hooks/notify-claude.js\"",
+            "async": true
           }
         ]
       }
