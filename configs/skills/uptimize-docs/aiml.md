@@ -6290,9 +6290,6 @@ OpenCode is an open source coding agent for terminal-first workflows. It support
         "claude-opus-4-6": {
           "name": "Claude Opus 4.6"
         },
-        "claude-opus-4-5-20251101": {
-          "name": "Claude Opus 4.5"
-        },
         "claude-sonnet-4-5-20250929": {
           "name": "Claude Sonnet 4.5"
         },
@@ -6355,7 +6352,6 @@ opencode
 7. In OpenCode, run `/models` and pick models from one or both providers:
 
    - `uptimize-foundry/claude-opus-4-6`
-   - `uptimize-foundry/claude-opus-4-5-20251101`
    - `uptimize-foundry/claude-sonnet-4-5-20250929`
    - `uptimize-bedrock/eu.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
