@@ -75,7 +75,48 @@ const provider = createAnthropic({
 
 This is safe -- the Foundry proxy doesn't use these headers. Auth is via the standard `Authorization: Bearer` header from the OSDK OAuth token.
 
-## Auth: Foundry OAuth (OSDK)
+## Cloning Foundry (Stemma) Repos
+
+Foundry hosts code repos on Stemma, accessed via HTTPS git. Auth uses Foundry credentials in the URL.
+
+**Critical: use a Personal Access Token (PAT), not an OAuth token.**
+
+Stemma git auth distinguishes token *type*, not just permissions:
+
+| Token source | Works for git? | Notes |
+|--------------|----------------|-------|
+| Foundry UI > Settings > Tokens (PAT) | Yes | Long-lived, server-tracked |
+| `tux token --foundry` (OAuth) | No | Rejected by Stemma git regardless of scopes |
+| OAuth with `api:repositories-read`, `api:filesystem-read`, etc. | No | Scope additions don't help |
+
+The JWT payload looks identical between PAT and OAuth tokens (no visible `exp` or `scp` claims), but Stemma enforces token type server-side via `jti` lookup.
+
+**Workflow:**
+
+1. Get PAT from Foundry UI: Settings > Tokens > Create token. Store as `$FOUNDRY_TOKEN` in shell.
+2. Find the repo RID and name via `palantir-mcp` or the Foundry UI.
+3. Clone with the URL pattern below.
+
+**URL pattern:**
+
+```
+https://<user-double-encoded>:<token>@<host>/stemma/git/<repo-rid>/<repo-name-with-dashes>
+```
+
+- **Username:** double URL-encoded. `<user>@one.merckgroup.com` → `M332023%40one.merckgroup.com` → `M332023%2540one.merckgroup.com`
+- **Repo name:** spaces become `-` (e.g. "Liquidity UI" → `liquidity-ui`), not `%20`
+- **Host:** typically `palantir.mcloud.merckgroup.com`
+
+**One-liner:**
+
+```bash
+USER_ENC=$(printf '%s' "$USER@one.merckgroup.com" | python3 -c "import urllib.parse,sys; print(urllib.parse.quote(urllib.parse.quote(sys.stdin.read(), safe=''), safe=''))")
+git clone "https://${USER_ENC}:${FOUNDRY_TOKEN}@palantir.mcloud.merckgroup.com/stemma/git/<repo-rid>/<repo-name>" <local-dir>
+```
+
+**Auth split:** PAT for git ops, OAuth (`tux token`) for API/MCP/artifacts calls. They serve different backends.
+
+## Foundry Auth (OSDK)
 
 ```typescript
 import { createPublicOauthClient } from "@osdk/oauth";
