@@ -103,7 +103,7 @@ The JWT payload looks identical between PAT and OAuth tokens (no visible `exp` o
 https://<user-double-encoded>:<token>@<host>/stemma/git/<repo-rid>/<repo-name-with-dashes>
 ```
 
-- **Username:** double URL-encoded. `<user>@one.merckgroup.com` → `M332023%40one.merckgroup.com` → `M332023%2540one.merckgroup.com`
+- **Username:** double URL-encoded. `<user>@one.merckgroup.com` → `%3Cuser%3E%40one.merckgroup.com` → `%253Cuser%253E%2540one.merckgroup.com`
 - **Repo name:** spaces become `-` (e.g. "Liquidity UI" → `liquidity-ui`), not `%20`
 - **Host:** typically `palantir.mcloud.merckgroup.com`
 
