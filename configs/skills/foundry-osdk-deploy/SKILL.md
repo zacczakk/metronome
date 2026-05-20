@@ -1,6 +1,9 @@
 ---
 name: foundry-osdk-deploy
-description: Use when releasing, deploying, tagging, or publishing a Foundry OSDK React app hosted on Stemma with Jemma CI. Covers the git-tag-based release flow, CI pipeline behavior, and manual promotion in Developer Console.
+description: >-
+  Use when releasing, deploying, tagging, or publishing a Foundry OSDK React app
+  hosted on Stemma with Jemma CI. Covers the git-tag-based release flow, CI
+  pipeline behavior, and manual promotion in Developer Console.
 ---
 
 # Foundry OSDK App — Release & Deploy
@@ -83,6 +86,8 @@ This makes tagged builds immediately go live without manual promotion.
 
 ### `foundry.config.json`
 
+The `autoVersion` type varies by app — check the actual file before releasing:
+
 ```json
 {
   "foundryUrl": "https://palantir.mcloud.merckgroup.com",
@@ -90,16 +95,26 @@ This makes tagged builds immediately go live without manual promotion.
     "application": "<application RID>",
     "directory": "./dist",
     "autoVersion": {
-      "type": "git-describe",
-      "tagPrefix": ""
+      "type": "package-json"
     },
     "uploadOnly": true
   }
 }
 ```
 
-- `autoVersion.type: "git-describe"` derives version from the nearest git tag
-- `tagPrefix: ""` means tags like `0.1.2` (no `v` prefix)
+**`autoVersion` types:**
+
+| Type | Version source | Release requirement |
+|------|---------------|---------------------|
+| `"package-json"` | `version` field in `package.json` | Bump `package.json` **before** tagging, then tag on that commit |
+| `"git-describe"` | Nearest reachable git tag | Tag the release commit; `tagPrefix` controls prefix (e.g. `""` for bare `0.1.0`) |
+
+**Critical for `package-json` type:** if you tag without bumping `package.json`, CI will upload the old version string and get `[error] The site version already exists`. Always:
+1. `npm version X.Y.Z --no-git-tag-version` (bumps `package.json`, no git tag)
+2. Commit the bump
+3. Tag the new commit
+4. Push master + tag
+
 - `directory: "./dist"` is the Vite build output uploaded to Foundry
 
 ### Environment Files
@@ -124,8 +139,9 @@ All set the same four `VITE_FOUNDRY_*` variables. Only `VITE_FOUNDRY_REDIRECT_UR
 
 - **Format**: `MAJOR.MINOR.PATCH` (semver, no prefix)
 - **Examples**: `0.1.0`, `0.2.0`, `1.0.0`
-- **Do NOT use** `v` prefix (e.g. `v0.1.0`) — it won't match `tagPrefix: ""`
+- **Do NOT use** `v` prefix — Foundry apps don't use it; bare semver is the standard
 - Tags are lightweight (not annotated)
+- For `autoVersion.type: "package-json"` apps: tag must be placed on the commit that bumps `package.json` to that version
 
 ## Common Issues
 
@@ -133,7 +149,8 @@ All set the same four `VITE_FOUNDRY_*` variables. Only `VITE_FOUNDRY_REDIRECT_UR
 |---------|-------|-----|
 | CI runs but doesn't deploy | No `JEMMA_TAG` — you pushed a commit, not a tag | Create and push a tag |
 | `env.test.ts` fails in CI | `.env.production` missing or has placeholders | Verify `.env.production` has real values |
-| Version shows as `0.0.0-N-gSHA` | No reachable tag on the branch | Create a tag on or before the commit |
+| `[error] The site version already exists` | `autoVersion.type: "package-json"` and `package.json` wasn't bumped before tagging | `npm version X.Y.Z --no-git-tag-version`, commit, retag on new commit, force-push tag |
+| Version shows as `0.0.0-N-gSHA` | `git-describe` type: no reachable tag on the branch | Create a tag on or before the commit |
 | Upload succeeds but app not updated | `uploadOnly: true` | Promote manually in Developer Console, or set to `false` |
 | npm install fails in CI | Foundry token expired or npm registry auth | Check `.npmrc` and `FOUNDRY_TOKEN` |
 
