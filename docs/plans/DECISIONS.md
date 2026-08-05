@@ -25,7 +25,7 @@ Decisions that span multiple plans or affect the repo broadly.
 3. Foundry LMS is an Anthropic-compatible proxy that hasn't implemented this field yet
 4. OpenCode sst/opencode#23541 tracks this; fix PR #23542 was closed without merge
 
-**Fix:** Per-model `options: { toolStreaming: false }` in `configs/settings/opencode.json`. This flows through OpenCode's options pipeline as `providerOptions.anthropic.toolStreaming = false`, suppressing the field injection. Provider-level options don't reach the per-request `providerOptions` — only model-level options do.
+**Fix:** Set `options: { toolStreaming: false }` both on the Tux provider and on every Anthropic model in `configs/settings/opencode.json`. OpenCode reads the provider-level capability when validating eager input streaming, while the model-level option reaches the per-request `providerOptions.anthropic.toolStreaming` path that suppresses field injection. Both levels are required across supported OpenCode versions.
 
 **No env var equivalent** to `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`. The model-level option is the only knob.
 
