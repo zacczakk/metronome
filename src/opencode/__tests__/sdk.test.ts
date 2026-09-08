@@ -179,6 +179,33 @@ describe('OpenCode V2 SDK alignment', () => {
     expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode-ai/cli@0.0.0-beta-17595');
   });
 
+  test('does not restore the global CLI twice when an older beta is interrupted after restoration', async () => {
+    const controller = new AbortController();
+    let packageVersion = '0.0.0-beta-17595';
+    let executable = '0.0.0-beta-17595';
+    let restoreCalls = 0;
+    const runner: CommandRunner = async (command, args) => {
+      if (args[0] === 'pm') return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
+      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
+      if (command === 'bun' && args[0] === 'install') {
+        if (args.at(-1) === '@opencode-ai/cli@beta') {
+          packageVersion = '0.0.0-beta-17498';
+          executable = packageVersion;
+        } else {
+          restoreCalls += 1;
+          if (restoreCalls > 1) throw new Error('duplicate restore');
+          packageVersion = '0.0.0-beta-17595';
+          executable = packageVersion;
+          controller.abort(new Error('interrupted'));
+        }
+      }
+      return { stdout: '', stderr: '' };
+    };
+
+    await expect(updateOpenCodeV2Safely('/config', async () => undefined, runner, undefined, controller.signal)).rejects.toThrow('interrupted');
+    expect(restoreCalls).toBe(1);
+  });
+
   test('rejects a parseable response missing required plugins', async () => {
     const runner: CommandRunner = async (_command, args) => ({
       stdout: args.at(-1) === '/api/plugin' ? '[]' : '',

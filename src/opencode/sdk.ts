@@ -268,6 +268,7 @@ export async function updateOpenCodeV2Safely(
     await installGlobalOpenCodeVersion(previous, runner);
     await ensureGlobalOpenCodeVersion(previous, runner, progress);
   });
+  let restoredPrevious = false;
   let resolved: string;
   try {
     resolved = await timedStage(progress, 'Install @opencode-ai/cli@beta', () => updateOpenCodeV2(configDir, runner, progress, signal));
@@ -275,6 +276,7 @@ export async function updateOpenCodeV2Safely(
     if (compareOpenCodeVersions(resolved, previous) < 0) {
       progress?.(`Beta channel returned ${resolved}; keeping current global CLI ${previous}`);
       await restorePrevious();
+      restoredPrevious = true;
       throwIfAborted(signal);
       await timedStage(progress, `Activate OpenCode V2 at ${previous}`, () => activate(previous, signal));
       throwIfAborted(signal);
@@ -283,6 +285,7 @@ export async function updateOpenCodeV2Safely(
     await timedStage(progress, `Activate OpenCode V2 at ${resolved}`, () => activate(resolved, signal));
     throwIfAborted(signal);
   } catch (error) {
+    if (restoredPrevious) throw error;
     try {
       await restorePrevious();
     } catch (rollbackError) {

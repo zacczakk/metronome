@@ -94,7 +94,9 @@ become actual model variants in V2 because V2 retains but does not apply agent
 
 `metronome opencode use v1|v2` activates a profile; `update v1|v2` refreshes it;
 and `upgrade v1|v2` updates the runtime before refreshing it. These commands
-persist the active profile in `~/.config/opencode/migration-manifest.json`.
+persist the active profile in `~/.config/opencode/migration-manifest.json` only
+after successful non-dry-run operations. Dry runs do not write, and failed or
+interrupted operations restore the previous manifest.
 Generic `check`,
 `push`, `pull`, `render`, and `diff` operations resolve target `opencode` from
 that manifest; missing or invalid manifests select V1. `opencode2` forces V2,

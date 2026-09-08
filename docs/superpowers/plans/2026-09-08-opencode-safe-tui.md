@@ -151,7 +151,6 @@ Steps:
 Run:
 
     bun test src/opencode/__tests__/sdk.test.ts src/opencode/__tests__/profile.test.ts src/cli/__tests__/terminal-ui.test.ts src/cli/__tests__/opencode-version.test.ts
-    bun run typecheck
     bun run test
     git diff --check
 
