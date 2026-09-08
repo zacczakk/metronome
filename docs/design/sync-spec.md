@@ -335,7 +335,7 @@ than concatenating those files into `AGENTS.md`.
 - Generic V2 sync handles settings, agents, MCP, commands, skills, and
   instructions. V2 plugin sync is intentionally a no-op because those files
   are profile-owned.
-- `metronome opencode use v1|v2` persists the active profile in
+- `metronome opencode use v1|v2`, `update v1|v2`, and `upgrade v1|v2` persist the active profile in
   `~/.config/opencode/migration-manifest.json`; `metronome opencode status`
   reports it. This is separate from the top-level `metronome status` drift
   alias.
@@ -361,17 +361,19 @@ than concatenating those files into `AGENTS.md`.
   `~/.config/opencode/migration-manifest.json`.
 - Backups live below `~/.config/opencode-backups/metronome/`.
 - Ordinary V2 activation waits for the hot-reloaded plugin catalog without
-  restarting the shared service; `update-v2` restarts it after an SDK/CLI
-  update.
-- Failed `update-v2` activation restores and re-verifies the previous exact
+  restarting the shared service; `upgrade v2` restarts it after an SDK/CLI
+  update. `update v1|v2` refreshes a profile without changing its runtime.
+- Failed or interrupted `upgrade v2` activation restores and re-verifies the previous exact
   global CLI build. The updater does not activate a beta-channel result older
   than the current build, retains the current build, and repairs
   package/launcher mismatches with a clean exact install.
+- `upgrade v1` runs the installed V1 CLI's upgrade command before refreshing the
+  V1 profile. `update v1` only refreshes the profile.
 
 For a Bun installation, update V2 only through:
 
 ```sh
-metronome opencode update-v2
+metronome opencode upgrade v2
 ```
 
 Equivalent manual flow: `bun install -g --force --trust --minimum-release-age=0

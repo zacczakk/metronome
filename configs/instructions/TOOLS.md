@@ -36,7 +36,7 @@ Agent Config Sync CLI. Canonical configs sync to AI CLI targets (`claude`, `open
 | `metronome diff` | Unified text diff of all drift. |
 | `metronome render` | Render single item to target format (debug). |
 | `metronome helpers` | Copy helper scripts to a target repo's `scripts/`. |
-| `metronome opencode use/status/update-v2` | Activate, inspect, or maintain the OpenCode V1/V2 profile. |
+| `metronome opencode use/update/upgrade/status` | Activate, refresh, upgrade, or inspect the OpenCode V1/V2 profile. |
 
 ### Common flags
 - `-t, --target <name>` — Scope to target (repeatable): `claude`, `opencode`, `opencode2`, `gemini`, `codex`. `opencode` follows the active profile; `opencode2` is explicit native V2. They share an installation and cannot be combined.
@@ -64,6 +64,10 @@ metronome push --force --delete              # Sync everything
 metronome push -t opencode --type commands   # Narrow scope
 metronome check -t opencode2                 # Explicit native V2 check
 metronome opencode use v2                    # Activate V2 profile
+metronome opencode update v2                 # Refresh V2 profile
+metronome opencode upgrade v2                # Upgrade V2 runtime + profile
+metronome opencode update v1                 # Refresh V1 profile
+metronome opencode upgrade v1                # Upgrade V1 runtime + profile
 metronome opencode status                    # Show active profile
 metronome pull -s claude --dry-run           # Preview reverse sync
 metronome render --type command --name gate  # Debug single item

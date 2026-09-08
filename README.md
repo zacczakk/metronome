@@ -107,14 +107,20 @@ atomically activate either runtime profile:
 ```sh
 metronome opencode use v1
 metronome opencode use v2
+metronome opencode update v1
+metronome opencode update v2
+metronome opencode upgrade v1
+metronome opencode upgrade v2
 metronome opencode status
-metronome opencode update-v2
 ```
 
-`metronome opencode use v1|v2` persists the active profile in
-`~/.config/opencode/migration-manifest.json`. `metronome opencode status` reports
-that profile; it is unrelated to `metronome status`, which remains the drift
-check alias.
+`use`, `update`, and `upgrade` take `v1` or `v2`. `use` activates a profile;
+`update` refreshes and verifies that profile; `upgrade` updates the runtime and
+then refreshes the profile. `upgrade v1` runs the installed V1 CLI's upgrade
+command. Every profile operation persists the active profile in
+`~/.config/opencode/migration-manifest.json`. `metronome opencode status`
+reports that profile; it is unrelated to `metronome status`, which remains the
+drift check alias.
 
 For generic `check`, `push`, `pull`, `render`, and `diff` operations, target
 `opencode` reads that manifest and follows the active profile. An absent or
@@ -144,28 +150,29 @@ The native V2 Muxy port is deployed as
 `~/.config/opencode/plugins/metronome-muxy-notify.js`; Muxy's app-owned
 `muxy-notify.js` file is left untouched because Muxy regenerates it.
 The canonical global profile sets `autoupdate: false`; use
-`metronome opencode update-v2` for trusted, verified CLI updates.
+`metronome opencode upgrade v2` for trusted, verified CLI updates.
 
 Every switch creates a complete compatibility backup under
 `~/.config/opencode-backups/metronome/` and appends hashes, plugin status, SDK
 version, and the restore source to
-`~/.config/opencode/migration-manifest.json`. Ordinary `use v2` waits for the
-hot-reloaded plugin catalog without restarting the shared service; `update-v2`
-refreshes the Bun-installed `@opencode-ai/cli@beta`, pins the local plugin SDK
-to the exact resolved build, restarts the V2 service because hot reload does
-not reliably register newly deployed plugin files, and verifies the plugin
-API. The package metadata and `opencode2 --version` must agree; older builds
-returned by the beta channel are not activated; the current build is retained.
-Failed activation restores and re-verifies the previous exact global CLI build.
+`~/.config/opencode/migration-manifest.json`. Ordinary `use v2` and `update v2`
+wait for the hot-reloaded plugin catalog without restarting the shared service.
+`upgrade v2` refreshes the Bun-installed `@opencode-ai/cli@beta`, pins the
+local plugin SDK to the exact resolved build, restarts the V2 service because
+hot reload does not reliably register newly deployed plugin files, and verifies
+the plugin API. The package metadata and `opencode2 --version` must agree;
+older builds returned by the beta channel are not activated; the current build
+is retained. Failed or interrupted activation restores the complete profile
+backup and, for V2 upgrades, the previous exact global CLI build.
 
-Profile switches print timed stages and compact plugin retry details to stderr.
-Required-plugin state changes are shown immediately; unchanged retries are
-periodic. Optional-plugin gaps are reported as warnings, not failures. SDK
-alignment skips `bun add` when the global CLI, local package manifest, and
-installed `@opencode-ai/plugin` already match. Use `--no-align-sdk` to skip
-alignment explicitly; plugin readiness still runs. `update-v2` also reports
-the current and resolved global CLI builds, service restart, and exact global
-rollback if activation fails.
+Profile operations show a compact live TUI in a terminal and plain indented
+stages when piped. Required-plugin state changes are shown immediately;
+unchanged partial-catalog retries are periodic. A failed service request stops
+verification immediately instead of spawning more service clients. Optional
+plugin gaps are warnings, not failures. SDK alignment skips `bun add` when the
+global CLI, local package manifest, and installed `@opencode-ai/plugin` already
+match. Use `--no-align-sdk` to skip alignment explicitly; plugin readiness
+still runs.
 
 Profile switches use atomic writes with rollback on failure.
 

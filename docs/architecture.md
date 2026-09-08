@@ -92,8 +92,10 @@ agent-specific model variants. Per-agent `reasoningEffort` and `textVerbosity`
 become actual model variants in V2 because V2 retains but does not apply agent
 `request.body` overlays.
 
-`metronome opencode use v1|v2` owns profile activation and persists the active
-profile in `~/.config/opencode/migration-manifest.json`. Generic `check`,
+`metronome opencode use v1|v2` activates a profile; `update v1|v2` refreshes it;
+and `upgrade v1|v2` updates the runtime before refreshing it. These commands
+persist the active profile in `~/.config/opencode/migration-manifest.json`.
+Generic `check`,
 `push`, `pull`, `render`, and `diff` operations resolve target `opencode` from
 that manifest; missing or invalid manifests select V1. `opencode2` forces V2,
 uses the same paths, is excluded from `ALL_TARGETS`, and cannot be combined

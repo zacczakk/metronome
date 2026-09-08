@@ -2,9 +2,22 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { PROJECT_ROOT } from './canonical';
-import { getOpenCodeVersionStatus, switchOpenCodeVersion } from '../opencode/profile';
+import { createTerminalUI, type TerminalUI } from './terminal-ui';
+import { getOpenCodeVersionStatus, switchOpenCodeVersion, type SwitchOpenCodeResult } from '../opencode/profile';
 import { alignOpenCodePluginSdk, restartAndVerifyOpenCodeV2, runCommand, updateOpenCodeV2Safely, verifyOpenCodeV2Plugins, type PluginVerificationProgress } from '../opencode/sdk';
 import type { OpenCodeVersion } from '../opencode/version-renderer';
+
+type OpenCodeOperation = 'use' | 'update' | 'upgrade';
+
+interface OperationOptions {
+  dryRun?: boolean;
+  alignSdk?: boolean;
+}
+
+interface OperationResult {
+  profile?: SwitchOpenCodeResult;
+  resolved?: string;
+}
 
 function version(value: string): OpenCodeVersion {
   if (value !== 'v1' && value !== 'v2') throw new Error('Version must be v1 or v2');
@@ -38,51 +51,161 @@ export function verificationReporter(report: (message: string) => void): (progre
   };
 }
 
-function progressReporter(): (message: string) => void {
-  return (message) => process.stderr.write(`  ${message}\n`);
+function title(operation: OpenCodeOperation, selected: OpenCodeVersion): string {
+  const noun = operation === 'use' ? 'profile activation' : operation === 'update' ? 'profile refresh' : 'runtime upgrade';
+  return `OpenCode ${selected.toUpperCase()} · ${noun}`;
+}
+
+function resultLabel(operation: OpenCodeOperation, selected: OpenCodeVersion, dryRun: boolean): string {
+  if (dryRun) return `Would ${operation === 'use' ? 'activate' : operation} OpenCode ${selected.toUpperCase()}`;
+  if (operation === 'use') return `Activated OpenCode ${selected.toUpperCase()}`;
+  if (operation === 'update') return `Updated OpenCode ${selected.toUpperCase()} profile`;
+  return `Upgraded OpenCode ${selected.toUpperCase()}`;
+}
+
+async function switchProfile(
+  selected: OpenCodeVersion,
+  homeDir: string,
+  options: OperationOptions,
+  restart: boolean,
+  report: ((message: string) => void) | undefined,
+  signal: AbortSignal,
+): Promise<SwitchOpenCodeResult> {
+  const configDir = join(homeDir, '.config', 'opencode');
+  const reporter = report ? verificationReporter(report) : undefined;
+  return switchOpenCodeVersion({
+    version: selected,
+    projectDir: PROJECT_ROOT,
+    homeDir,
+    dryRun: options.dryRun,
+    signal,
+    progress: report,
+    prepare: selected === 'v2' && options.alignSdk !== false && !options.dryRun
+      ? async (currentSignal) => {
+        const resolved = await alignOpenCodePluginSdk(configDir, runCommand, currentSignal);
+        report?.(`Resolved @opencode-ai/plugin to ${resolved}`);
+      }
+      : undefined,
+    rollback: selected === 'v2' && options.alignSdk !== false && !options.dryRun
+      ? async () => { await runCommand('bun', ['install', '--frozen-lockfile'], configDir); }
+      : undefined,
+    verifyPlugins: selected === 'v2' && !options.dryRun
+      ? (currentSignal) => restart
+        ? restartAndVerifyOpenCodeV2(undefined, undefined, undefined, reporter, report, currentSignal)
+        : verifyOpenCodeV2Plugins(undefined, undefined, undefined, reporter, currentSignal)
+      : undefined,
+  });
+}
+
+async function timedUpgrade(
+  report: ((message: string) => void) | undefined,
+  signal: AbortSignal,
+): Promise<void> {
+  const startedAt = Date.now();
+  report?.('Upgrade OpenCode V1 CLI...');
+  await runCommand('opencode', ['upgrade'], undefined, signal);
+  report?.(`Upgrade OpenCode V1 CLI done (${formatDuration(Date.now() - startedAt)})`);
+}
+
+async function performOperation(
+  operation: OpenCodeOperation,
+  selected: OpenCodeVersion,
+  options: OperationOptions,
+  ui: TerminalUI,
+  signal: AbortSignal,
+): Promise<OperationResult> {
+  const homeDir = homedir();
+  const report = options.dryRun ? undefined : (message: string) => ui.report(message);
+
+  if (operation === 'upgrade' && selected === 'v2' && !options.dryRun) {
+    const configDir = join(homeDir, '.config', 'opencode');
+    let profile: SwitchOpenCodeResult | undefined;
+    const resolved = await updateOpenCodeV2Safely(
+      configDir,
+      async (build, currentSignal) => {
+        profile = await switchProfile(selected, homeDir, options, true, report, currentSignal ?? signal);
+        report?.(`Activated OpenCode V2 at ${build}`);
+      },
+      runCommand,
+      report,
+      signal,
+    );
+    report?.(`Global CLI and local SDK resolved to ${resolved}`);
+    return { profile, resolved };
+  }
+
+  if (operation === 'upgrade' && selected === 'v1' && !options.dryRun) await timedUpgrade(report, signal);
+  return { profile: await switchProfile(selected, homeDir, options, false, report, signal) };
+}
+
+async function withInterrupts<T>(ui: TerminalUI, operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  let interrupted = false;
+  const onInterrupt = () => {
+    if (interrupted) return;
+    interrupted = true;
+    ui.report('Interrupt received; restoring previous state…');
+    controller.abort(new Error('Operation interrupted'));
+  };
+  process.once('SIGINT', onInterrupt);
+  process.once('SIGTERM', onInterrupt);
+  try {
+    return await operation(controller.signal);
+  } catch (error) {
+    if (interrupted) process.exitCode = 130;
+    throw error;
+  } finally {
+    process.removeListener('SIGINT', onInterrupt);
+    process.removeListener('SIGTERM', onInterrupt);
+  }
+}
+
+async function executeOperation(operation: OpenCodeOperation, rawVersion: string, options: OperationOptions): Promise<void> {
+  const ui = createTerminalUI();
+  try {
+    const selected = version(rawVersion);
+    ui.start(title(operation, selected));
+    const result = await withInterrupts(ui, (signal) => performOperation(operation, selected, options, ui, signal));
+    ui.success(resultLabel(operation, selected, options.dryRun === true));
+    if (result.profile) {
+      process.stdout.write(`${resultLabel(operation, selected, options.dryRun === true)}\n`);
+      if (!options.dryRun) process.stdout.write(`Files written: ${result.profile.written.length}\n`);
+      process.stdout.write(`Backup: ${result.profile.backupPath}\nManifest: ${result.profile.manifestPath}\n`);
+    } else {
+      process.stdout.write(`${resultLabel(operation, selected, options.dryRun === true)} at ${result.resolved}\n`);
+    }
+  } catch (error) {
+    ui.failure(error instanceof Error ? error.message : String(error));
+    if (process.exitCode !== 130) process.exitCode = 1;
+  } finally {
+    ui.close();
+  }
+}
+
+function addVersionArgument(command: Command): Command {
+  return command
+    .argument('<version>', 'v1 or v2')
+    .option('--dry-run', 'Show the planned change without writing')
+    .option('--no-align-sdk', 'Do not align the local V2 plugin SDK');
+}
+
+function addOperationCommand(operation: OpenCodeOperation): void {
+  const command = addVersionArgument(opencodeVersionCommand.command(operation));
+  command
+    .description(operation === 'use'
+      ? 'Activate an OpenCode compatibility profile'
+      : operation === 'update'
+        ? 'Refresh an OpenCode compatibility profile'
+        : 'Upgrade the OpenCode runtime and profile')
+    .action((rawVersion: string, options: OperationOptions) => executeOperation(operation, rawVersion, options));
 }
 
 export const opencodeVersionCommand = new Command('opencode')
   .description('Switch and maintain OpenCode V1/V2 compatibility profiles');
 
-opencodeVersionCommand.command('use')
-  .argument('<version>', 'v1 or v2')
-  .option('--dry-run', 'Show paths without writing')
-  .option('--no-align-sdk', 'Do not align the local V2 plugin SDK')
-  .description('Atomically activate a rendered OpenCode compatibility profile')
-  .action(async (rawVersion: string, options: { dryRun?: boolean; alignSdk?: boolean }) => {
-    try {
-      const selected = version(rawVersion);
-      const homeDir = homedir();
-      const report = options.dryRun ? undefined : progressReporter();
-      if (report) {
-        const mode = selected === 'v2' ? ' (hot reload; no service restart)' : '';
-        process.stderr.write(`OpenCode ${selected.toUpperCase()} profile switch${mode}\n`);
-      }
-      const result = await switchOpenCodeVersion({
-        version: selected,
-        projectDir: PROJECT_ROOT,
-        homeDir,
-        dryRun: options.dryRun,
-        progress: report,
-        prepare: selected === 'v2' && options.alignSdk !== false && !options.dryRun
-          ? async () => { report?.(`Resolved @opencode-ai/plugin to ${await alignOpenCodePluginSdk(join(homeDir, '.config', 'opencode'))}`); }
-          : undefined,
-        rollback: selected === 'v2' && options.alignSdk !== false && !options.dryRun
-          ? () => runCommand('bun', ['install', '--frozen-lockfile'], join(homeDir, '.config', 'opencode')).then(() => undefined)
-          : undefined,
-        verifyPlugins: selected === 'v2' && !options.dryRun
-          ? () => verifyOpenCodeV2Plugins(undefined, undefined, undefined, report ? verificationReporter(report) : undefined)
-          : undefined,
-      });
-      process.stdout.write(`${options.dryRun ? 'Would activate' : 'Activated'} OpenCode ${selected.toUpperCase()}\n`);
-      if (!options.dryRun) process.stdout.write(`Files written: ${result.written.length}\n`);
-      process.stdout.write(`Backup: ${result.backupPath}\nManifest: ${result.manifestPath}\n`);
-    } catch (error) {
-      process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-      process.exitCode = 1;
-    }
-  });
+addOperationCommand('use');
+addOperationCommand('update');
+addOperationCommand('upgrade');
 
 opencodeVersionCommand.command('status')
   .description('Show the active Metronome OpenCode profile and latest switch')
@@ -97,29 +220,8 @@ opencodeVersionCommand.command('status')
     if (latest) process.stdout.write(`Last switch: ${latest.timestamp}\nBackup: ${latest.backup}\n`);
   });
 
-opencodeVersionCommand.command('update-v2')
-  .description('Update the Bun-installed V2 CLI, align the local SDK, restart, and verify plugins')
-  .action(async () => {
-    try {
-      const homeDir = homedir();
-      const configDir = join(homeDir, '.config', 'opencode');
-      const report = progressReporter();
-      process.stderr.write('OpenCode V2 update\n');
-      const resolved = await updateOpenCodeV2Safely(configDir, async () => {
-        await switchOpenCodeVersion({
-          version: 'v2',
-          projectDir: PROJECT_ROOT,
-          homeDir,
-          prepare: async () => { report(`Resolved @opencode-ai/plugin to ${await alignOpenCodePluginSdk(configDir)}`); },
-          rollback: () => runCommand('bun', ['install', '--frozen-lockfile'], configDir).then(() => undefined),
-          progress: report,
-          verifyPlugins: () => restartAndVerifyOpenCodeV2(undefined, undefined, undefined, verificationReporter(report), report),
-        });
-      }, undefined, report);
-      report(`Global CLI and local SDK resolved to ${resolved}`);
-      process.stdout.write(`OpenCode V2 and @opencode-ai/plugin aligned at ${resolved}\n`);
-    } catch (error) {
-      process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
-      process.exitCode = 1;
-    }
-  });
+for (const legacy of ['update-v2', 'upgrade-v2']) {
+  opencodeVersionCommand.command(legacy, { hidden: true })
+    .description('Legacy alias for upgrade v2')
+    .action(() => executeOperation('upgrade', 'v2', {}));
+}
