@@ -2,8 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { opencodeVersionCommand, verificationReporter } from '../opencode-version';
 
 describe('opencode version command', () => {
-  test('exposes use, status, and update-v2 commands', () => {
-    expect(opencodeVersionCommand.commands.map((command) => command.name())).toEqual(['use', 'status', 'update-v2']);
+  test('exposes consistent use, update, upgrade, and status commands', () => {
+    expect(opencodeVersionCommand.commands.map((command) => command.name())).toEqual(['use', 'update', 'upgrade', 'status', 'update-v2', 'upgrade-v2']);
+    expect(opencodeVersionCommand.helpInformation()).toContain('update [options] <version>');
+    expect(opencodeVersionCommand.helpInformation()).toContain('upgrade [options] <version>');
+    expect(opencodeVersionCommand.helpInformation()).not.toContain('update-v2');
   });
 
   test('documents SDK opt-out for isolated switching', () => {

@@ -46,7 +46,9 @@ Read-only — reports drift without modifying anything.
 
 ### OpenCode profiles
 
-`metronome opencode use v1|v2` activates a profile and persists it in
+`metronome opencode use v1|v2` activates a profile. `update v1|v2` refreshes a
+profile, and `upgrade v1|v2` updates the runtime before refreshing it.
+All profile operations persist the active profile in
 `~/.config/opencode/migration-manifest.json`; `metronome opencode status` reports
 the profile. Generic `check`, `push`, `pull`, `render`, and `diff` target
 `opencode` follows that manifest and defaults to V1 when it is absent or

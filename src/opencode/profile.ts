@@ -50,9 +50,10 @@ export interface SwitchOpenCodeOptions {
   homeDir: string;
   now?: Date;
   dryRun?: boolean;
-  prepare?: () => Promise<void>;
+  signal?: AbortSignal;
+  prepare?: (signal?: AbortSignal) => Promise<void>;
   rollback?: () => Promise<void>;
-  verifyPlugins?: () => Promise<string[]>;
+  verifyPlugins?: (signal?: AbortSignal) => Promise<string[]>;
   progress?: (message: string) => void;
 }
 
@@ -65,6 +66,16 @@ export interface SwitchOpenCodeResult {
 
 function hash(content: string): string {
   return createHash('sha256').update(content).digest('hex');
+}
+
+function abortError(signal: AbortSignal): Error {
+  const reason = signal.reason;
+  if (reason instanceof Error) return reason;
+  return new Error(typeof reason === 'string' ? reason : 'Operation interrupted');
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw abortError(signal);
 }
 
 function formatDuration(milliseconds: number): string {
@@ -270,11 +281,14 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
   const backupRoot = join(options.homeDir, '.config', 'opencode-backups', 'metronome', `${timestamp}-${from}-to-${options.version}`);
   if (options.dryRun) return { version: options.version, backupPath: backupRoot, manifestPath, written: [] };
 
+  throwIfAborted(options.signal);
   await timedStage(options.progress, `Back up current OpenCode state to ${backupRoot}`, () => createCompleteBackup(options.homeDir, backupRoot));
   const written: string[] = [];
   try {
+    throwIfAborted(options.signal);
     if (options.prepare) {
-      await timedStage(options.progress, `Prepare OpenCode ${options.version.toUpperCase()} dependencies`, options.prepare);
+      await timedStage(options.progress, `Prepare OpenCode ${options.version.toUpperCase()} dependencies`, () => options.prepare!(options.signal));
+      throwIfAborted(options.signal);
     }
     const renderedState = await timedStage(options.progress, `Render and write OpenCode ${options.version.toUpperCase()} profile`, async () => {
       const canonical = await readJson(join(options.projectDir, 'configs', 'settings', 'opencode.json'));
@@ -300,9 +314,11 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
       const cursorTarget = await switchCursorPlugin(options.homeDir, options.version, previousManifest);
       return { merged, cursorTarget };
     });
+    throwIfAborted(options.signal);
     const observedPlugins = options.verifyPlugins
-      ? await timedStage(options.progress, 'Verify OpenCode plugin catalog', options.verifyPlugins)
+      ? await timedStage(options.progress, 'Verify OpenCode plugin catalog', () => options.verifyPlugins!(options.signal))
       : undefined;
+    throwIfAborted(options.signal);
     const files: Record<string, string> = {};
     for (const path of written) files[relative(options.homeDir, path)] = hash(await readFile(path, 'utf8'));
     const sdk = await installedSdkVersion(configDir);
@@ -327,15 +343,21 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
     };
     const manifest: MigrationManifest = { version: 1, active: options.version, history: [...(previousManifest?.history ?? []), history] };
     await timedStage(options.progress, 'Record migration manifest', async () => {
+      throwIfAborted(options.signal);
       await atomicWrite(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
       written.push(manifestPath);
     });
+    throwIfAborted(options.signal);
     return { version: options.version, backupPath: backupRoot, manifestPath, written };
   } catch (error) {
-    await timedStage(options.progress, 'Restore previous OpenCode state', async () => {
-      await restoreCompleteBackup(options.homeDir, backupRoot);
-      await options.rollback?.();
-    });
+    try {
+      await timedStage(options.progress, 'Restore previous OpenCode state', async () => {
+        await restoreCompleteBackup(options.homeDir, backupRoot);
+        await options.rollback?.();
+      });
+    } catch (rollbackError) {
+      throw new AggregateError([error, rollbackError], 'OpenCode profile activation failed and the previous state could not be restored');
+    }
     throw error;
   }
 }

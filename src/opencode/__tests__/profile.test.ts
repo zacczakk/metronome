@@ -182,4 +182,23 @@ describe('switchOpenCodeVersion', () => {
     expect(await readFile(configPath, 'utf8')).toBe(before);
     expect((await lstat(manifestPath)).isDirectory()).toBe(true);
   });
+
+  test('restores the complete backup when verification is interrupted', async () => {
+    const paths = await fixture();
+    const configPath = join(paths.homeDir, '.config', 'opencode', 'opencode.json');
+    const before = await readFile(configPath, 'utf8');
+    const controller = new AbortController();
+
+    await expect(switchOpenCodeVersion({
+      ...paths,
+      version: 'v2',
+      signal: controller.signal,
+      verifyPlugins: async () => {
+        controller.abort(new Error('interrupted'));
+        return [];
+      },
+    })).rejects.toThrow('interrupted');
+
+    expect(await readFile(configPath, 'utf8')).toBe(before);
+  });
 });

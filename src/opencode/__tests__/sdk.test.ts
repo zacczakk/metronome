@@ -2,9 +2,17 @@ import { describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { alignOpenCodePluginSdk, compareOpenCodeVersions, OPTIONAL_V2_PLUGIN_IDS, parseGlobalOpenCodeVersion, parseOpenCodeExecutableVersion, parsePluginIDs, REQUIRED_V2_PLUGIN_IDS, restartAndVerifyOpenCodeV2, updateOpenCodeV2, updateOpenCodeV2Safely, verifyOpenCodeV2Plugins, type CommandRunner } from '../sdk';
+import { alignOpenCodePluginSdk, compareOpenCodeVersions, OPTIONAL_V2_PLUGIN_IDS, parseGlobalOpenCodeVersion, parseOpenCodeExecutableVersion, parsePluginIDs, REQUIRED_V2_PLUGIN_IDS, restartAndVerifyOpenCodeV2, runCommand, updateOpenCodeV2, updateOpenCodeV2Safely, verifyOpenCodeV2Plugins, type CommandRunner } from '../sdk';
 
 describe('OpenCode V2 SDK alignment', () => {
+  test('terminates a child process when aborted', async () => {
+    const controller = new AbortController();
+    const command = runCommand(process.execPath, ['-e', 'setTimeout(() => {}, 30000)'], undefined, controller.signal);
+    setTimeout(() => controller.abort(new Error('interrupted')), 20);
+
+    await expect(command).rejects.toThrow('interrupted');
+  });
+
   test('parses the exact global next build', () => {
     expect(parseGlobalOpenCodeVersion('└── @opencode-ai/cli@0.0.0-next-17098')).toBe('0.0.0-next-17098');
   });
@@ -123,6 +131,31 @@ describe('OpenCode V2 SDK alignment', () => {
     expect(progress.some((message) => message === 'Restore global CLI 0.0.0-next-17098...')).toBe(true);
   });
 
+  test('does not abort global CLI rollback after an interrupted activation', async () => {
+    const controller = new AbortController();
+    const calls: Array<{ command: string; args: string[]; signal?: AbortSignal }> = [];
+    let packageVersion = '0.0.0-next-17098';
+    let executable = '0.0.0-next-17098';
+    const runner: CommandRunner = async (command, args, _cwd, signal) => {
+      calls.push({ command, args, signal });
+      if (args[0] === 'pm') return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
+      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
+      if (command === 'bun' && args[0] === 'install') {
+        packageVersion = args.at(-1) === '@opencode-ai/cli@beta' ? '0.0.0-next-17102' : '0.0.0-next-17098';
+        executable = packageVersion;
+      }
+      return { stdout: '', stderr: '' };
+    };
+
+    const activation = updateOpenCodeV2Safely('/config', async () => {
+      controller.abort(new Error('interrupted'));
+    }, runner, undefined, controller.signal);
+
+    await expect(activation).rejects.toThrow('interrupted');
+    const restore = calls.find((call) => call.command === 'bun' && call.args.at(-1) === '@opencode-ai/cli@0.0.0-next-17098');
+    expect(restore?.signal).toBeUndefined();
+  });
+
   test('keeps the current build when the beta channel returns an older build', async () => {
     const calls: string[] = [];
     let packageVersion = '0.0.0-beta-17595';
@@ -179,6 +212,28 @@ describe('OpenCode V2 SDK alignment', () => {
       missing: [],
       optionalMissing: OPTIONAL_V2_PLUGIN_IDS,
     }]);
+  });
+
+  test('fails fast after a plugin request failure', async () => {
+    let calls = 0;
+    const runner: CommandRunner = async () => {
+      calls += 1;
+      throw new Error('service unavailable');
+    };
+
+    await expect(verifyOpenCodeV2Plugins(runner, 60, 1)).rejects.toThrow('service request failed');
+    expect(calls).toBe(1);
+  });
+
+  test('aborts plugin verification while a request is pending', async () => {
+    const controller = new AbortController();
+    const runner: CommandRunner = async (_command, _args, _cwd, signal) => new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+    });
+    const verification = verifyOpenCodeV2Plugins(runner, 60, 1, undefined, controller.signal);
+    setTimeout(() => controller.abort(new Error('interrupted')), 20);
+
+    await expect(verification).rejects.toThrow('interrupted');
   });
 
   test('proves readiness through the API when restart drops its client connection', async () => {

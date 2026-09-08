@@ -16,12 +16,15 @@ read_when:
 
 ## Unreleased
 
+- **OpenCode command safety and UI** — added signal-safe rollback with child
+  cleanup, fail-fast service verification, consistent `use|update|upgrade
+  v1|v2` commands, hidden legacy V2 aliases, and a compact terminal progress UI
 - **OpenCode V2 ChatGPT websearch** — vendored the unmaintained upstream
   `opencode-chatgpt-websearch` plugin as a bundled, profile-owned file
   (`configs/opencode/v2/plugins/chatgpt-websearch.js`) instead of a
   `plugin`/`plugins` array entry, since newer OpenCode2 betas resolve array
   entries strictly as npm/git package specifiers and silently drop relative
-  directory paths, breaking `metronome opencode update-v2` plugin
+  directory paths, breaking `metronome opencode upgrade v2` plugin
   verification
 - **OpenCode context pricing** — added legacy long-context costs for Tux's
   OpenAI models and translated them into native V2 tiers at the OpenAI 272K
@@ -29,8 +32,8 @@ read_when:
 - **OpenCode profile diagnostics** — timed profile-switch stages now go to
   stderr, plugin readiness retries report missing IDs, and redundant exact SDK
   installs are skipped; corrected docs to distinguish `use v2` hot reload from
-  `update-v2` service restart
-- **OpenCode V2 update diagnostics** — `update-v2` now reports global CLI
+  `upgrade v2` service restart
+- **OpenCode V2 update diagnostics** — `upgrade v2` now reports global CLI
   resolution/install, profile activation, service restart, verification, and
   exact global rollback stages
 - **OpenCode V2 update hardening** — refuse to activate beta-channel

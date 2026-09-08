@@ -36,7 +36,9 @@ Typical workflow:
   metronome pull -s claude     Pull configs from Claude Code back to canonical
   metronome helpers -p <path>  Copy helper scripts to a repo's scripts/ dir
   metronome codex-provider tux Switch Codex Desktop between Enterprise and Tux
-  metronome opencode use v2   Activate native OpenCode V2 compatibility
+  metronome opencode use v2     Activate native OpenCode V2 compatibility
+  metronome opencode update v2  Refresh the V2 profile
+  metronome opencode upgrade v2 Upgrade the V2 runtime and profile
 
 Exit codes:
   0  Success / no drift
