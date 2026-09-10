@@ -107,7 +107,11 @@ The switcher backs up `opencode.json`, agents, both global plugin roots, CLI
 settings, package manifests, and lockfiles before writing. Unknown plugins and
 Tux's V1 `provider.tux` overlay are preserved. Native `providers` wins in V2,
 so Tux may continue writing its V1 integration without breaking the active V2
-catalog.
+catalog. Profile activation also folds mixed legacy/native MCP entries into the
+selected shape, preserving noncanonical servers and letting canonical entries
+win on name collisions. The stale legacy `foundry` duplicate and retired
+`uptimize-*` providers are removed from the projection; unrelated legacy
+overlays, including Tux's, remain.
 
 Versioned V2 plugins live under `configs/opencode/v2/plugins/`. V2 ports the
 instruction loader, Memory advisor, read guard, commit validator, and Muxy

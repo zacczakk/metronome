@@ -33,6 +33,14 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
   }));
   await writeFile(join(projectDir, 'configs', 'agents', 'review.md'), '---\nmodel: acme/claude\nreasoningEffort: high\npermission:\n  edit: deny\n---\nReview.\n');
   await writeFile(join(projectDir, 'configs', 'mcp', 'tool.json'), JSON.stringify({ transport: 'stdio', command: 'tool', enabled: true }));
+  await writeFile(join(projectDir, 'configs', 'mcp', 'github.json'), JSON.stringify({
+    transport: 'http',
+    url: 'https://api.githubcopilot.com/mcp/',
+    target_options: {
+      opencode: { oauth: false },
+      opencode2: { oauth: false, codemode: true },
+    },
+  }));
   for (const name of ['memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {
     await writeFile(join(projectDir, 'configs', 'plugins', name), `// v1 ${name}\n`);
   }
@@ -41,7 +49,16 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
   }
   await writeFile(join(projectDir, 'configs', 'opencode', 'v1', 'plugins', 'muxy-notify.js'), '// v1 muxy\n');
   await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', 'muxy-notify.js'), '// v2 muxy\n');
-  await writeFile(join(homeDir, '.config', 'opencode', 'opencode.json'), JSON.stringify({ provider: { tux: { name: 'Tux overlay' } }, custom: true }));
+  await writeFile(join(homeDir, '.config', 'opencode', 'opencode.json'), JSON.stringify({
+    provider: { tux: { name: 'Tux overlay' } },
+    mcp: {
+      servers: {
+        native: { type: 'local', command: ['native'], disabled: true },
+      },
+      legacy: { type: 'remote', url: 'https://legacy.example/mcp', enabled: true },
+    },
+    custom: true,
+  }));
   await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'third-party.ts'), '// preserve\n');
   await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), '// external muxy v1\n');
   await writeFile(join(homeDir, '.opencode', 'plugins', 'muxy-notify.js'), '// external muxy\n');
@@ -60,6 +77,10 @@ describe('switchOpenCodeVersion', () => {
     expect(v2.providers.acme.models.claude.limit).toEqual({ output: 64000 });
     expect(v2.permissions[0]).toEqual({ action: 'shell', resource: '*', effect: 'allow' });
     expect(v2.mcp.servers.tool.disabled).toBe(false);
+    expect(v2.mcp.servers.github).toMatchObject({ oauth: false, codemode: true });
+    expect(v2.mcp.servers.legacy).toEqual({ type: 'remote', url: 'https://legacy.example/mcp', disabled: false });
+    expect(v2.mcp.servers.native).toEqual({ type: 'local', command: ['native'], disabled: true });
+    expect(v2.mcp.legacy).toBeUndefined();
     expect(v2.plugins).not.toContain('context-mode');
     expect(v2.plugins).toEqual([]);
     expect(v2.websearch).toEqual({ provider: 'chatgpt' });
@@ -77,6 +98,9 @@ describe('switchOpenCodeVersion', () => {
     expect(v1.provider.acme.models.claude.limit).toBeUndefined();
     expect(v1.provider.tux.name).toBe('Tux overlay');
     expect(v1.mcp.tool.enabled).toBe(true);
+    expect(v1.mcp.github).toMatchObject({ oauth: false });
+    expect(v1.mcp.legacy).toEqual({ type: 'remote', url: 'https://legacy.example/mcp', enabled: true });
+    expect(v1.mcp.native).toEqual({ type: 'local', command: ['native'], enabled: false });
     expect(v1.plugin).toEqual(['context-mode']);
     expect(v1.websearch).toBeUndefined();
     expect(await Bun.file(join(paths.homeDir, '.config', 'opencode', 'plugins', 'chatgpt-websearch.js')).exists()).toBe(false);

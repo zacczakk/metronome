@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import type { MCPServer } from '../../types';
 import {
+  configureOpenCodeV2Plugins,
+  mergeOpenCodeSettings,
   renderOpenCodeAgent,
   renderOpenCodeMcp,
   renderOpenCodeSettings,
@@ -27,6 +29,18 @@ describe('renderOpenCodeSettings', () => {
       websearch: { provider: 'chatgpt' },
     });
     expect(renderOpenCodeSettings(settings, 'v1')).toEqual({ plugin: ['context-mode'] });
+  });
+
+  test('removes stale profile-owned ChatGPT plugin paths from V2 entries', () => {
+    expect(renderOpenCodeSettings({ plugin: ['./chatgpt-websearch'] }, 'v2').plugins).toEqual([]);
+
+    const rendered = renderOpenCodeSettings({}, 'v2');
+
+    configureOpenCodeV2Plugins(rendered, {
+      plugins: ['./chatgpt-websearch', 'third-party', { package: './chatgpt-websearch' }],
+    });
+
+    expect(rendered.plugins).toEqual(['third-party']);
   });
 
   test('migrates settings, providers, models, permissions, and explore agent variants to V2', () => {
@@ -190,6 +204,69 @@ describe('renderOpenCodeSettings', () => {
         package: 'aisdk:@ai-sdk/anthropic',
         models: { claude: { limit: { context: 200000, output: 64000 } } },
       },
+    });
+  });
+
+  test('preserves unowned MCP servers and the Tux overlay while removing stale Foundry', () => {
+    const merged = mergeOpenCodeSettings({
+      provider: {
+        foundry: { name: 'legacy duplicate' },
+        tux: { name: 'Tux overlay' },
+        'uptimize-openai': { name: 'retired Uptimize provider' },
+        external: { name: 'external provider' },
+      },
+      providers: {
+        external: { package: 'aisdk:external' },
+        foundry: { package: 'aisdk:legacy-foundry' },
+      },
+      mcp: {
+        servers: {
+          native: { type: 'local', command: ['native'], disabled: true },
+        },
+        legacy: { type: 'remote', url: 'https://legacy.example/mcp', enabled: true },
+        native: { type: 'remote', url: 'https://legacy-native.example/mcp', enabled: true },
+      },
+    }, {
+      providers: {
+        foundry: { package: 'aisdk:managed-foundry' },
+      },
+      mcp: {
+        servers: {
+          managed: { type: 'local', command: ['managed'], disabled: false },
+        },
+      },
+    }, 'v2');
+
+    expect(merged.provider).toEqual({
+      tux: { name: 'Tux overlay' },
+      external: { name: 'external provider' },
+    });
+    expect(merged.providers).toEqual({
+      external: { package: 'aisdk:external' },
+      foundry: { package: 'aisdk:managed-foundry' },
+    });
+    expect(merged.mcp).toEqual({
+      servers: {
+        legacy: { type: 'remote', url: 'https://legacy.example/mcp', disabled: false },
+        native: { type: 'local', command: ['native'], disabled: true },
+        managed: { type: 'local', command: ['managed'], disabled: false },
+      },
+    });
+  });
+
+  test('does not reintroduce retired providers through V1 provider merging', () => {
+    const merged = mergeOpenCodeSettings({
+      provider: {
+        'uptimize-openai': { name: 'retired Uptimize provider' },
+        tux: { name: 'Tux overlay' },
+      },
+    }, {
+      provider: { acme: { name: 'managed' } },
+    }, 'v1');
+
+    expect(merged.provider).toEqual({
+      tux: { name: 'Tux overlay' },
+      acme: { name: 'managed' },
     });
   });
 

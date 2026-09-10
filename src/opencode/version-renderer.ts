@@ -13,6 +13,34 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+const CHATGPT_WEBSEARCH_PLUGIN_PATHS = new Set([
+  './chatgpt-websearch',
+  './chatgpt-websearch.js',
+]);
+
+function isChatGPTWebSearchPluginEntry(entry: unknown): boolean {
+  if (typeof entry === 'string') return CHATGPT_WEBSEARCH_PLUGIN_PATHS.has(entry);
+  return isRecord(entry)
+    && typeof entry.package === 'string'
+    && CHATGPT_WEBSEARCH_PLUGIN_PATHS.has(entry.package);
+}
+
+function withoutChatGPTWebSearchPlugin(entries: unknown[]): unknown[] {
+  return entries.filter((entry) => !isChatGPTWebSearchPluginEntry(entry));
+}
+
+const RETIRED_PROVIDER_IDS = new Set([
+  'uptimize-bedrock',
+  'uptimize-foundry',
+  'uptimize-openai',
+]);
+
+function withoutRetiredProviders(providers: UnknownRecord): UnknownRecord {
+  const filtered = clone(providers);
+  for (const providerID of RETIRED_PROVIDER_IDS) delete filtered[providerID];
+  return filtered;
+}
+
 function renamedPermission(name: string): string {
   if (name === 'bash') return 'shell';
   if (name === 'task') return 'subagent';
@@ -190,6 +218,7 @@ export function renderOpenCodeAgent(metadata: Record<string, unknown>, version: 
 export function renderOpenCodeSettings(settings: Record<string, unknown>, version: OpenCodeVersion): Record<string, unknown> {
   if (version === 'v1') {
     const rendered = clone(settings);
+    if (Array.isArray(rendered.plugin)) rendered.plugin = withoutChatGPTWebSearchPlugin(rendered.plugin);
     if (isRecord(rendered.websearch) && rendered.websearch.provider === 'chatgpt') delete rendered.websearch;
     return rendered;
   }
@@ -200,7 +229,7 @@ export function renderOpenCodeSettings(settings: Record<string, unknown>, versio
   for (const [key, value] of Object.entries(settings)) {
     if (key === 'permission') rendered.permissions = renderPermissions(value);
     else if (key === 'plugin') {
-      const configured = Array.isArray(value) ? clone(value) : [];
+      const configured = Array.isArray(value) ? withoutChatGPTWebSearchPlugin(clone(value)) : [];
       const existing = Array.isArray(rendered.plugins) ? rendered.plugins : [];
       rendered.plugins = [...new Map([...existing, ...configured].map((entry) => [JSON.stringify(entry), entry])).values()];
     }
@@ -286,17 +315,37 @@ export function mergeOpenCodeSettings(
   version: OpenCodeVersion,
 ): Record<string, unknown> {
   const next = structuredClone(existing);
+  let output = structuredClone(rendered);
   const remove = version === 'v1'
     ? ['permissions', 'agents', 'plugins', 'providers', 'websearch']
     : ['permission', 'agent', 'plugin'];
   for (const key of remove) delete next[key];
-  const providerKey = version === 'v1' ? 'provider' : 'providers';
-  const existingProviders = existing[providerKey];
-  const renderedProviders = rendered[providerKey];
-  if (isRecord(existingProviders) && isRecord(renderedProviders)) {
-    rendered = { ...rendered, [providerKey]: { ...existingProviders, ...renderedProviders } };
+
+  if (isRecord(next.provider)) next.provider = withoutRetiredProviders(next.provider);
+  if (isRecord(next.providers)) next.providers = withoutRetiredProviders(next.providers);
+  if (isRecord(output.provider)) output.provider = withoutRetiredProviders(output.provider);
+  if (isRecord(output.providers)) output.providers = withoutRetiredProviders(output.providers);
+
+  if (isRecord(output.mcp)) output.mcp = mergeOpenCodeMcp(existing.mcp, output.mcp, version);
+
+  if (version === 'v2' && isRecord(existing.provider) && isRecord(output.providers)) {
+    const legacyProviders = withoutRetiredProviders(existing.provider);
+    if ('foundry' in output.providers || (isRecord(existing.providers) && 'foundry' in existing.providers)) {
+      delete legacyProviders.foundry;
+    }
+    if (Object.keys(legacyProviders).length > 0) next.provider = legacyProviders;
+    else delete next.provider;
   }
-  Object.assign(next, rendered);
+
+  const providerKey = version === 'v1' ? 'provider' : 'providers';
+  const existingProviders = next[providerKey];
+  const renderedProviders = output[providerKey];
+  if (isRecord(existingProviders) && isRecord(renderedProviders)) {
+    output = { ...output, [providerKey]: { ...existingProviders, ...renderedProviders } };
+  }
+  Object.assign(next, output);
+  if (version === 'v1' && Array.isArray(next.plugin)) next.plugin = withoutChatGPTWebSearchPlugin(next.plugin);
+  if (version === 'v2' && Array.isArray(next.plugins)) next.plugins = withoutChatGPTWebSearchPlugin(next.plugins);
   return next;
 }
 
@@ -304,7 +353,7 @@ export function configureOpenCodeV2Plugins(settings: Record<string, unknown>, ex
   const rendered = Array.isArray(settings.plugins) ? settings.plugins : [];
   const external = Array.isArray(existing.plugins) ? existing.plugins : [];
   const configured = [...new Map([...external, ...rendered].map((entry) => [JSON.stringify(entry), entry])).values()];
-  settings.plugins = configured.filter((entry) => entry !== 'context-mode'
+  settings.plugins = withoutChatGPTWebSearchPlugin(configured).filter((entry) => entry !== 'context-mode'
     && entry !== './plugins/memory-vault-advisor.ts'
     && !(isRecord(entry) && entry.package === './plugins/instructions-loader.ts'));
 }
@@ -362,6 +411,79 @@ export function applyOpenCodeAgentVariants(
     model.variants = [...withoutExisting, { id: variant.id, settings: clone(variant.settings) }];
   }
   return rendered;
+}
+
+function isOpenCodeMcpServerConfig(value: unknown): value is UnknownRecord {
+  if (!isRecord(value)) return false;
+  return ['type', 'command', 'url', 'enabled', 'disabled'].some((key) => key in value);
+}
+
+function convertOpenCodeMcpConfig(value: UnknownRecord, version: OpenCodeVersion): UnknownRecord {
+  const converted = clone(value);
+  if (version === 'v2') {
+    if (typeof converted.enabled === 'boolean' && converted.disabled === undefined) converted.disabled = !converted.enabled;
+    delete converted.enabled;
+    if (typeof converted.timeout === 'number') {
+      converted.timeout = { catalog: converted.timeout, execution: converted.timeout };
+    }
+    return converted;
+  }
+
+  if (typeof converted.disabled === 'boolean' && converted.enabled === undefined) converted.enabled = !converted.disabled;
+  delete converted.disabled;
+  if (isRecord(converted.timeout)) {
+    const timeout = typeof converted.timeout.execution === 'number'
+      ? converted.timeout.execution
+      : typeof converted.timeout.catalog === 'number' ? converted.timeout.catalog : undefined;
+    if (timeout !== undefined) converted.timeout = timeout;
+  }
+  return converted;
+}
+
+function existingOpenCodeMcpParts(value: unknown): {
+  legacy: UnknownRecord;
+  native: UnknownRecord;
+  extras: UnknownRecord;
+} {
+  const legacy: UnknownRecord = {};
+  const native: UnknownRecord = {};
+  const extras: UnknownRecord = {};
+  if (!isRecord(value)) return { legacy, native, extras };
+
+  if (isRecord(value.servers)) Object.assign(native, value.servers);
+  for (const [name, config] of Object.entries(value)) {
+    if (name === 'servers') continue;
+    if (isOpenCodeMcpServerConfig(config)) legacy[name] = config;
+    else extras[name] = clone(config);
+  }
+  return { legacy, native, extras };
+}
+
+function mergeOpenCodeMcp(existing: unknown, rendered: UnknownRecord, version: OpenCodeVersion): UnknownRecord {
+  const current = existingOpenCodeMcpParts(existing);
+  const renderedServers = version === 'v2' && isRecord(rendered.servers)
+    ? rendered.servers
+    : rendered;
+  const legacy = Object.fromEntries(
+    Object.entries(current.legacy).map(([name, config]) => [name, convertOpenCodeMcpConfig(config, version)]),
+  );
+  const native = Object.fromEntries(
+    Object.entries(current.native).map(([name, config]) => [name, convertOpenCodeMcpConfig(config, version)]),
+  );
+
+  if (version === 'v2') {
+    return {
+      ...current.extras,
+      servers: { ...legacy, ...native, ...clone(renderedServers) },
+    };
+  }
+
+  return {
+    ...current.extras,
+    ...legacy,
+    ...native,
+    ...clone(renderedServers),
+  };
 }
 
 export function renderOpenCodeMcp(servers: MCPServer[], version: OpenCodeVersion, target: TargetName = 'opencode'): Record<string, unknown> {

@@ -296,7 +296,7 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
       const mcp = await readCanonicalMCPServers(options.projectDir);
       const renderedAgents = await renderAgents(options.projectDir, options.version);
       let rendered = renderOpenCodeSettings(canonical, options.version);
-      rendered.mcp = renderOpenCodeMcp(mcp, options.version);
+      rendered.mcp = renderOpenCodeMcp(mcp, options.version, options.version === 'v2' ? 'opencode2' : 'opencode');
       if (options.version === 'v2') {
         rendered = applyOpenCodeAgentVariants(rendered, renderedAgents.variants);
         configureOpenCodeV2Plugins(rendered, existing);
