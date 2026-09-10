@@ -32,12 +32,12 @@ OpenCode-only specialists such as `foundry-sql`; list both `opencode` and
 `opencode2` when the agent should survive either OpenCode profile.
 
 ## Current OpenCode routing
-- `explore`, `execute`, `verify`: `tux/gpt-5.6-luna` with max reasoning effort.
-- `docs`, `research`, `vault-ops`: `tux/gpt-5.6-luna` with max reasoning effort.
-- `release`: `tux/gpt-5.6-luna` with xhigh reasoning effort.
-- `api-review`, `infra-review`: `tux/gpt-5.6-terra` with medium reasoning effort.
-- `security-review`: `tux/gpt-5.6-sol` with high reasoning effort.
-- `foundry-sql`: `tux/gpt-5.6-luna` with max reasoning effort; OpenCode only.
+- `explore`, `execute`, `verify`: `github-copilot/gpt-5.6-luna` with max reasoning effort.
+- `docs`, `research`, `vault-ops`: `github-copilot/gpt-5.6-luna` with max reasoning effort.
+- `release`: `github-copilot/gpt-5.6-luna` with xhigh reasoning effort.
+- `api-review`, `infra-review`: `github-copilot/gpt-5.6-terra` with medium reasoning effort.
+- `security-review`: `github-copilot/gpt-5.6-sol` with high reasoning effort.
+- `foundry-sql`: `github-copilot/gpt-5.6-luna` with max reasoning effort; OpenCode only.
 
 ## Portable tool derivation
 - Non-OpenCode targets do not consume OpenCode `permission` blocks directly.

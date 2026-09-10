@@ -66,7 +66,7 @@
   },
   "agent": {
     "explore": {
-      "model": "tux/gpt-5.6-luna",
+      "model": "github-copilot/gpt-5.6-luna",
       "options": {
         "reasoningEffort": "max"
       }

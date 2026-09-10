@@ -5,7 +5,7 @@ description: >-
   independent proof adds value. Do not invoke after every implementer or ordinary handoff.
   Catches hollowed-out implementations, stubs, missing wiring. Read-only — reports, never edits.
 mode: subagent
-model: tux/gpt-5.6-luna
+model: github-copilot/gpt-5.6-luna
 reasoningEffort: max
 textVerbosity: low
 color: '#ffc861'
