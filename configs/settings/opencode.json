@@ -281,6 +281,36 @@
             "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
             "max": { "reasoningEffort": "max", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
           }
+        },
+        "deepseek-v4-pro": {
+          "name": "DeepSeek V4 Pro",
+          "cost": { "input": 1.74, "output": 3.48, "cache_read": 0.145, "cache_write": 1.74 },
+          "limit": { "context": 1000000, "output": 384000 },
+          "options": { "toolStreaming": false },
+          "attachment": true,
+          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "variants": {
+            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
+            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
+            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+          }
+        },
+        "glm-5.2": {
+          "name": "GLM 5.2",
+          "cost": { "input": 1.54, "output": 4.84, "cache_read": 0.15 },
+          "provider": { "npm": "@ai-sdk/openai" },
+          "limit": { "context": 1000000, "output": 128000 },
+          "reasoning": true,
+          "attachment": true,
+          "options": { "reasoningSummary": "auto" },
+          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "variants": {
+            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
+          }
         }
       }
     }
