@@ -10,7 +10,6 @@ textVerbosity: low
 steps: 12
 targets:
   - opencode
-  - opencode2
 color: '#4da6ff'
 permission:
   '*': deny

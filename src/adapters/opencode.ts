@@ -12,16 +12,12 @@ import type {
 } from '../types';
 
 export class OpenCodeAdapter extends BaseAdapter {
-  constructor(homeDir?: string, target: 'opencode' | 'opencode2' = 'opencode') {
-    super(target, 'OpenCode', homeDir);
+  constructor(homeDir?: string) {
+    super('opencode', 'OpenCode', homeDir);
   }
 
   getCapabilities(): AdapterCapabilities {
     return { commands: true, agents: true, mcp: true, instructions: true, skills: true, settings: true, agentVariantsInSettings: true, hooks: false };
-  }
-
-  private get mcpTarget(): 'opencode' | 'opencode2' {
-    return this.target;
   }
 
   /** Keys that only exist in the canonical format — strip before rendering */
@@ -73,7 +69,7 @@ export class OpenCodeAdapter extends BaseAdapter {
   /** OpenCode renders enabled: false servers (with disabled flag) */
   override getRenderedServerNames(servers: MCPServer[]): string[] {
     return servers
-      .filter((s) => !s.disabledFor?.includes(this.mcpTarget))
+      .filter((s) => !s.disabledFor?.includes('opencode'))
       .map((s) => s.name);
   }
 
@@ -119,7 +115,7 @@ export class OpenCodeAdapter extends BaseAdapter {
           if (key in cfg) targetOptions[key] = cfg[key];
         }
         if (Object.keys(targetOptions).length > 0) {
-          server.targetOptions = { [this.mcpTarget]: targetOptions };
+          server.targetOptions = { opencode: targetOptions };
         }
 
         servers.push(server);
@@ -160,6 +156,6 @@ export class OpenCodeAdapter extends BaseAdapter {
 
   override renderMCPServers(servers: MCPServer[], existingContent?: string): string {
     const existing = existingContent ? readJsonc<Record<string, unknown>>(existingContent) : {};
-    return JSON.stringify({ ...existing, mcp: renderOpenCodeMcp(servers, this.mcpTarget) }, null, 2) + '\n';
+    return JSON.stringify({ ...existing, mcp: renderOpenCodeMcp(servers, 'opencode') }, null, 2) + '\n';
   }
 }

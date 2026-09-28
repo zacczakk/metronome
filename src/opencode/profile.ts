@@ -173,7 +173,7 @@ async function restoreCompleteBackup(homeDir: string, backupRoot: string): Promi
 }
 
 async function renderAgents(projectDir: string): Promise<{ files: Map<string, string>; variants: OpenCodeModelVariant[] }> {
-  const target = 'opencode2';
+  const target = 'opencode';
   const agents = (await readCanonicalAgents(projectDir, () => false))
     .filter((agent) => isCanonicalAgentForTarget(agent, target));
   const files = new Map<string, string>();
@@ -239,7 +239,7 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
       const mcp = await readCanonicalMCPServers(options.projectDir);
       const renderedAgents = await renderAgents(options.projectDir);
       let rendered = renderOpenCodeSettings(canonical);
-      rendered.mcp = renderOpenCodeMcp(mcp, 'opencode2');
+      rendered.mcp = renderOpenCodeMcp(mcp, 'opencode');
       rendered = applyOpenCodeAgentVariants(rendered, renderedAgents.variants);
       configureOpenCodeV2Plugins(rendered, existing);
       const merged = mergeOpenCodeSettings(existing, rendered);

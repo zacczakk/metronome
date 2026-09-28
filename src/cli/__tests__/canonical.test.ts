@@ -32,9 +32,8 @@ describe('canonical agent routing', () => {
     const agents = await readCanonicalAgents(process.cwd(), () => false);
     const agent = agents.find(({ name }) => name === 'foundry-sql');
 
-    expect(agent?.metadata.targets).toEqual(['opencode', 'opencode2']);
+    expect(agent?.metadata.targets).toEqual(['opencode']);
     expect(agent && isCanonicalAgentForTarget(agent, 'opencode')).toBe(true);
-    expect(agent && isCanonicalAgentForTarget(agent, 'opencode2')).toBe(true);
     expect(agent && isCanonicalAgentForTarget(agent, 'claude-code')).toBe(false);
     expect(agent && isCanonicalAgentForTarget(agent, 'codex')).toBe(false);
   });

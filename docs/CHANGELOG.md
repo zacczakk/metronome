@@ -16,6 +16,8 @@ read_when:
 
 ## Unreleased
 
+- **One OpenCode target** — removed the duplicate `opencode2` Metronome target; canonical MCP and agent routing now use `opencode` only. Historical manifest ownership remains readable.
+
 - **OpenCode 2 stable cutover** — switched the Bun runtime to stable
   `@opencode/cli` / `@opencode/plugin` and kept `opencode2` as the explicit
   native V2 target name.

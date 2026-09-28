@@ -46,7 +46,6 @@ export function createAdapter(target: TargetName, homeDir?: string): ToolAdapter
   switch (target) {
     case 'claude-code': return new ClaudeCodeAdapter(homeDir);
     case 'opencode':    return new OpenCodeAdapter(homeDir);
-    case 'opencode2':   return new OpenCodeAdapter(homeDir, 'opencode2');
     case 'antigravity': return new AntigravityAdapter(homeDir);
     case 'codex':       return new CodexAdapter(homeDir);
   }
@@ -54,7 +53,7 @@ export function createAdapter(target: TargetName, homeDir?: string): ToolAdapter
 
 /** Resolve the stable OpenCode adapter. */
 export async function createTargetAdapter(target: TargetName, homeDir?: string): Promise<ToolAdapter> {
-  if (target === 'opencode' || target === 'opencode2') return new OpenCodeAdapter(homeDir, target);
+  if (target === 'opencode') return new OpenCodeAdapter(homeDir);
   return createAdapter(target, homeDir);
 }
 
@@ -207,8 +206,7 @@ export async function readCanonicalInstructions(
 function settingsFileName(target: TargetName): string {
   switch (target) {
     case 'claude-code': return 'claude.json';
-    case 'opencode':
-    case 'opencode2': return 'opencode.json';
+    case 'opencode': return 'opencode.json';
     default:            return `${target}.json`;
   }
 }

@@ -50,10 +50,9 @@ Read-only — reports drift without modifying anything.
 and `upgrade` updates the runtime before refreshing it.
 All profile operations persist the active profile in
 `~/.config/opencode/migration-manifest.json`; `metronome opencode status` reports
-the profile. Generic `check`, `push`, `pull`, `render`, and `diff` target
-`opencode` uses the stable profile. `opencode2` forces native V2 for scripts and CI as a target name, shares the same paths,
-is not part of the default all-target set, and cannot be combined with
-`opencode`. The stable runtime executable is `opencode`. The top-level
+the profile. Generic `check`, `push`, `pull`, `render`, and `diff` use the single
+`opencode` target and the stable `opencode` runtime executable.
+The top-level
 `metronome status` remains the drift-check alias.
 
 ## Key Design Decisions

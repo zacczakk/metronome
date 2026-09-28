@@ -5,7 +5,6 @@
   "args": ["-y", "@steipete/peekaboo@latest", "mcp"],
   "enabled": false,
   "target_options": {
-    "opencode": { "timeout": 30000 },
-    "opencode2": { "timeout": 30000 }
+    "opencode": { "timeout": 30000 }
   }
 }

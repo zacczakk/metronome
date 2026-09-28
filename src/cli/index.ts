@@ -16,7 +16,6 @@ const DESCRIPTION = `Agent Config Sync — single source of truth for AI coding 
 Manages canonical configs in configs/ and syncs them to 4 CLI targets:
   claude-code  (~/.claude/)
   opencode     (~/.config/opencode/, stable V2 profile)
-  opencode2    (~/.config/opencode/, explicit V2 target for CI/scripts)
   antigravity  (~/.gemini/antigravity-cli/)
   codex        (~/.codex/)
 

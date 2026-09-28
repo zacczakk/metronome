@@ -24,7 +24,7 @@ import type { TargetName, CanonicalItem } from '../types';
 const VALID_SINGULAR_TYPES = ['command', 'agent', 'mcp', 'instruction', 'skill', 'settings', 'hook'] as const;
 type SingularType = (typeof VALID_SINGULAR_TYPES)[number];
 
-const VALID_TARGETS = ['claude', 'antigravity', 'codex', 'opencode', 'opencode2'] as const;
+const VALID_TARGETS = ['claude', 'antigravity', 'codex', 'opencode'] as const;
 
 function mapTarget(t: string): TargetName {
   if (t === 'claude') return 'claude-code';

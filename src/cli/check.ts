@@ -453,7 +453,7 @@ Examples:
 Exit codes: 0 = no drift, 2 = drift detected, 1 = error`)
   .option('--json', 'Machine-readable JSON output')
   .option('-v, --verbose', 'Show all items including up-to-date')
-  .option('-t, --target <name>', 'Scope to specific target (repeatable): claude, antigravity, codex, opencode, opencode2', collect, [] as string[])
+  .option('-t, --target <name>', 'Scope to specific target (repeatable): claude, antigravity, codex, opencode', collect, [] as string[])
   .option('--type <name>', 'Scope to config type (repeatable): commands, agents, mcps, instructions, skills, settings, hooks', collect, [] as string[])
   .action(async (options: { json?: boolean; verbose?: boolean; target: string[]; type: string[] }) => {
     try {

@@ -36,7 +36,7 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
     url: 'https://api.githubcopilot.com/mcp/',
     target_options: {
       opencode: { oauth: false },
-      opencode2: { oauth: false, codemode: true },
+      opencode: { oauth: false, codemode: true },
     },
   }));
   for (const name of ['chatgpt-websearch.js', 'instructions-loader.ts', 'memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {

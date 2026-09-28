@@ -92,7 +92,6 @@ describe('render subcommand logic', () => {
       targetOptions: {
       'claude-code': { type: 'stdio' },
       opencode: { enabled: true, timeout: 20000, codemode: false },
-      opencode2: { enabled: true, timeout: 20000, codemode: false },
       },
     });
   });

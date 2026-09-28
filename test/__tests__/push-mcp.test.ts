@@ -85,9 +85,9 @@ describe('push MCP E2E', () => {
   });
 
   test('pushes native OpenCode V2 GitHub codemode configuration and is idempotent', async () => {
-    const fakeHome = createTestHome('push-mcp-opencode2');
-    const projectDir = createTestProject('push-mcp-opencode2', FIXTURE_ROOT);
-    const adapter = createAdapter('opencode2', fakeHome);
+    const fakeHome = createTestHome('push-mcp-opencode');
+    const projectDir = createTestProject('push-mcp-opencode', FIXTURE_ROOT);
+    const adapter = createAdapter('opencode', fakeHome);
     const mcpPath = adapter.getPaths().getMCPConfigPath();
     mkdirSync(dirname(mcpPath), { recursive: true });
     writeFileSync(mcpPath, JSON.stringify({
@@ -104,7 +104,7 @@ describe('push MCP E2E', () => {
 
     const result = await runPush({
       projectDir,
-      targets: ['opencode2'],
+      targets: ['opencode'],
       force: true,
       types: ['mcp'],
       homeDir: fakeHome,
@@ -128,7 +128,7 @@ describe('push MCP E2E', () => {
 
     const second = await runPush({
       projectDir,
-      targets: ['opencode2'],
+      targets: ['opencode'],
       force: true,
       types: ['mcp'],
       homeDir: fakeHome,

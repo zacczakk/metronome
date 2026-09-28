@@ -76,7 +76,8 @@ export async function historicallyOwnedSharedSkillNames(
       continue;
     }
     const targets = manifest.items[`skill/${name}`]?.targets;
-    if (targets?.codex?.hash === historicalSkillHash(content) || targets?.opencode?.hash === historicalSkillHash(content) || targets?.opencode2?.hash === historicalSkillHash(content)) {
+    const hash = historicalSkillHash(content);
+    if (Object.values(targets ?? {}).some((target) => target?.hash === hash)) {
       proven.add(name);
     }
   }
@@ -189,7 +190,7 @@ export function selectedSkillProjectionRoots(
   const roots: SkillProjectionRoot[] = [];
   const seen = new Set<string>();
   for (const target of targets) {
-    const root = target === 'opencode' || target === 'opencode2' || target === 'codex'
+    const root = target === 'opencode' || target === 'codex'
       ? join(homeDir, '.agents', 'skills')
       : target === 'claude-code'
         ? join(homeDir, '.claude', 'skills')

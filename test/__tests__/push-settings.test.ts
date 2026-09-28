@@ -147,7 +147,7 @@ describe('push settings E2E', () => {
     const result = await runPush({
       projectDir,
       force: true,
-      targets: ['opencode2'],
+      targets: ['opencode'],
       types: ['agent'],
       homeDir: fakeHome,
     });
@@ -175,7 +175,7 @@ describe('push settings E2E', () => {
       projectDir,
       force: true,
       deleteStale: true,
-      targets: ['opencode2'],
+      targets: ['opencode'],
       types: ['agent'],
       homeDir: fakeHome,
     });

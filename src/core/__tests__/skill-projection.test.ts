@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { createTestHome, createTestProject } from '../../../test/helpers/backup';
-import { planSkillProjection, projectionNeedsUpdate, replaceSkillTree, selectedSkillProjectionRoots, skillFiles, PUBLIC_SKILL_MARKER } from '../skill-projection';
+import { historicallyOwnedSharedSkillNames, planSkillProjection, projectionNeedsUpdate, replaceSkillTree, selectedSkillProjectionRoots, skillFiles, PUBLIC_SKILL_MARKER } from '../skill-projection';
 import type { Manifest } from '../../types';
 
 function historicalManifest(skillName: string, primaryContent: string): Manifest {
@@ -58,14 +58,20 @@ async function historicalAdoptionFor(files: Record<string, string>, peerFiles?: 
 describe('selectedSkillProjectionRoots', () => {
   const home = '/portable-home';
 
-  test('deduplicates OpenCode and Codex shared root', () => {
-    expect(selectedSkillProjectionRoots(['opencode', 'codex'], home)).toEqual([
-      { target: 'opencode', root: join(home, '.agents', 'skills') },
-    ]);
+  test('recognizes historical skill ownership from the retired OpenCode target', async () => {
+    const homeDir = createTestHome('projection-retired-opencode');
+    const root = join(homeDir, '.agents', 'skills');
+    const name = 'obsidian';
+    const content = 'legacy public skill\n';
+    writeSkill(root, name, { 'SKILL.md': content });
+    const manifest = historicalManifest(name, content);
+    const item = manifest.items[`skill/${name}`]!;
+    item.targets = { opencode2: { hash: createHash('sha256').update(content.trimEnd()).digest('hex'), lastSynced: item.lastSynced } } as typeof item.targets;
+    expect(await historicallyOwnedSharedSkillNames(manifest, [name], root)).toEqual(new Set([name]));
   });
 
-  test('deduplicates both OpenCode identities and Codex at the shared root', () => {
-    expect(selectedSkillProjectionRoots(['opencode', 'opencode2', 'codex'], home)).toEqual([
+  test('deduplicates OpenCode and Codex shared root', () => {
+    expect(selectedSkillProjectionRoots(['opencode', 'codex'], home)).toEqual([
       { target: 'opencode', root: join(home, '.agents', 'skills') },
     ]);
   });

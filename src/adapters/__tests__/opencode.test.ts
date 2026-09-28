@@ -126,11 +126,10 @@ describe('OpenCodeAdapter.renderAgent', () => {
   it('strips target routing metadata from agent frontmatter', () => {
     const item = {
       ...agentItem,
-      metadata: { ...agentItem.metadata, targets: ['opencode', 'opencode2'] },
+      metadata: { ...agentItem.metadata, targets: ['opencode'] },
     };
     const result = adapter.renderAgent(item);
     expect(result.content).not.toContain('targets:');
-    expect(result.content).not.toContain('opencode2');
   });
 
   it('passes through tools in agent frontmatter', () => {
@@ -188,14 +187,14 @@ describe('OpenCodeAdapter capabilities', () => {
 
 describe('OpenCodeAdapter native settings', () => {
   it('renders native settings and MCP semantics', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
+    const v2 = new OpenCodeAdapter();
     const settings = v2.renderSettings({
-      target: 'opencode2',
+      target: 'opencode',
       keys: { permission: { bash: 'allow' } },
     });
     const mcp = v2.renderMCPServers([{
       name: 'native', transport: 'stdio', command: 'tool', enabled: false,
-      targetOptions: { opencode2: { timeout: 12 } },
+      targetOptions: { opencode: { timeout: 12 } },
     }]);
 
     expect(settings).toContain('"permissions"');
@@ -205,9 +204,9 @@ describe('OpenCodeAdapter native settings', () => {
   });
 
   it('preserves native providers and configured external plugins', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
+    const v2 = new OpenCodeAdapter();
     const settings = JSON.parse(v2.renderSettings({
-      target: 'opencode2',
+      target: 'opencode',
       keys: {
         plugin: ['some-plugin'],
         websearch: { provider: 'chatgpt' },
@@ -224,7 +223,7 @@ describe('OpenCodeAdapter native settings', () => {
   });
 
   it('preserves profile-owned agent variants during generic V2 settings sync', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
+    const v2 = new OpenCodeAdapter();
     const existing = JSON.stringify({
       providers: {
         acme: {
@@ -242,7 +241,7 @@ describe('OpenCodeAdapter native settings', () => {
     });
 
     const rendered = JSON.parse(v2.renderSettings({
-      target: 'opencode2',
+      target: 'opencode',
       keys: {
         provider: {
           acme: {
@@ -260,11 +259,11 @@ describe('OpenCodeAdapter native settings', () => {
     });
   });
 
-  it('uses opencode2 MCP overrides for the active V2 profile', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
+  it('uses OpenCode MCP overrides for the active V2 profile', () => {
+    const v2 = new OpenCodeAdapter();
     const mcp = v2.renderMCPServers([{
       name: 'native', transport: 'stdio', command: 'tool',
-      targetOptions: { opencode: { timeout: 3 }, opencode2: { timeout: 12 } },
+      targetOptions: { opencode: { timeout: 12 } },
     }]);
 
     expect(mcp).toContain('"catalog": 12');

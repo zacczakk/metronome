@@ -336,8 +336,7 @@ than concatenating those files into `AGENTS.md`.
   in `~/.config/opencode/migration-manifest.json`; `metronome opencode status`
   reports it.
 - Generic `check`, `push`, `pull`, `render`, and `diff` operations use the
-  stable OpenCode profile. `opencode2` remains an explicit native V2 target
-  name for scripts and CI.
+  stable OpenCode profile through the single `opencode` target.
 - Preserve unowned plugin files and Tux's provider overlay.
 - Canonical settings include `websearch.provider: chatgpt`. ChatGPT websearch
   is a vendored, profile-owned plugin
@@ -400,8 +399,7 @@ The canonical MCP definition schema (`configs/mcp/*.json`):
   "disabled_for": ["cli"],      // optional, per-CLI exclusion
   "target_options": {           // optional, target-specific render extras
     "claude-code": {"disabled": true},
-    "opencode": {"oauth": false},
-    "opencode2": {"oauth": false, "codemode": true}
+    "opencode": {"oauth": false, "codemode": true}
   }
 }
 ```
@@ -481,15 +479,15 @@ Rules:
   as `disabled: false`).
 - A numeric target timeout becomes both `timeout.catalog` and
   `timeout.execution`.
-- Apply `disabled_for` using the `opencode2` target identity.
-- Use `target_options.opencode2` for native MCP render options.
+- Apply `disabled_for` using the `opencode` target identity.
+- Use `target_options.opencode` for native MCP render options.
 - Convert `${VAR}` references in `environment` and `headers` to OpenCode's
   `{env:VAR}` runtime references; pull reverses this conversion.
-- Copy `target_options.opencode2` into the server entry.
+- Copy `target_options.opencode` into the server entry.
 
 **OpenCode pull**: Remote server `headers` are parsed back into the canonical
 schema. Recognized `oauth` and `codemode` fields are stored under
-`target_options.opencode2`.
+`target_options.opencode`.
 
 #### Antigravity CLI Format
 
@@ -573,9 +571,8 @@ Rules:
 ### OpenCode
 
 - **Profiles**: `opencode` uses the stable profile in
-  `~/.config/opencode/migration-manifest.json`. `opencode2` forces native V2
-  for scripts and CI. Both target names share `~/.config/opencode/`, cannot be
-  combined, and only `opencode` is in the default all-target set.
+  `~/.config/opencode/migration-manifest.json` and is included in the default
+  all-target set.
 - **Custom providers**: Tux's native `provider` map is preserved and merged
   with canonical providers. Legacy rendered `providers` maps are migrated.
 - **Env var syntax**: OpenCode uses `{env:VAR_NAME}` template syntax in
@@ -752,10 +749,8 @@ directory paths to `~`. Compare to canonical settings file.
 
 **Canonical source**: `configs/settings/opencode.json`.
 
-Generic target `opencode` uses the stable profile from
-`~/.config/opencode/migration-manifest.json`. Target `opencode2` is the
-explicit native V2 identity. Both targets share this file and cannot be
-combined; only `opencode` is in `ALL_TARGETS`.
+The `opencode` target uses the stable profile from
+`~/.config/opencode/migration-manifest.json` and is in `ALL_TARGETS`.
 
 **Managed keys**: `provider`, `plugins`, `permissions`, `agents`, `model`,
 `instructions`, `websearch`, `disabled_providers`. V2 retains the canonical ChatGPT websearch
@@ -785,7 +780,7 @@ placeholders. Leave them as-is during push and pull.
 
 **Push/pull**: Read or write the stable profile's rendered keys while
 preserving unmanaged top-level state. `pull -s opencode` and
-`pull -s opencode2` read native V2 shapes.
+the single `pull -s opencode` path reads native V2 shapes.
 
 ### Antigravity `~/.gemini/antigravity-cli/settings.json`
 

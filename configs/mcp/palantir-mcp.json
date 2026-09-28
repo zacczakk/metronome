@@ -15,11 +15,6 @@
       "enabled": true,
       "timeout": 20000,
       "codemode": false
-    },
-    "opencode2": {
-      "enabled": true,
-      "timeout": 20000,
-      "codemode": false
     }
   }
 }

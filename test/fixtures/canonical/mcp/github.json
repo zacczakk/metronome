@@ -8,9 +8,6 @@
   "env_vars": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
   "target_options": {
     "opencode": {
-      "oauth": false
-    },
-    "opencode2": {
       "oauth": false,
       "codemode": true
     }

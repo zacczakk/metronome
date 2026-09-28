@@ -14,9 +14,6 @@
     "opencode": {
       "enabled": true,
       "timeout": 20000
-    },
-    "opencode2": {
-      "timeout": 20000
     }
   }
 }

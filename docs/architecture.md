@@ -91,7 +91,7 @@ notifications. The native Muxy V2 port is deployed globally as
 it; the app-owned file is preserved because Muxy continuously regenerates it.
 The Metronome port remains the active notification integration. Muxy is optional
 for V2 readiness. The stable runtime uses the `opencode` executable;
-`opencode2` remains only as the explicit Metronome target name. Cursor OAuth is
+There is one Metronome target, `opencode`. Cursor OAuth is
 disabled in V2 because the
 public V2 catalog API cannot add a provider. Switching back to
 another profile is not supported.

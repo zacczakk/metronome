@@ -115,12 +115,9 @@ updates the runtime and then refreshes the profile. Every profile operation pers
 reports that profile; it is unrelated to `metronome status`, which remains the
 drift check alias.
 
-For generic `check`, `push`, `pull`, `render`, and `diff` operations, target
-`opencode` uses the stable V2 profile. Use the `opencode2` target name to force native V2 in
-scripts and CI (`metronome check -t opencode2`,
-`metronome push -t opencode2 --force`). Both names resolve the same
-`~/.config/opencode/` paths and cannot be combined. `opencode2` is intentionally
-not in the default `ALL_TARGETS` list; the stable executable is `opencode`.
+For generic `check`, `push`, `pull`, `render`, and `diff` operations, use
+target `opencode`. It renders the stable OpenCode profile in
+`~/.config/opencode/`; the runtime executable is `opencode`.
 
 Generic V2 sync covers settings, agents, MCP, commands, skills, and
 instructions. V2 plugin files are profile-owned and deployed by

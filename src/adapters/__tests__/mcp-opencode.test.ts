@@ -3,7 +3,7 @@ import { OpenCodeAdapter } from '../opencode';
 import { readJsonc } from '../../formats/jsonc';
 import type { MCPServer } from '../../types';
 
-const adapter = new OpenCodeAdapter(undefined, 'opencode2');
+const adapter = new OpenCodeAdapter();
 
 const stdioServer: MCPServer = {
   name: 'context7', transport: 'stdio', command: 'npx', args: ['-y', '@context7/mcp'],
@@ -18,7 +18,7 @@ const httpServer: MCPServer = {
 const githubServer: MCPServer = {
   name: 'github', transport: 'http', url: 'https://api.githubcopilot.com/mcp/',
   headers: { Authorization: 'Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}' },
-  targetOptions: { opencode2: { oauth: false, codemode: true } },
+  targetOptions: { opencode: { oauth: false, codemode: true } },
 };
 
 function servers(content: string): Record<string, Record<string, unknown>> {
@@ -54,7 +54,7 @@ describe('OpenCodeAdapter native MCP rendering', () => {
   test('renders inverse enablement and target overrides', () => {
     const disabled: MCPServer = {
       name: 'thinking', transport: 'stdio', command: 'npx', args: ['-y', '@mcp/thinking'], enabled: false,
-      targetOptions: { opencode2: { enabled: true, codemode: false, timeout: 20_000 } },
+      targetOptions: { opencode: { enabled: true, codemode: false, timeout: 20_000 } },
     };
     const rendered = servers(adapter.renderMCPServers([stdioServer, disabled]));
     expect(rendered.context7.disabled).toBe(false);
@@ -63,7 +63,7 @@ describe('OpenCodeAdapter native MCP rendering', () => {
   });
 
   test('filters servers disabled for the native target', () => {
-    const excluded: MCPServer = { name: 'excluded', transport: 'stdio', command: 'tool', disabledFor: ['opencode2'] };
+    const excluded: MCPServer = { name: 'excluded', transport: 'stdio', command: 'tool', disabledFor: ['opencode'] };
     const rendered = servers(adapter.renderMCPServers([stdioServer, excluded]));
     expect(rendered.context7).toBeDefined();
     expect(rendered.excluded).toBeUndefined();
@@ -87,11 +87,11 @@ describe('OpenCodeAdapter native MCP rendering', () => {
       {
         name: 'github', transport: 'http', url: 'https://api.githubcopilot.com/mcp/',
         headers: { Authorization: 'Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}' },
-        targetOptions: { opencode2: { oauth: false, codemode: true } },
+        targetOptions: { opencode: { oauth: false, codemode: true } },
       },
       {
         name: 'peekaboo', transport: 'stdio', command: 'peekaboo', args: [],
-        targetOptions: { opencode2: { timeout: { catalog: 30_000, execution: 30_000 } } },
+        targetOptions: { opencode: { timeout: { catalog: 30_000, execution: 30_000 } } },
       },
     ]);
   });
