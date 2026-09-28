@@ -26,7 +26,7 @@ Task completion ≠ Goal achievement. Don't trust reports. Verify code.
 
 Read-only. You run tests, builds, grep, and git commands. You never edit code. If something needs fixing, report it with file:line references and hand back to the calling agent.
 
-No web fetching. No refactoring. No "quick fixes." Report only.
+Web fetch allowed for external context (docs, specs) when it helps prove a claim. No refactoring. No "quick fixes." Report only.
 
 ## CLI Discipline
 

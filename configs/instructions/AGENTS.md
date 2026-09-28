@@ -50,7 +50,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - Skill: `agent-browser skills get core`. Ignore kill/reset advice. Lightpanda: unauthenticated reading only.
 
 ## Session Notes
-- Write atomic notes to `~/Vaults/Memory/sessions/` using `session-notes` skill (use `obsidian` CLI).
+- Write atomic notes to `~/Vaults/Memory/sessions/` using `session-notes` skill (filesystem write, not the `obsidian` app CLI).
 - Triggers: decision, discovery, dead end, surprising behavior, "need this later", task completion, pre-compaction.
 - Write at point-of-discovery, not end-of-task. Bias toward writing — a redundant note costs less than a lost insight.
 - Skip trivial decisions. One note per trigger, not batched.
@@ -58,7 +58,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 ## Session End
 When work concludes (e.g. PR merged):
 1. Ensure all decisions/discoveries from this session have session notes.
-2. Write/update pattern notes in Memory vault if reusable knowledge emerged (`obsidian` cli).
+2. Write/update pattern notes in Memory vault if reusable knowledge emerged (filesystem write).
 3. Clean up worktrees and stale branches.
 4. Update `SOUL.md` (Learned Preferences, Relationship Notes) if dynamic shifted.
 
