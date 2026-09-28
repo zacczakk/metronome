@@ -3,301 +3,104 @@ import { OpenCodeAdapter } from '../opencode';
 import { readJsonc } from '../../formats/jsonc';
 import type { MCPServer } from '../../types';
 
-const adapter = new OpenCodeAdapter();
+const adapter = new OpenCodeAdapter(undefined, 'opencode2');
 
 const stdioServer: MCPServer = {
-  name: 'context7',
-  transport: 'stdio',
-  command: 'npx',
-  args: ['-y', '@context7/mcp'],
+  name: 'context7', transport: 'stdio', command: 'npx', args: ['-y', '@context7/mcp'],
   env: { CONTEXT7_API_KEY: '${CONTEXT7_API_KEY}' },
 };
 
 const httpServer: MCPServer = {
-  name: 'tavily',
-  transport: 'http',
-  url: 'https://mcp.tavily.com/mcp',
+  name: 'tavily', transport: 'http', url: 'https://mcp.tavily.com/mcp',
   env: { TAVILY_API_KEY: '${TAVILY_API_KEY}' },
 };
 
 const githubServer: MCPServer = {
-  name: 'github',
-  transport: 'http',
-  url: 'https://api.githubcopilot.com/mcp/',
+  name: 'github', transport: 'http', url: 'https://api.githubcopilot.com/mcp/',
   headers: { Authorization: 'Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}' },
-  targetOptions: {
-    opencode: { oauth: false },
-    opencode2: { oauth: false, codemode: true },
-  },
+  targetOptions: { opencode2: { oauth: false, codemode: true } },
 };
 
-describe('OpenCodeAdapter.renderMCPServers', () => {
-  test('renders stdio server as local type with command array', () => {
-    const result = adapter.renderMCPServers([stdioServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
+function servers(content: string): Record<string, Record<string, unknown>> {
+  const parsed = readJsonc<Record<string, unknown>>(content);
+  return (parsed.mcp as Record<string, unknown>).servers as Record<string, Record<string, unknown>>;
+}
 
-    expect(mcp.context7.type).toBe('local');
-    expect(mcp.context7.command).toEqual(['npx', '-y', '@context7/mcp']);
-  });
-
-  test('renders http server as remote type with url', () => {
-    const result = adapter.renderMCPServers([httpServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-
-    expect(mcp.tavily.type).toBe('remote');
-    expect(mcp.tavily.url).toBe('https://mcp.tavily.com/mcp');
-  });
-
-  test('converts env vars to OpenCode {env:VAR} format', () => {
-    const result = adapter.renderMCPServers([stdioServer]);
-    expect(result).toContain('{env:CONTEXT7_API_KEY}');
-    expect(result).not.toContain('${CONTEXT7_API_KEY}');
-  });
-
-  test('env vars in http server also converted', () => {
-    const result = adapter.renderMCPServers([httpServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-    const env = mcp.tavily.environment as Record<string, string>;
-
-    expect(env.TAVILY_API_KEY).toBe('{env:TAVILY_API_KEY}');
-  });
-
-  test('renders remote headers with OpenCode environment interpolation', () => {
-    const result = adapter.renderMCPServers([githubServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-
-    expect(mcp.github.headers).toEqual({ Authorization: 'Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}' });
-    expect(mcp.github.oauth).toBe(false);
-    expect(mcp.github.codemode).toBeUndefined();
-  });
-
-  test('omits environment key when no env vars', () => {
-    const server: MCPServer = {
-      name: 'simple',
-      transport: 'stdio',
-      command: 'node',
-      args: ['server.js'],
-    };
-    const result = adapter.renderMCPServers([server]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-    expect(mcp.simple.environment).toBeUndefined();
-  });
-
-  test('filters out servers disabled for opencode', () => {
-    const disabled: MCPServer = {
-      name: 'claude-only',
-      transport: 'stdio',
-      command: 'some-tool',
-      disabledFor: ['opencode'],
-    };
-    const result = adapter.renderMCPServers([stdioServer, disabled]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, unknown>;
-
-    expect(mcp.context7).toBeDefined();
-    expect(mcp['claude-only']).toBeUndefined();
-  });
-
-  test('preserves existing JSONC comments when merging', () => {
-    const existing = `{
-  // This is a comment
-  "theme": "dark"
-}`;
-    const result = adapter.renderMCPServers([stdioServer], existing);
-    expect(result).toContain('// This is a comment');
-    expect(result).toContain('"theme"');
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    expect((parsed as Record<string, unknown>).theme).toBe('dark');
-  });
-
-  test('starts with empty {} when no existingContent', () => {
-    const result = adapter.renderMCPServers([stdioServer]);
-    expect(() => readJsonc(result)).not.toThrow();
-  });
-
-  test('output contains mcp key at root', () => {
-    const result = adapter.renderMCPServers([stdioServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    expect(parsed.mcp).toBeDefined();
-  });
-
-  test('command array includes command + args (no undefined)', () => {
-    const noArgs: MCPServer = {
-      name: 'minimal',
-      transport: 'stdio',
-      command: 'mytool',
-    };
-    const result = adapter.renderMCPServers([noArgs]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-    expect(mcp.minimal.command).toEqual(['mytool']);
-  });
-
-  test('empty server list produces empty mcp object', () => {
-    const result = adapter.renderMCPServers([]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    expect(parsed.mcp).toEqual({});
-  });
-
-  test('renders enabled: true for normal servers', () => {
-    const result = adapter.renderMCPServers([stdioServer]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-    expect(mcp.context7.enabled).toBe(true);
-  });
-
-  test('renders enabled: false servers with disabled flag', () => {
-    const disabled: MCPServer = {
-      name: 'thinking',
-      transport: 'stdio',
-      command: 'npx',
-      args: ['-y', '@mcp/thinking'],
-      enabled: false,
-    };
-    const result = adapter.renderMCPServers([stdioServer, disabled]);
-    const parsed = readJsonc<Record<string, unknown>>(result);
-    const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
-
-    expect(mcp.context7.enabled).toBe(true);
-    expect(mcp.thinking).toBeDefined();
-    expect(mcp.thinking.enabled).toBe(false);
-  });
-
-  test('getRenderedServerNames includes enabled: false servers', () => {
-    const disabled: MCPServer = {
-      name: 'thinking',
-      transport: 'stdio',
-      command: 'npx',
-      enabled: false,
-    };
-    const names = adapter.getRenderedServerNames([stdioServer, disabled]);
-    expect(names).toEqual(['context7', 'thinking']);
-  });
-
-  test('getRenderedServerNames excludes disabledFor servers', () => {
-    const excluded: MCPServer = {
-      name: 'excluded',
-      transport: 'stdio',
-      command: 'tool',
-      disabledFor: ['opencode'],
-    };
-    const names = adapter.getRenderedServerNames([stdioServer, excluded]);
-    expect(names).toEqual(['context7']);
-  });
-
-  test('parseExistingMCPServerNames extracts mcp keys (not mcpServers)', () => {
-    const content = JSON.stringify({
-      mcp: { context7: {}, tavily: {}, 'chrome-devtools': {} },
+describe('OpenCodeAdapter native MCP rendering', () => {
+  test('renders stdio and HTTP servers', () => {
+    expect(servers(adapter.renderMCPServers([stdioServer])).context7).toMatchObject({
+      type: 'local', command: ['npx', '-y', '@context7/mcp'], disabled: false,
     });
-    const names = adapter.parseExistingMCPServerNames(content);
-    expect(names).toEqual(['context7', 'tavily', 'chrome-devtools']);
-  });
-
-  test('parseExistingMCPServerNames returns empty for no mcp key', () => {
-    expect(adapter.parseExistingMCPServerNames('{}')).toEqual([]);
-  });
-
-  test('removesNonCanonicalOnPush returns true (mcp object reset)', () => {
-    expect(adapter.removesNonCanonicalOnPush()).toBe(true);
-  });
-});
-
-describe('OpenCodeAdapter V2 MCP parsing', () => {
-  test('reads native V2 server names and disabled state', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
-    const content = JSON.stringify({ mcp: { servers: { native: { type: 'local', command: ['tool'], disabled: true } } } });
-
-    expect(v2.parseExistingMCPServerNames(content)).toEqual(['native']);
-    expect(v2.parseMCPServers(content)).toEqual([{
-      name: 'native', transport: 'stdio', command: 'tool', args: [], enabled: false,
-    }]);
-  });
-
-  test('renders GitHub PAT auth and enables V2 codemode', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
-    const parsed = readJsonc<Record<string, unknown>>(v2.renderMCPServers([githubServer]));
-    const servers = (parsed.mcp as Record<string, unknown>).servers as Record<string, Record<string, unknown>>;
-
-    expect(servers.github).toEqual({
-      type: 'remote',
-      url: 'https://api.githubcopilot.com/mcp/',
-      headers: { Authorization: 'Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}' },
-      oauth: false,
-      codemode: true,
-      disabled: false,
+    expect(servers(adapter.renderMCPServers([httpServer])).tavily).toMatchObject({
+      type: 'remote', url: 'https://mcp.tavily.com/mcp', disabled: false,
     });
   });
 
-  test('honors V2 target enablement without leaking V1-only enabled', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
-    const parsed = readJsonc<Record<string, unknown>>(v2.renderMCPServers([{
-      name: 'palantir-mcp',
-      transport: 'stdio',
-      command: 'tux',
-      args: ['palantir-mcp', 'start'],
-      enabled: false,
+  test('converts environment variables and headers to runtime syntax', () => {
+    const rendered = adapter.renderMCPServers([stdioServer, httpServer, githubServer]);
+    expect(rendered).toContain('{env:CONTEXT7_API_KEY}');
+    expect(rendered).toContain('{env:TAVILY_API_KEY}');
+    expect(servers(rendered).github.headers).toEqual({ Authorization: 'Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}' });
+  });
+
+  test('omits empty environment values and preserves unrelated JSONC state', () => {
+    const simple: MCPServer = { name: 'simple', transport: 'stdio', command: 'node', args: ['server.js'] };
+    const existing = '{\n  // comment\n  "theme": "dark"\n}';
+    const rendered = adapter.renderMCPServers([simple], existing);
+    expect(readJsonc<Record<string, unknown>>(rendered).theme).toBe('dark');
+    expect(servers(rendered).simple.environment).toBeUndefined();
+  });
+
+  test('renders inverse enablement and target overrides', () => {
+    const disabled: MCPServer = {
+      name: 'thinking', transport: 'stdio', command: 'npx', args: ['-y', '@mcp/thinking'], enabled: false,
       targetOptions: { opencode2: { enabled: true, codemode: false, timeout: 20_000 } },
-    }]));
-    const servers = (parsed.mcp as Record<string, unknown>).servers as Record<string, Record<string, unknown>>;
-
-    expect(servers['palantir-mcp']).toMatchObject({
-      codemode: false,
-      disabled: false,
-      timeout: { catalog: 20_000, execution: 20_000 },
-    });
-    expect(servers['palantir-mcp'].enabled).toBeUndefined();
+    };
+    const rendered = servers(adapter.renderMCPServers([stdioServer, disabled]));
+    expect(rendered.context7.disabled).toBe(false);
+    expect(rendered.thinking).toMatchObject({ disabled: false, codemode: false, timeout: { catalog: 20_000, execution: 20_000 } });
+    expect(rendered.thinking.enabled).toBeUndefined();
   });
 
-  test('pulls remote headers and V2 target options into canonical form', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
+  test('filters servers disabled for the native target', () => {
+    const excluded: MCPServer = { name: 'excluded', transport: 'stdio', command: 'tool', disabledFor: ['opencode2'] };
+    const rendered = servers(adapter.renderMCPServers([stdioServer, excluded]));
+    expect(rendered.context7).toBeDefined();
+    expect(rendered.excluded).toBeUndefined();
+    expect(adapter.getRenderedServerNames([stdioServer, excluded])).toEqual(['context7']);
+  });
+
+  test('parses native servers and round-trips target options', () => {
     const content = JSON.stringify({
       mcp: {
         servers: {
           github: {
-            type: 'remote',
-            url: 'https://api.githubcopilot.com/mcp/',
-            headers: { Authorization: 'Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}' },
-            oauth: false,
-            codemode: true,
+            type: 'remote', url: 'https://api.githubcopilot.com/mcp/',
+            headers: { Authorization: 'Bearer {env:GITHUB_PERSONAL_ACCESS_TOKEN}' }, oauth: false, codemode: true,
           },
+          peekaboo: { type: 'local', command: ['peekaboo'], timeout: { catalog: 30_000, execution: 30_000 } },
         },
       },
     });
-
-    expect(v2.parseMCPServers(content)).toEqual([{
-      name: 'github',
-      transport: 'http',
-      url: 'https://api.githubcopilot.com/mcp/',
-      headers: { Authorization: 'Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}' },
-      targetOptions: { opencode2: { oauth: false, codemode: true } },
-    }]);
+    expect(adapter.parseExistingMCPServerNames(content)).toEqual(['github', 'peekaboo']);
+    expect(adapter.parseMCPServers(content)).toEqual([
+      {
+        name: 'github', transport: 'http', url: 'https://api.githubcopilot.com/mcp/',
+        headers: { Authorization: 'Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}' },
+        targetOptions: { opencode2: { oauth: false, codemode: true } },
+      },
+      {
+        name: 'peekaboo', transport: 'stdio', command: 'peekaboo', args: [],
+        targetOptions: { opencode2: { timeout: { catalog: 30_000, execution: 30_000 } } },
+      },
+    ]);
   });
 
-  test('preserves V2 timeout in the parsed target options', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
-    const content = JSON.stringify({
-      mcp: {
-        servers: {
-          peekaboo: {
-            type: 'local',
-            command: ['peekaboo'],
-            timeout: { catalog: 30_000, execution: 30_000 },
-          },
-        },
-      },
-    });
-
-    expect(v2.parseMCPServers(content)).toEqual([{
-      name: 'peekaboo',
-      transport: 'stdio',
-      command: 'peekaboo',
-      args: [],
-      targetOptions: { opencode2: { timeout: { catalog: 30_000, execution: 30_000 } } },
-    }]);
+  test('handles empty and minimal configs', () => {
+    expect(servers(adapter.renderMCPServers([]))).toEqual({});
+    const minimal: MCPServer = { name: 'minimal', transport: 'stdio', command: 'mytool' };
+    expect(servers(adapter.renderMCPServers([minimal])).minimal.command).toEqual(['mytool']);
+    expect(adapter.parseExistingMCPServerNames('{}')).toEqual([]);
+    expect(adapter.removesNonCanonicalOnPush()).toBe(true);
   });
 });

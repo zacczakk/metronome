@@ -62,13 +62,28 @@ describe('canonical agent routing', () => {
   test('routes OpenCode explore to Luna with max reasoning effort', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'opencode.json'), 'utf8'),
-    ) as { model?: string; agent?: Record<string, { model?: string; options?: { reasoningEffort?: string } }> };
+    ) as { model?: string; agents?: Record<string, { model?: string }> };
 
-    expect(settings.model).toBe('tux/gpt-5.6-luna');
-    expect(settings.agent?.explore).toEqual({
-      model: 'github-copilot/gpt-5.6-luna',
-      options: { reasoningEffort: 'max' },
-    });
+    expect(settings.model).toBe('tux/gpt-6-luna');
+    expect(settings.agents?.explore).toEqual({ model: 'github-copilot/gpt-5.6-luna#agent-explore' });
+  });
+
+  test('matches the current Tux OpenCode catalog and provider policy', () => {
+    const settings = JSON.parse(
+      readFileSync(join(process.cwd(), 'configs', 'settings', 'opencode.json'), 'utf8'),
+    ) as {
+      disabled_providers?: string[];
+      provider?: { tux?: { models?: Record<string, { cost?: Record<string, unknown> }> } };
+    };
+    const models = settings.provider?.tux?.models ?? {};
+
+    for (const model of ['claude-opus-5-5', 'claude-sonnet-4-5', 'gpt-6-sol', 'gpt-6-luna']) {
+      expect(models[model]).toBeDefined();
+    }
+    expect(settings.disabled_providers).toEqual(['opencode', 'opencode-go']);
+    expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2, output: 10, cache_read: 0.2, cache_write: 2.5 });
+    expect(models['gpt-5.6-sol']?.cost).toMatchObject({ input: 4, output: 20, cache_read: 0.4, cache_write: 5 });
+    expect(models['gpt-6-luna']?.cost).toMatchObject({ input: 0.1, output: 0.5, cache_read: 0.01, cache_write: 0.125 });
   });
 
   test('allows webfetch for review and verification agents', async () => {
@@ -125,7 +140,6 @@ describe('canonical vault retrieval policy', () => {
     const files = [
       ...walk(join(process.cwd(), 'configs', 'agents')),
       ...walk(join(process.cwd(), 'configs', 'commands')),
-      ...walk(join(process.cwd(), 'configs', 'plugins')),
       'configs/skills/memory-retrieval/SKILL.md',
       'configs/skills/obsidian-vault-conventions/SKILL.md',
     ].map((file) => file.startsWith('/') ? file : join(process.cwd(), file));

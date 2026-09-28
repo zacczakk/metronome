@@ -2,7 +2,7 @@
 
 ## Context
 
-`metronome opencode use v2` can be interrupted while it has already changed
+`metronome opencode use` can be interrupted while it has already changed
 the live OpenCode files. The current rollback lives in the command's normal
 `catch` path, so SIGINT can bypass it. Plugin verification also retries a
 failed `opencode2 api` request; that command can auto-start the managed
@@ -18,8 +18,7 @@ stream of unrelated progress lines rather than one readable operation view.
 - Rollback itself is never aborted by the user's signal.
 - A failed plugin request fails fast; only a successful partial catalog is
   retried.
-- Public commands are `use <version>`, `update <version>`, and
-  `upgrade <version>` for both `v1` and `v2`.
+- Public commands are `use`, `update`, and `upgrade` for the stable profile.
 - Existing `update-v2` and `upgrade-v2` spellings remain hidden aliases.
 - TTY output has one compact title, live stage, and final status line.
   Piped output remains plain and line-oriented.
@@ -63,12 +62,10 @@ dependencies.
 
 ### Command mapping
 
-- `use v1|v2`: select and render the profile.
-- `update v1|v2`: refresh and verify the selected profile.
-- `upgrade v1`: run the installed V1 CLI upgrade, then refresh the V1 profile.
-- `upgrade v2`: update the V2 beta/runtime dependencies, then activate and
-  verify V2.
-- `update-v2` and `upgrade-v2`: hidden compatibility aliases for `upgrade v2`.
+- `use`: select and render the stable profile.
+- `update`: refresh and verify the stable profile.
+- `upgrade`: update the stable runtime, then activate and verify it.
+- `update-v2` and `upgrade-v2`: hidden compatibility aliases.
 
 ## Tasks
 
@@ -135,9 +132,8 @@ Files:
 
 Steps:
 
-1. Add `update` and `upgrade` commands taking `v1` or `v2`.
-2. Route the four operation/version combinations to the right existing
-   behavior.
+1. Add `update` and `upgrade` commands for the stable profile.
+2. Route the operations to the existing stable behavior.
 3. Keep old V2 command spellings as hidden aliases.
 4. Install and remove signal handlers around each operation; use exit 130 for
    an interrupt.

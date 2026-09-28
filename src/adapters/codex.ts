@@ -55,7 +55,7 @@ export class CodexAdapter extends BaseAdapter {
   }
 
   getCapabilities(): AdapterCapabilities {
-    return { commands: true, agents: true, mcp: true, instructions: true, skills: true, settings: true, plugins: false, hooks: true };
+    return { commands: true, agents: true, mcp: true, instructions: true, skills: true, settings: true, hooks: true };
   }
 
   override renderSettings(settings: CanonicalSettings, existingContent?: string): string {

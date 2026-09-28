@@ -1,4 +1,4 @@
-"""OpenCode V2 session database access for the sessions CLI."""
+"""OpenCode session database access for the sessions CLI."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DEFAULT_DB = Path.home() / ".local" / "share" / "opencode-v2" / "opencode" / "opencode.db"
+DEFAULT_DB = Path.home() / ".local" / "share" / "opencode" / "opencode.db"
 
 
 def open_db(db_path: Path = DEFAULT_DB) -> sqlite3.Connection:
     if not db_path.exists():
-        raise FileNotFoundError(f"OpenCode V2 DB not found at {db_path}")
+        raise FileNotFoundError(f"OpenCode DB not found at {db_path}")
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
@@ -205,14 +205,14 @@ def session_to_markdown(db_path: Path, session_id: str) -> str | None:
     if not messages:
         return None
 
-    title = row["title"] or "OpenCode V2 session"
+    title = row["title"] or "OpenCode session"
     directory = row["directory"]
     project = Path(directory).name if directory else "unknown"
     created = datetime.fromtimestamp(row["time_created"] / 1000, tz=timezone.utc)
     lines = [
         "---",
         f"session_id: {session_id}",
-        "source: opencode2",
+        "source: opencode",
         f"title: {json.dumps(title)}",
         f"project: {project}",
         f"directory: {directory}",

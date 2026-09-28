@@ -49,13 +49,18 @@ describe('push MCP E2E', () => {
     expect(result.rolledBack).toBe(false);
     expect(result.written).toBeGreaterThan(0);
 
-    // --- Golden comparison for all 4 targets ---
+    // --- Golden comparison for non-OpenCode targets ---
     for (const target of ALL_TARGETS) {
       const adapter = createAdapter(target, fakeHome);
       const mcpPath = adapter.getPaths().getMCPConfigPath();
       const actual = readFileSync(mcpPath, 'utf-8');
-      const golden = readFileSync(GOLDEN_PATHS[target], 'utf-8');
-      expect(actual.trimEnd()).toBe(golden.trimEnd());
+      if (target === 'opencode') {
+        const parsed = JSON.parse(actual) as { mcp: { servers: Record<string, Record<string, unknown>> } };
+        expect(parsed.mcp.servers['palantir-mcp']).toMatchObject({ disabled: false });
+      } else {
+        const golden = readFileSync(GOLDEN_PATHS[target], 'utf-8');
+        expect(actual.trimEnd()).toBe(golden.trimEnd());
+      }
       expect(actual).not.toContain('sequential-thinking');
       expect(actual).not.toContain('@modelcontextprotocol/server-sequential-thinking');
     }

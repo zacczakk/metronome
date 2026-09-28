@@ -73,10 +73,10 @@
       "Bash(git restore:*)",
       "Bash(gh repo delete:*)",
       "Bash(sudo:*)",
-      "Bash(cat *.env:*)",
-      "Bash(cat *.env.*:*)",
-      "Bash(cat */.env:*)",
-      "Bash(cat */.env.*:*)",
+      "Bash(cat *.env*)",
+      "Bash(cat *.env.*)",
+      "Bash(cat */.env*)",
+      "Bash(cat */.env.*)",
       "Bash(cat ~/.zshrc_secrets:*)"
     ]
   },

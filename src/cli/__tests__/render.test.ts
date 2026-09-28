@@ -116,16 +116,11 @@ describe('render subcommand logic', () => {
     expect(opencodeRendered).toContain('"tux"');
     expect(opencodeRendered).toContain('"palantir-mcp"');
     expect(opencodeRendered).toContain('"start"');
-    expect(opencodeRendered).toContain('"enabled": true');
-    expect(opencodeRendered).toContain('"timeout": 20000');
+    expect(opencodeRendered).toContain('"disabled": false');
+    expect(opencodeRendered).toContain('"catalog": 20000');
+    expect(opencodeRendered).toContain('"execution": 20000');
     expect(opencodeRendered).not.toContain('palantir-mcp@latest');
     expect(opencodeRendered).not.toContain('FOUNDRY_TOKEN');
-
-    const opencodeV2Rendered = createAdapter('opencode2').renderMCPServers([palantir!]);
-    expect(opencodeV2Rendered).toContain('"disabled": false');
-    expect(opencodeV2Rendered).toContain('"codemode": false');
-    expect(opencodeV2Rendered).toContain('"catalog": 20000');
-    expect(opencodeV2Rendered).toContain('"execution": 20000');
 
     const codexRendered = createAdapter('codex').renderMCPServers([palantir!]);
     expect(codexRendered).toContain('[mcp_servers.palantir-mcp]');

@@ -12,7 +12,6 @@ import {
   readCanonicalInstructions,
   readCanonicalSkills,
   readCanonicalSettings,
-  readCanonicalPlugins,
   readCanonicalHooks,
 } from './canonical';
 import { runCheck } from './check';
@@ -36,7 +35,6 @@ interface CanonicalCache {
   agents: CanonicalItem[];
   mcpServers: CanonicalItem[];
   skills: CanonicalItem[];
-  plugins: CanonicalItem[];
   projectDir: string;
 }
 
@@ -118,11 +116,6 @@ async function renderOpDiff(
     const item = cache.skills.find((s) => s.name === op.name);
     if (!item) return null;
     rendered = adapter.renderSkill(item).content;
-  } else if (op.itemType === 'plugin') {
-    if (!caps.plugins) return null;
-    const item = cache.plugins.find((p) => p.name === op.name);
-    if (!item) return null;
-    rendered = adapter.renderPlugin(item).content;
   } else if (op.itemType === 'settings') {
     if (!caps.settings) return null;
     const settings = await readCanonicalSettings(cache.projectDir, target);
@@ -209,14 +202,13 @@ Exit codes: 0 = no drift, 2 = drift found, 1 = error`)
       }
 
       const isExcluded = createExclusionFilter();
-      const [commands, agents, mcpServers, skills, plugins] = await Promise.all([
+       const [commands, agents, mcpServers, skills] = await Promise.all([
         readCanonicalCommands(projectDir, isExcluded),
         readCanonicalAgents(projectDir, isExcluded),
         readCanonicalMCPServers(projectDir),
         readCanonicalSkills(projectDir, isExcluded),
-        readCanonicalPlugins(projectDir, isExcluded),
       ]);
-      const cache: CanonicalCache = { commands, agents, mcpServers, skills, plugins, projectDir };
+       const cache: CanonicalCache = { commands, agents, mcpServers, skills, projectDir };
 
       // Collect all drifted operations across targets
       const driftOps: DriftOp[] = [];

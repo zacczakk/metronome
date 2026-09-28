@@ -1,4 +1,4 @@
-import { Plugin } from "@opencode-ai/plugin"
+import { Plugin } from "@opencode/plugin"
 
 const TYPES = ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore"]
 const PATTERN = new RegExp(`^(${TYPES.join("|")})(\\(.+\\))?(!)?:\\s.+`)

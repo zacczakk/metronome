@@ -2,10 +2,10 @@
 """sessions — search, export, and browse OpenCode, Claude Code, and Codex sessions.
 
 Usage:
-    sessions list   [--source opencode|opencode2|claude|codex] [--since DATE] [--limit N] [--project NAME]
-    sessions latest [--source opencode|opencode2|claude|codex] [--since DATE] [--project NAME]
-    sessions export [--source opencode|opencode2|claude|codex] [--since DATE] [--force]
-    sessions search <query> [--source opencode|opencode2|claude|codex] [--since DATE] [--limit N] [--role user|assistant] [--context N]
+    sessions list   [--source opencode|claude|codex] [--since DATE] [--limit N] [--project NAME]
+    sessions latest [--source opencode|claude|codex] [--since DATE] [--project NAME]
+    sessions export [--source opencode|claude|codex] [--since DATE] [--force]
+    sessions search <query> [--source opencode|claude|codex] [--since DATE] [--limit N] [--role user|assistant] [--context N]
     sessions read   <session_id> [--role user|assistant] [--no-tools]
     sessions find   <query> [--limit N]
     sessions stats
@@ -26,29 +26,26 @@ from sessions_codex import list_sessions as codex_list_sessions
 from sessions_codex import read_metadata as codex_read_metadata
 from sessions_codex import read_session as codex_read_session
 from sessions_codex import session_to_markdown as codex_session_to_markdown
-from sessions_opencode import DEFAULT_DB as DEFAULT_OPENCODE2_DB
-from sessions_opencode import list_sessions as opencode2_list_sessions
-from sessions_opencode import open_db as opencode2_db
-from sessions_opencode import read_session as opencode2_read_session
-from sessions_opencode import session_to_markdown as opencode2_session_to_markdown
-from sessions_opencode import stats as opencode2_stats
-from sessions_opencode import text_blocks_since as opencode2_text_blocks_since
+from sessions_opencode import DEFAULT_DB as OPENCODE_DB
+from sessions_opencode import list_sessions as opencode_list_sessions
+from sessions_opencode import open_db as opencode_db
+from sessions_opencode import read_session as opencode_read_session
+from sessions_opencode import session_to_markdown as opencode_session_to_markdown
+from sessions_opencode import stats as opencode_stats
+from sessions_opencode import text_blocks_since as opencode_text_blocks_since
 
 # --- Paths -------------------------------------------------------------------
 
-OPENCODE_DB = Path.home() / ".local" / "share" / "opencode" / "opencode.db"
-OPENCODE2_DB = DEFAULT_OPENCODE2_DB
 CLAUDE_DIR = Path.home() / ".claude" / "projects"
 CODEX_DIR = Path.home() / ".codex" / "sessions"
 VAULT_DIR = Path.home() / "Vaults" / "Sessions"
 OPENCODE_VAULT = VAULT_DIR / "opencode"
-OPENCODE2_VAULT = VAULT_DIR / "opencode2"
 CLAUDE_VAULT = VAULT_DIR / "claude"
 CODEX_VAULT = VAULT_DIR / "codex"
 LOCAL_DATA = Path.home() / ".local" / "share" / "sessions"
 FTS_DB = LOCAL_DATA / ".sessions-fts.db"
 EXPORT_STATE = LOCAL_DATA / ".export-state.json"
-SESSION_SOURCES = ("opencode", "opencode2", "claude", "codex")
+SESSION_SOURCES = ("opencode", "claude", "codex")
 
 
 # --- Helpers ------------------------------------------------------------------
@@ -84,7 +81,6 @@ def load_export_state() -> dict:
         return json.loads(EXPORT_STATE.read_text())
     return {
         "opencode_last_ts": 0,
-        "opencode2_exported": {},
         "claude_exported": [],
         "codex_exported": [],
     }
@@ -97,136 +93,6 @@ def save_export_state(state: dict):
 
 def project_name_from_dir(directory: str) -> str:
     return Path(directory).name
-
-
-# --- OpenCode DB access -------------------------------------------------------
-
-def opencode_db() -> sqlite3.Connection:
-    if not OPENCODE_DB.exists():
-        print(f"error: OpenCode DB not found at {OPENCODE_DB}", file=sys.stderr)
-        sys.exit(1)
-    conn = sqlite3.connect(f"file:{OPENCODE_DB}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def opencode_list_sessions(since: datetime | None = None, limit: int = 20,
-                           project: str | None = None) -> list[dict]:
-    conn = opencode_db()
-    q = "SELECT s.id, s.title, s.directory, s.time_created, s.time_updated, s.parent_id FROM session s"
-    conds, params = [], []
-    if since:
-        conds.append("s.time_created >= ?")
-        params.append(int(since.timestamp() * 1000))
-    if project:
-        conds.append("s.directory LIKE ?")
-        params.append(f"%/{project}%")
-    if conds:
-        q += " WHERE " + " AND ".join(conds)
-    q += " ORDER BY s.time_created DESC LIMIT ?"
-    params.append(limit)
-    rows = conn.execute(q, params).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-def opencode_read_session(session_id: str, role_filter: str | None = None,
-                          include_tools: bool = True) -> list[dict]:
-    """Return messages for a session, ordered chronologically."""
-    conn = opencode_db()
-    q = """
-        SELECT m.id as msg_id, json_extract(m.data, '$.role') as role,
-               m.time_created,
-               p.id as part_id, json_extract(p.data, '$.type') as ptype,
-               p.data as pdata
-        FROM message m
-        JOIN part p ON p.message_id = m.id
-        WHERE m.session_id = ?
-        ORDER BY m.time_created, p.time_created
-    """
-    rows = conn.execute(q, (session_id,)).fetchall()
-    conn.close()
-
-    messages = []
-    for r in rows:
-        ptype = r["ptype"]
-        role = r["role"]
-
-        if role_filter and role != role_filter:
-            continue
-
-        if ptype == "text":
-            data = json.loads(r["pdata"])
-            text = data.get("text", "").strip()
-            if text:
-                messages.append({"role": role, "type": "text", "text": text,
-                                 "ts": r["time_created"]})
-        elif ptype == "tool" and include_tools:
-            data = json.loads(r["pdata"])
-            tool_name = data.get("tool", "unknown")
-            state = data.get("state", {})
-            inp = state.get("input", {})
-            inp_summary = json.dumps(inp)[:200] if isinstance(inp, dict) else str(inp)[:200]
-            messages.append({"role": role, "type": "tool", "tool": tool_name,
-                             "input_summary": inp_summary, "ts": r["time_created"]})
-    return messages
-
-
-def opencode_session_to_markdown(session_id: str) -> str | None:
-    """Export a single OpenCode session as markdown."""
-    conn = opencode_db()
-    row = conn.execute(
-        "SELECT id, title, directory, time_created, time_updated, parent_id FROM session WHERE id = ?",
-        (session_id,)
-    ).fetchone()
-    if not row:
-        conn.close()
-        return None
-
-    title = row["title"]
-    directory = row["directory"]
-    created = ts_to_dt(row["time_created"])
-    parent_id = row["parent_id"]
-    project = project_name_from_dir(directory)
-
-    # Get model from first assistant message
-    model_row = conn.execute(
-        "SELECT json_extract(data, '$.modelID') as model FROM message WHERE session_id = ? AND json_extract(data, '$.role') = 'assistant' LIMIT 1",
-        (session_id,)
-    ).fetchone()
-    model = model_row["model"] if model_row else "unknown"
-    conn.close()
-
-    messages = opencode_read_session(session_id, include_tools=False)
-    if not messages:
-        return None
-
-    lines = [
-        "---",
-        f"session_id: {session_id}",
-        "source: opencode",
-        f'title: "{title}"',
-        f"project: {project}",
-        f"directory: {directory}",
-        f"created: {dt_to_str(created)}",
-        f"model: {model}",
-    ]
-    if parent_id:
-        lines.append(f"parent_session: {parent_id}")
-    lines.append("---")
-    lines.append("")
-
-    current_role = None
-    for msg in messages:
-        if msg["role"] != current_role:
-            current_role = msg["role"]
-            label = "User" if current_role == "user" else "Assistant"
-            lines.append(f"## {label}")
-            lines.append("")
-        lines.append(msg["text"])
-        lines.append("")
-
-    return "\n".join(lines)
 
 
 # --- Claude Code access -------------------------------------------------------
@@ -430,65 +296,20 @@ def fts_db() -> sqlite3.Connection:
 
 
 def fts_index_opencode():
-    """Index OpenCode text parts into FTS5. Self-tracking via fts_meta."""
-    if not OPENCODE_DB.exists():
-        return 0
-    src = opencode_db()
-    dst = fts_db()
-
-    row = dst.execute("SELECT value FROM fts_meta WHERE key = 'opencode_last_ts'").fetchone()
-    since_ts = int(row[0]) if row else 0
-
-    q = """
-        SELECT m.session_id, json_extract(m.data, '$.role') as role,
-               json_extract(p.data, '$.text') as text,
-               p.time_created
-        FROM message m
-        JOIN part p ON p.message_id = m.id
-        WHERE json_extract(p.data, '$.type') = 'text'
-        AND p.time_created > ?
-        ORDER BY p.time_created
-    """
-    rows = src.execute(q, (since_ts,)).fetchall()
-    src.close()
-
-    batch = []
-    for r in rows:
-        text = r[2]
-        if not text or not text.strip():
-            continue
-        batch.append((r[0], "opencode", r[1], text.strip()))
-
-    if batch:
-        dst.executemany(
-            "INSERT INTO session_fts (session_id, source, role, text) VALUES (?, ?, ?, ?)",
-            batch
-        )
-        dst.execute(
-            "INSERT OR REPLACE INTO fts_meta (key, value) VALUES ('opencode_last_ts', ?)",
-            (str(rows[-1][3]),)
-        )
-        dst.commit()
-
-    dst.close()
-    return len(batch)
-
-
-def fts_index_opencode2():
-    """Index OpenCode V2 visible text into FTS5."""
-    src = OPENCODE2_DB
+    """Index OpenCode visible text into FTS5."""
+    src = OPENCODE_DB
     if not src.exists():
         return 0
 
     dst = fts_db()
-    # V2 records can be edited and share timestamps, so rebuild this source slice.
-    blocks = opencode2_text_blocks_since(src, -1)
-    dst.execute("DELETE FROM session_fts WHERE source = 'opencode2'")
+    # Records can be edited and share timestamps, so rebuild this source slice.
+    blocks = opencode_text_blocks_since(src, -1)
+    dst.execute("DELETE FROM session_fts WHERE source = 'opencode'")
 
     if blocks:
         dst.executemany(
             "INSERT INTO session_fts (session_id, source, role, text) VALUES (?, ?, ?, ?)",
-            [(session_id, "opencode2", role, text) for session_id, role, text, _ in blocks],
+            [(session_id, "opencode", role, text) for session_id, role, text, _ in blocks],
         )
     dst.commit()
 
@@ -644,17 +465,18 @@ def cmd_list(args):
     json_rows = []
     results = []
 
-    if args.source == "opencode" or (args.source is None and OPENCODE_DB.exists()):
+    if args.source in (None, "opencode") and OPENCODE_DB.exists():
         since = parse_date(args.since)
-        sessions = opencode_list_sessions(since=since, limit=args.limit, project=args.project)
+        sessions = opencode_list_sessions(OPENCODE_DB, since=since, limit=args.limit, project=args.project)
         for s in sessions:
             dt = ts_to_dt(s["time_created"])
             proj = project_name_from_dir(s["directory"])
             is_sub = bool(s["parent_id"])
+            title = s["title"] or "OpenCode session"
             if args.json:
                 json_rows.append({
                     "id": s["id"],
-                    "title": s["title"],
+                    "title": title,
                     "date": dt_to_str(dt),
                     "source": "opencode",
                     "project": proj,
@@ -666,32 +488,7 @@ def cmd_list(args):
                 })
             else:
                 sub_label = " [sub]" if is_sub else ""
-                results.append((dt, f"[opencode{sub_label}] {dt.strftime('%Y-%m-%d %H:%M')}  {proj:20s}  {s['title'][:60]}  ({s['id']})"))
-
-    if args.source in (None, "opencode2") and OPENCODE2_DB.exists():
-        since = parse_date(args.since)
-        sessions = opencode2_list_sessions(OPENCODE2_DB, since=since, limit=args.limit, project=args.project)
-        for s in sessions:
-            dt = ts_to_dt(s["time_created"])
-            proj = project_name_from_dir(s["directory"])
-            is_sub = bool(s["parent_id"])
-            title = s["title"] or "OpenCode V2 session"
-            if args.json:
-                json_rows.append({
-                    "id": s["id"],
-                    "title": title,
-                    "date": dt_to_str(dt),
-                    "source": "opencode2",
-                    "project": proj,
-                    "directory": s["directory"],
-                    "is_subagent": is_sub,
-                    "parent_id": s["parent_id"],
-                    "time_created": s["time_created"],
-                    "time_updated": s["time_updated"],
-                })
-            else:
-                sub_label = " [sub]" if is_sub else ""
-                results.append((dt, f"[opencode2{sub_label}] {dt.strftime('%Y-%m-%d %H:%M')}  {proj:20s}  {title[:60]}  ({s['id']})"))
+                results.append((dt, f"[opencode{sub_label}] {dt.strftime('%Y-%m-%d %H:%M')}  {proj:20s}  {title[:60]}  ({s['id']})"))
 
     if args.source in (None, "claude"):
         since = parse_date(args.since)
@@ -769,47 +566,16 @@ def cmd_export(args):
     if not dry_run:
         # Ensure vault dirs exist
         OPENCODE_VAULT.mkdir(parents=True, exist_ok=True)
-        OPENCODE2_VAULT.mkdir(parents=True, exist_ok=True)
         CLAUDE_VAULT.mkdir(parents=True, exist_ok=True)
         CODEX_VAULT.mkdir(parents=True, exist_ok=True)
 
-    if args.source == "opencode" or (args.source is None and OPENCODE_DB.exists()):
-        since_ts = 0 if force else state.get("opencode_last_ts", 0)
-        since = parse_date(args.since)
-        if since:
-            since_ts = max(since_ts, int(since.timestamp() * 1000))
-
-        conn = opencode_db()
-        q = "SELECT id, title, time_created FROM session WHERE time_created > ? ORDER BY time_created"
-        rows = conn.execute(q, (since_ts,)).fetchall()
-        conn.close()
-
-        max_ts = since_ts
-        for r in rows:
-            md = opencode_session_to_markdown(r["id"])
-            if not md:
-                continue
-            dt = ts_to_dt(r["time_created"])
-            slug = slugify(r["title"])
-            filename = f"{dt.strftime('%Y-%m-%d')}-{slug}.md"
-            if dry_run:
-                print(f"would write: {OPENCODE_VAULT / filename}")
-            else:
-                (OPENCODE_VAULT / filename).write_text(md)
-                max_ts = max(max_ts, r["time_created"])
-            total += 1
-
-        if not dry_run:
-            state["opencode_last_ts"] = max_ts
-            print(f"exported {total} opencode sessions")
-
-    if args.source in (None, "opencode2") and OPENCODE2_DB.exists():
-        exported_state = state.get("opencode2_exported", {})
+    if args.source in (None, "opencode") and OPENCODE_DB.exists():
+        exported_state = state.get("opencode_exported", {})
         exported = exported_state if isinstance(exported_state, dict) else {}
         if force:
             exported = {}
         since = parse_date(args.since)
-        conn = opencode2_db(OPENCODE2_DB)
+        conn = opencode_db(OPENCODE_DB)
         query = "SELECT id, title, time_created, time_updated FROM session_v2"
         params: tuple[object, ...] = ()
         if since:
@@ -819,27 +585,27 @@ def cmd_export(args):
         rows = conn.execute(query, params).fetchall()
         conn.close()
 
-        opencode2_count = 0
+        opencode_count = 0
         for row in rows:
             if not force and exported.get(row["id"]) == row["time_updated"]:
                 continue
-            markdown = opencode2_session_to_markdown(OPENCODE2_DB, row["id"])
+            markdown = opencode_session_to_markdown(OPENCODE_DB, row["id"])
             if not markdown:
                 continue
             dt = ts_to_dt(row["time_created"])
-            title = row["title"] or "opencode2-session"
+            title = row["title"] or "opencode-session"
             filename = f"{dt.strftime('%Y-%m-%d')}-{slugify(title)}.md"
             if dry_run:
-                print(f"would write: {OPENCODE2_VAULT / filename}")
+                print(f"would write: {OPENCODE_VAULT / filename}")
             else:
-                (OPENCODE2_VAULT / filename).write_text(markdown)
+                (OPENCODE_VAULT / filename).write_text(markdown)
                 exported[row["id"]] = row["time_updated"]
             total += 1
-            opencode2_count += 1
+            opencode_count += 1
 
         if not dry_run:
-            state["opencode2_exported"] = exported
-            print(f"exported {opencode2_count} opencode2 sessions")
+            state["opencode_exported"] = exported
+            print(f"exported {opencode_count} opencode sessions")
 
     claude_count = 0
     if args.source in (None, "claude"):
@@ -938,10 +704,9 @@ def cmd_export(args):
 
     # FTS tracks its own watermark via fts_meta table
     oc_count = fts_index_opencode()
-    oc2_count = fts_index_opencode2()
     cl_count = fts_index_claude()
     cx_count = fts_index_codex()
-    print(f"indexed {oc_count} opencode + {oc2_count} opencode2 + {cl_count} claude + {cx_count} codex text blocks")
+    print(f"indexed {oc_count} opencode + {cl_count} claude + {cx_count} codex text blocks")
 
     # qmd collection index
     if not args.no_index:
@@ -964,23 +729,14 @@ def cmd_search(args):
         return
 
     if args.json:
-        # enrich with title/date from opencode db where possible
-        conn = opencode_db() if OPENCODE_DB.exists() else None
-        conn2 = opencode2_db(OPENCODE2_DB) if OPENCODE2_DB.exists() else None
+        # enrich with title/date from OpenCode where possible
+        conn = opencode_db(OPENCODE_DB) if OPENCODE_DB.exists() else None
         out = []
         for r in results:
             title = None
             date = None
             if conn and r["source"] == "opencode":
                 row = conn.execute(
-                    "SELECT title, time_created FROM session WHERE id = ?",
-                    (r["session_id"],)
-                ).fetchone()
-                if row:
-                    title = row["title"]
-                    date = dt_to_str(ts_to_dt(row["time_created"]))
-            elif conn2 and r["source"] == "opencode2":
-                row = conn2.execute(
                     "SELECT title, time_created FROM session_v2 WHERE id = ?",
                     (r["session_id"],),
                 ).fetchone()
@@ -998,8 +754,6 @@ def cmd_search(args):
             })
         if conn:
             conn.close()
-        if conn2:
-            conn2.close()
         print(json.dumps(out, indent=2))
         return
 
@@ -1013,43 +767,16 @@ def cmd_search(args):
 def cmd_read(args):
     session_id = args.session_id
 
-    # try opencode first
-    row = None
     if OPENCODE_DB.exists():
-        conn = opencode_db()
-        row = conn.execute("SELECT id, title, directory FROM session WHERE id = ?", (session_id,)).fetchone()
-        conn.close()
-
-    if row:
-        print(f"# {row['title']}")
-        print(f"# project: {project_name_from_dir(row['directory'])}")
-        print()
-        messages = opencode_read_session(session_id, role_filter=args.role,
-                                         include_tools=not args.no_tools)
-        for m in messages:
-            if m["type"] == "text":
-                label = "User" if m["role"] == "user" else "Assistant"
-                print(f"## {label}")
-                print(m["text"])
-                print()
-            elif m["type"] == "tool":
-                print(f"  [{m['tool']}] {m['input_summary']}")
-        return
-
-    # try OpenCode V2
-    if OPENCODE2_DB.exists():
-        conn = opencode2_db(OPENCODE2_DB)
-        row = conn.execute(
-            "SELECT id, title, directory FROM session_v2 WHERE id = ?",
-            (session_id,),
-        ).fetchone()
+        conn = opencode_db(OPENCODE_DB)
+        row = conn.execute("SELECT id, title, directory FROM session_v2 WHERE id = ?", (session_id,)).fetchone()
         conn.close()
         if row:
-            print(f"# {row['title'] or 'OpenCode V2 session'}")
+            print(f"# {row['title'] or 'OpenCode session'}")
             print(f"# project: {project_name_from_dir(row['directory'])}")
             print()
-            messages = opencode2_read_session(
-                OPENCODE2_DB,
+            messages = opencode_read_session(
+                OPENCODE_DB,
                 session_id,
                 role_filter=args.role,
                 include_tools=not args.no_tools,
@@ -1209,33 +936,13 @@ def cmd_stats(args):
 
     # OpenCode stats
     if OPENCODE_DB.exists():
-        conn = opencode_db()
-        total = conn.execute("SELECT count(*) FROM session").fetchone()[0]
-        top_level = conn.execute("SELECT count(*) FROM session WHERE parent_id IS NULL").fetchone()[0]
-        sub = total - top_level
-        msg_count = conn.execute("SELECT count(*) FROM message").fetchone()[0]
-        text_parts = conn.execute(
-            "SELECT count(*) FROM part WHERE json_extract(data, '$.type') = 'text'"
-        ).fetchone()[0]
-        conn.close()
-        stats["opencode"] = {
-            "sessions_total": total,
-            "sessions_top_level": top_level,
-            "sessions_subagent": sub,
-            "messages": msg_count,
-            "text_parts": text_parts,
-        }
-        if not args.json:
-            print(f"opencode: {total} sessions ({top_level} top-level, {sub} subagent), {msg_count} messages, {text_parts} text parts")
-
-    if OPENCODE2_DB.exists():
-        opencode2 = opencode2_stats(OPENCODE2_DB)
-        stats["opencode2"] = opencode2
+        opencode = opencode_stats(OPENCODE_DB)
+        stats["opencode"] = opencode
         if not args.json:
             print(
-                f"opencode2: {opencode2['sessions_total']} sessions "
-                f"({opencode2['sessions_top_level']} top-level, {opencode2['sessions_subagent']} subagent), "
-                f"{opencode2['messages']} messages, {opencode2['text_parts']} text parts"
+                f"opencode: {opencode['sessions_total']} sessions "
+                f"({opencode['sessions_top_level']} top-level, {opencode['sessions_subagent']} subagent), "
+                f"{opencode['messages']} messages, {opencode['text_parts']} text parts"
             )
 
     # Claude stats
@@ -1271,18 +978,16 @@ def cmd_stats(args):
     # Vault stats
     if VAULT_DIR.exists():
         oc_files = list(OPENCODE_VAULT.glob("*.md")) if OPENCODE_VAULT.exists() else []
-        oc2_files = list(OPENCODE2_VAULT.glob("*.md")) if OPENCODE2_VAULT.exists() else []
         cl_files = list(CLAUDE_VAULT.glob("*.md")) if CLAUDE_VAULT.exists() else []
         cx_files = list(CODEX_VAULT.glob("*.md")) if CODEX_VAULT.exists() else []
         stats["vault"] = {
             "opencode_exported": len(oc_files),
-            "opencode2_exported": len(oc2_files),
             "claude_exported": len(cl_files),
             "codex_exported": len(cx_files),
         }
         if not args.json:
             print(
-                f"vault: {len(oc_files)} opencode + {len(oc2_files)} opencode2 + "
+                f"vault: {len(oc_files)} opencode + "
                 f"{len(cl_files)} claude + {len(cx_files)} codex exported files"
             )
 
@@ -1295,7 +1000,7 @@ def cmd_stats(args):
 def main():
     parser = argparse.ArgumentParser(
         prog="sessions",
-        description="Browse live coding sessions or search exported history from OpenCode V1/V2, Claude Code, and Codex.",
+        description="Browse live coding sessions or search exported history from OpenCode, Claude Code, and Codex.",
         epilog=(
             "Live sessions (no export needed):\n"
             "  sessions list\n"
@@ -1306,8 +1011,7 @@ def main():
             "  sessions search \"words\"       Fast word search\n"
             "  sessions find \"what happened\" Meaning-based search\n\n"
             "Use `index` only to refresh the search index for sessions already exported.\n\n"
-            "Sources: OpenCode V1 (~/.local/share/opencode/opencode.db), "
-            "OpenCode V2 (~/.local/share/opencode-v2/opencode/opencode.db), "
+            "Source: OpenCode (~/.local/share/opencode/opencode.db), "
             "Claude Code (~/.claude/projects/)\n"
             "Codex (~/.codex/sessions/)\n"
             "Vault: ~/Vaults/Sessions/ (exported markdown with frontmatter)\n"
@@ -1326,7 +1030,6 @@ def main():
             "Examples:\n"
             "  sessions list\n"
             "  sessions list --limit 10 --source opencode\n"
-            "  sessions list --source opencode2 --limit 1\n"
             "  sessions list --json | jq '.[0]'\n"
             "  sessions list --since 2026-03-01 --project metronome"
         ),
@@ -1334,7 +1037,7 @@ def main():
     p_list.add_argument(
         "--source",
         choices=SESSION_SOURCES,
-        help="Filter by session source/database (opencode=V1, opencode2=V2; not a project)",
+        help="Filter by session source/database (opencode, claude, codex; not a project)",
     )
     p_list.add_argument("--since", help="Date filter (YYYY-MM-DD)")
     p_list.add_argument("--limit", type=int, default=20, help="Max results (default: 20)")
@@ -1348,14 +1051,13 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  sessions latest --source opencode2\n"
-            "  sessions latest --source opencode2 --json"
+            "  sessions latest --source opencode --json"
         ),
     )
     p_latest.add_argument(
         "--source",
         choices=SESSION_SOURCES,
-        help="Filter by session source/database (opencode=V1, opencode2=V2; not a project)",
+        help="Filter by session source/database (opencode, claude, codex; not a project)",
     )
     p_latest.add_argument("--since", help="Date filter (YYYY-MM-DD)")
     p_latest.add_argument("--project", help="Filter by project directory name (not a session source)")
@@ -1413,7 +1115,7 @@ def main():
             "  sessions read ~/.claude/projects/-foo/session.jsonl"
         ),
     )
-    p_read.add_argument("session_id", help="Session ID (OpenCode V1/V2, Claude, or Codex) or JSONL path")
+    p_read.add_argument("session_id", help="Session ID (OpenCode, Claude, or Codex) or JSONL path")
     p_read.add_argument("--role", choices=["user", "assistant"], help="Show only one role")
     p_read.add_argument("--no-tools", action="store_true", help="Hide tool call blocks")
 

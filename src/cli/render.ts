@@ -15,14 +15,13 @@ import {
   readCanonicalInstructions,
   readCanonicalSkills,
   readCanonicalSettings,
-  readCanonicalPlugins,
   readCanonicalHooks,
 } from './canonical';
 import { createExclusionFilter } from '../infra/exclusion';
 import { parseFrontmatter } from '../formats/markdown';
 import type { TargetName, CanonicalItem } from '../types';
 
-const VALID_SINGULAR_TYPES = ['command', 'agent', 'mcp', 'instruction', 'skill', 'settings', 'plugin', 'hook'] as const;
+const VALID_SINGULAR_TYPES = ['command', 'agent', 'mcp', 'instruction', 'skill', 'settings', 'hook'] as const;
 type SingularType = (typeof VALID_SINGULAR_TYPES)[number];
 
 const VALID_TARGETS = ['claude', 'antigravity', 'codex', 'opencode', 'opencode2'] as const;
@@ -113,16 +112,6 @@ Examples:
             );
           }
           content = adapter.renderSkill(item).content;
-        } else if (itemType === 'plugin') {
-          const isExcluded2 = createExclusionFilter();
-          const allPlugins = await readCanonicalPlugins(projectDir, isExcluded2);
-          const item = allPlugins.find((p) => p.name === name);
-          if (!item) {
-            throw new Error(
-              `Canonical plugin "${name}" not found in configs/plugins/${name}.ts`,
-            );
-          }
-          content = adapter.renderPlugin(item).content;
         } else if (itemType === 'hook') {
           const hooks = await readCanonicalHooks(projectDir, target);
           if (!hooks) {

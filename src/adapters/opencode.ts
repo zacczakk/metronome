@@ -1,9 +1,8 @@
 import { BaseAdapter } from './base';
 import { stringifyFrontmatter } from '../formats/markdown';
-import { modifyJsonc, readJsonc } from '../formats/jsonc';
+import { readJsonc } from '../formats/jsonc';
 import { EnvVarTransformer } from '../secrets/env-var-transformer';
-import { isPlainObject, deepMergeObjects } from './merge';
-import { applyOpenCodeAgentVariants, configureOpenCodeV2Plugins, mergeOpenCodeSettings, preserveOpenCodeAgentVariants, removeOpenCodeAgentVariants, renderOpenCodeAgent, renderOpenCodeAgentVariants, renderOpenCodeMcp, renderOpenCodeSettings, type OpenCodeVersion } from '../opencode/version-renderer';
+import { applyOpenCodeAgentVariants, configureOpenCodeV2Plugins, mergeOpenCodeSettings, preserveOpenCodeAgentVariants, removeOpenCodeAgentVariants, renderOpenCodeAgent, renderOpenCodeAgentVariants, renderOpenCodeMcp, renderOpenCodeSettings } from '../opencode/version-renderer';
 import type {
   CanonicalItem,
   CanonicalSettings,
@@ -13,16 +12,16 @@ import type {
 } from '../types';
 
 export class OpenCodeAdapter extends BaseAdapter {
-  constructor(homeDir?: string, private readonly version: OpenCodeVersion = 'v1', target: 'opencode' | 'opencode2' = 'opencode') {
+  constructor(homeDir?: string, target: 'opencode' | 'opencode2' = 'opencode') {
     super(target, 'OpenCode', homeDir);
   }
 
   getCapabilities(): AdapterCapabilities {
-    return { commands: true, agents: true, mcp: true, instructions: true, skills: true, settings: true, agentVariantsInSettings: this.version === 'v2', plugins: this.version === 'v1', hooks: false };
+    return { commands: true, agents: true, mcp: true, instructions: true, skills: true, settings: true, agentVariantsInSettings: true, hooks: false };
   }
 
   private get mcpTarget(): 'opencode' | 'opencode2' {
-    return this.version === 'v2' ? 'opencode2' : this.target as 'opencode' | 'opencode2';
+    return this.target;
   }
 
   /** Keys that only exist in the canonical format — strip before rendering */
@@ -49,17 +48,9 @@ export class OpenCodeAdapter extends BaseAdapter {
       if (!OpenCodeAdapter.CANONICAL_ONLY_KEYS.has(key)) metadata[key] = value;
     }
     metadata.mode = 'subagent';
-    if (this.version === 'v2') {
-      const rendered = renderOpenCodeAgent({ ...metadata, _agentName: item.name }, 'v2');
-      delete rendered._modelVariant;
-      return { relativePath: this.paths.getAgentFilePath(item.name), content: stringifyFrontmatter(item.content, rendered) };
-    }
-
-    const content = stringifyFrontmatter(item.content, metadata);
-    return {
-      relativePath: this.paths.getAgentFilePath(item.name),
-      content,
-    };
+    const rendered = renderOpenCodeAgent({ ...metadata, _agentName: item.name });
+    delete rendered._modelVariant;
+    return { relativePath: this.paths.getAgentFilePath(item.name), content: stringifyFrontmatter(item.content, rendered) };
   }
 
   /** OpenCode uses mcp key (not mcpServers) */
@@ -67,11 +58,8 @@ export class OpenCodeAdapter extends BaseAdapter {
     try {
       const parsed = readJsonc<Record<string, unknown>>(content);
       const mcp = parsed.mcp as Record<string, unknown> | undefined;
-      if (this.version === 'v2') {
-        const servers = mcp?.servers as Record<string, unknown> | undefined;
-        return servers ? Object.keys(servers) : [];
-      }
-      return mcp ? Object.keys(mcp) : [];
+      const servers = mcp?.servers as Record<string, unknown> | undefined;
+      return servers ? Object.keys(servers) : [];
     } catch {
       return [];
     }
@@ -94,9 +82,7 @@ export class OpenCodeAdapter extends BaseAdapter {
     try {
       const parsed = readJsonc<Record<string, unknown>>(content);
       const mcp = parsed.mcp as Record<string, Record<string, unknown>> | undefined;
-      const entries = this.version === 'v2'
-        ? mcp?.servers as Record<string, Record<string, unknown>> | undefined
-        : mcp;
+      const entries = mcp?.servers as Record<string, Record<string, unknown>> | undefined;
       if (!entries) return [];
 
       const servers: MCPServer[] = [];
@@ -126,7 +112,7 @@ export class OpenCodeAdapter extends BaseAdapter {
           }
         }
 
-        if (this.version === 'v2' ? cfg.disabled === true : cfg.enabled === false) server.enabled = false;
+        if (cfg.disabled === true) server.enabled = false;
 
         const targetOptions: Record<string, unknown> = {};
         for (const key of ['oauth', 'codemode', 'timeout']) {
@@ -144,9 +130,6 @@ export class OpenCodeAdapter extends BaseAdapter {
     }
   }
 
-  /** Keys that use deep-merge (canonical wins on conflict, user extras preserved) */
-  private static readonly DEEP_MERGE_KEYS = new Set(['permission']);
-
   /** OpenCode uses JSONC — override to preserve comments and $schema */
   override renderSettings(
     settings: CanonicalSettings,
@@ -154,30 +137,13 @@ export class OpenCodeAdapter extends BaseAdapter {
     agents: CanonicalItem[] = [],
     staleAgentNames: string[] = [],
   ): string {
-    if (this.version === 'v2') {
-      const existing = existingContent ? readJsonc<Record<string, unknown>>(existingContent) : {};
-      let rendered = renderOpenCodeSettings(settings.keys, 'v2');
-      rendered = applyOpenCodeAgentVariants(rendered, renderOpenCodeAgentVariants(agents));
-      configureOpenCodeV2Plugins(rendered, existing);
-      removeOpenCodeAgentVariants(existing, staleAgentNames);
-      preserveOpenCodeAgentVariants(rendered, existing, staleAgentNames);
-      return JSON.stringify(mergeOpenCodeSettings(existing, rendered, 'v2'), null, 2) + '\n';
-    }
-    let text = existingContent ?? '{}';
     const existing = existingContent ? readJsonc<Record<string, unknown>>(existingContent) : {};
-    const renderedSettings = renderOpenCodeSettings(settings.keys, 'v1');
-
-    for (const [key, value] of Object.entries(renderedSettings)) {
-      if (OpenCodeAdapter.DEEP_MERGE_KEYS.has(key) && isPlainObject(value) && isPlainObject(existing[key])) {
-        // Deep-merge: canonical wins on conflict, user extras preserved
-        const merged = deepMergeObjects(existing[key] as Record<string, unknown>, value as Record<string, unknown>);
-        text = modifyJsonc(text, [key], merged) as string;
-      } else {
-        // Wholesale replace
-        text = modifyJsonc(text, [key], value) as string;
-      }
-    }
-    return text;
+    let rendered = renderOpenCodeSettings(settings.keys);
+    rendered = applyOpenCodeAgentVariants(rendered, renderOpenCodeAgentVariants(agents));
+    configureOpenCodeV2Plugins(rendered, existing);
+    removeOpenCodeAgentVariants(existing, staleAgentNames);
+    preserveOpenCodeAgentVariants(rendered, existing, staleAgentNames);
+    return JSON.stringify(mergeOpenCodeSettings(existing, rendered), null, 2) + '\n';
   }
 
   /** OpenCode uses JSONC — override to parse with comment support */
@@ -193,44 +159,7 @@ export class OpenCodeAdapter extends BaseAdapter {
   }
 
   override renderMCPServers(servers: MCPServer[], existingContent?: string): string {
-    if (this.version === 'v2') {
-      const existing = existingContent ? readJsonc<Record<string, unknown>>(existingContent) : {};
-      return JSON.stringify({ ...existing, mcp: renderOpenCodeMcp(servers, 'v2', this.mcpTarget) }, null, 2) + '\n';
-    }
-    // Filter out servers disabled for this target (but keep enabled: false — render as disabled)
-    const filtered = servers.filter((s) => !s.disabledFor?.includes('opencode'));
-
-    let text = existingContent ?? '{}';
-
-    // Ensure mcp object exists
-    text = modifyJsonc(text, ['mcp'], {}) as string;
-
-    for (const server of filtered) {
-      const cfg: Record<string, unknown> = {
-        type: server.transport === 'stdio' ? 'local' : 'remote',
-      };
-      const targetOptions = server.targetOptions?.['opencode'] ?? {};
-
-      if (server.transport === 'stdio') {
-        cfg.command = [server.command, ...(server.args ?? [])];
-      } else {
-        cfg.url = server.url;
-      }
-
-      if (server.env && Object.keys(server.env).length > 0) {
-        cfg.environment = EnvVarTransformer.toOpenCode(server.env) as Record<string, string>;
-      }
-      if (server.headers && Object.keys(server.headers).length > 0) {
-        cfg.headers = EnvVarTransformer.toOpenCode(server.headers) as Record<string, string>;
-      }
-
-      // OpenCode natively supports enabled: false
-      cfg.enabled = server.enabled !== false;
-      Object.assign(cfg, targetOptions);
-
-      text = modifyJsonc(text, ['mcp', server.name], cfg) as string;
-    }
-
-    return text;
+    const existing = existingContent ? readJsonc<Record<string, unknown>>(existingContent) : {};
+    return JSON.stringify({ ...existing, mcp: renderOpenCodeMcp(servers, this.mcpTarget) }, null, 2) + '\n';
   }
 }

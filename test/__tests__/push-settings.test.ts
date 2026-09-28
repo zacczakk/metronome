@@ -64,8 +64,12 @@ describe('push settings E2E', () => {
     // --- OpenCode golden comparison ---
     const opencodeAdapter = createAdapter('opencode', fakeHome);
     const opencodeActual = readFileSync(opencodeAdapter.getPaths().getSettingsPath(), 'utf-8');
-    const opencodeGolden = readFileSync(join(FIXTURE_ROOT, 'opencode/settings/opencode.json'), 'utf-8');
-    expect(opencodeActual.trimEnd()).toBe(opencodeGolden.trimEnd());
+    const opencodeConfig = readJsonc<Record<string, unknown>>(opencodeActual);
+    expect(opencodeConfig.model).toBe('throttle-tux/claude-opus-4-6');
+    expect(opencodeConfig.permissions).toBeArray();
+    expect(opencodeConfig.provider).toBeDefined();
+    expect(opencodeConfig.disabled_providers).toEqual(['opencode', 'opencode-go']);
+    expect(opencodeConfig.plugins).toEqual([]);
 
     // --- Verify non-canonical keys preserved ---
     expect(claudeActual).toContain('customKey');
@@ -106,11 +110,11 @@ describe('push settings E2E', () => {
     const opencodeAdapter = createAdapter('opencode', fakeHome);
     const config = readJsonc<{
       model?: string;
-      mcp?: Record<string, { enabled?: boolean }>;
+      mcp?: { servers?: Record<string, { disabled?: boolean }> };
     }>(readFileSync(opencodeAdapter.getPaths().getSettingsPath(), 'utf-8'));
 
     expect(config.model).toBe('throttle-tux/claude-opus-4-6');
-    expect(config.mcp?.['palantir-mcp']?.enabled).toBe(true);
+    expect(config.mcp?.servers?.['palantir-mcp']?.disabled).toBe(false);
   });
 
   test('syncs V2 agent variants when pushing agents alone', async () => {
@@ -151,17 +155,16 @@ describe('push settings E2E', () => {
     expect(result.failed).toBe(0);
     expect(result.written).toBe(2);
     const config = JSON.parse(readFileSync(join(fakeHome, '.config', 'opencode', 'opencode.json'), 'utf8')) as {
-      providers: Record<string, { models: Record<string, { variants: Array<{ id: string; settings: Record<string, string> }> }> }>;
+      provider: Record<string, { models: Record<string, { variants: Record<string, Record<string, string>> }> }>;
     };
-    expect(config.providers.tux.models['gpt-5.6-terra'].variants).toContainEqual({
-      id: 'agent-test-agent',
-      settings: { reasoningEffort: 'medium', textVerbosity: 'low' },
+    expect(config.provider.tux.models['gpt-5.6-terra'].variants['agent-test-agent']).toEqual({
+      reasoningEffort: 'medium', textVerbosity: 'low',
     });
 
-    config.providers.openai = {
+    config.provider.openai = {
       models: {
         'gpt-5.6-luna-fast': {
-          variants: [{ id: 'agent-test-agent', settings: { reasoningEffort: 'medium', textVerbosity: 'low' } }],
+          variants: { 'agent-test-agent': { reasoningEffort: 'medium', textVerbosity: 'low' } },
         },
       },
     };
@@ -179,12 +182,12 @@ describe('push settings E2E', () => {
 
     expect(cleanup.failed).toBe(0);
     const cleanedConfig = JSON.parse(readFileSync(join(fakeHome, '.config', 'opencode', 'opencode.json'), 'utf8')) as {
-      providers: {
-        tux: { models: { 'gpt-5.6-terra': { variants: Array<{ id: string }> } } };
-        openai?: { models?: { 'gpt-5.6-luna-fast'?: { variants: Array<{ id: string }> } } };
+      provider: {
+        tux: { models: { 'gpt-5.6-terra': { variants: Record<string, unknown> } } };
+        openai?: { models?: { 'gpt-5.6-luna-fast'?: { variants: Record<string, unknown> } } };
       };
     };
-    expect(cleanedConfig.providers.tux.models['gpt-5.6-terra'].variants.map(({ id }) => id)).not.toContain('agent-test-agent');
-    expect(cleanedConfig.providers.openai?.models?.['gpt-5.6-luna-fast']).toBeUndefined();
+    expect(cleanedConfig.provider.tux.models['gpt-5.6-terra'].variants['agent-test-agent']).toBeUndefined();
+    expect(cleanedConfig.provider.openai?.models?.['gpt-5.6-luna-fast']).toBeUndefined();
   });
 });

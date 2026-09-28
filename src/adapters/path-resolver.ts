@@ -50,19 +50,9 @@ export class AdapterPathResolver {
     return this.expandHome(this.rawSkillsDir());
   }
 
-  /** Plugins directory (only meaningful for opencode) */
-  getPluginsDir(): string {
-    return this.expandHome(this.rawPluginsDir());
-  }
-
   /** Hook config path for targets that support standalone hooks config */
   getHooksPath(): string {
     return this.expandHome(this.rawHooksPath());
-  }
-
-  /** Full path for a rendered plugin file given a logical name */
-  getPluginFilePath(name: string): string {
-    return path.join(this.getPluginsDir(), this.pluginFileName(name));
   }
 
   /** Full path for a rendered command file given a logical name */
@@ -154,23 +144,11 @@ export class AdapterPathResolver {
     }
   }
 
-  private rawPluginsDir(): string {
-    switch (this.target) {
-      case 'opencode':    return '~/.config/opencode/plugins/';
-      case 'opencode2':   return '~/.config/opencode/plugins/';
-      default:            return path.join(this.rawBaseDir(), 'plugins/');
-    }
-  }
-
   private rawHooksPath(): string {
     switch (this.target) {
       case 'codex':       return '~/.codex/hooks.json';
       default:            return path.join(this.rawBaseDir(), 'hooks.json');
     }
-  }
-
-  private pluginFileName(name: string): string {
-    return `${name}.ts`;
   }
 
   /**

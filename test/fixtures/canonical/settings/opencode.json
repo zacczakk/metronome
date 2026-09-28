@@ -3,37 +3,123 @@
     "~/.config/opencode/AGENTS.md"
   ],
   "model": "throttle-tux/claude-opus-4-6",
-  "permission": {
-    "*": "allow",
-    "bash": {
-      "*": "allow",
-      "rm *": "deny",
-      "cat *.env": "deny",
-      "cat *.env.*": "deny",
-      "cat */.env": "deny",
-      "cat */.env.*": "deny",
-      "cat */.env.example": "allow",
-      "cat ~/.zshrc_secrets": "deny",
-      "git push *": "ask",
-      "git reset --hard *": "deny"
+  "disabled_providers": [
+    "opencode",
+    "opencode-go"
+  ],
+  "permissions": [
+    {
+      "action": "*",
+      "resource": "*",
+      "effect": "allow"
     },
-    "external_directory": {
-      "*": "ask",
-      "~/Vaults/**": "allow",
-      "~/.config/opencode/agents/*": "allow"
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
     },
-    "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "*.env.example": "allow",
-      "~/.zshrc_secrets": "deny",
-      "~/.config/opencode/agents/*": "allow",
-      "~/.config/opencode/commands/*": "allow",
-      "~/.agents/**": "allow"
+    {
+      "action": "shell",
+      "resource": "rm *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *.env",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env.example",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat ~/.zshrc_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git reset --hard *",
+      "effect": "deny"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Vaults/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.config/opencode/agents/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*.env",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*.env.example",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.zshrc_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "~/.config/opencode/agents/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.config/opencode/commands/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.agents/**",
+      "effect": "allow"
     }
-  },
-  "plugin": [],
+  ],
+  "plugins": [],
   "provider": {
     "throttle-tux": {
       "npm": "@ai-sdk/anthropic",
@@ -62,7 +148,6 @@
           "provider": {
             "npm": "@ai-sdk/openai"
           },
-          "reasoning": true,
           "modalities": {
             "input": [
               "image",

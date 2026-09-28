@@ -1,8 +1,6 @@
 import type { CanonicalItem, MCPServer, TargetName } from '../types';
 import { EnvVarTransformer } from '../secrets/env-var-transformer';
 
-export type OpenCodeVersion = 'v1' | 'v2';
-
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -65,113 +63,88 @@ function renderPermissions(permission: unknown): unknown[] {
   return rules;
 }
 
-function withAnthropicOutputLimit(model: UnknownRecord, packageName: unknown): UnknownRecord {
-  if (packageName !== 'aisdk:@ai-sdk/anthropic') return model;
-
-  const limit = isRecord(model.limit) ? clone(model.limit) : {};
-  if (typeof limit.output !== 'number' || limit.output <= 0) limit.output = 64000;
-  return { ...model, limit };
+function withoutAisdkPrefix(value: unknown): unknown {
+  return typeof value === 'string' && value.startsWith('aisdk:') ? value.slice(6) : clone(value);
 }
 
-function contextTierSize(modelProvider: UnknownRecord | undefined, providerPackage: unknown): number {
-  const packageName = modelProvider?.npm ?? providerPackage;
-  if (packageName === '@ai-sdk/openai' || packageName === 'aisdk:@ai-sdk/openai') return 272000;
-  return 200000;
+function rawCost(value: unknown): unknown {
+  if (!Array.isArray(value)) {
+    if (!isRecord(value)) return clone(value);
+    const cost: UnknownRecord = {};
+    for (const [key, item] of Object.entries(value)) {
+      if (key === 'cache' && isRecord(item)) {
+        if (item.read !== undefined) cost.cache_read = clone(item.read);
+        if (item.write !== undefined) cost.cache_write = clone(item.write);
+      } else if (key !== 'tier') {
+        cost[key] = clone(item);
+      }
+    }
+    return cost;
+  }
+
+  const [short, long] = value;
+  const cost = rawCost(short);
+  if (!isRecord(cost) || !isRecord(long)) return cost;
+  const longCost = rawCost(long);
+  return isRecord(longCost) ? { ...cost, context_over_200k: longCost } : cost;
 }
 
-function renderModel(model: unknown, providerPackage: unknown, version: OpenCodeVersion): unknown {
+function rawModel(model: unknown): unknown {
   if (!isRecord(model)) return clone(model);
-
-  const rendered: UnknownRecord = {};
-  const modelProvider = isRecord(model.provider) ? model.provider : undefined;
-  let effectivePackage = providerPackage;
+  const raw: UnknownRecord = {};
+  let packageName: unknown;
 
   for (const [key, value] of Object.entries(model)) {
-    if (key === 'options') {
-      rendered.settings = clone(value);
-    } else if (key === 'modalities') {
-      const capabilities = isRecord(rendered.capabilities) ? rendered.capabilities : {};
-      rendered.capabilities = isRecord(value) ? { tools: true, ...capabilities, ...clone(value) } : clone(value);
-    } else if (key === 'tool_call') {
-      const capabilities = isRecord(rendered.capabilities) ? rendered.capabilities : {};
-      rendered.capabilities = { ...capabilities, tools: clone(value) };
-    } else if (key === 'attachment' && version === 'v2') {
-      const capabilities = isRecord(rendered.capabilities) ? rendered.capabilities : {};
-      rendered.capabilities = { ...capabilities, attachment: clone(value) };
-    } else if (key === 'variants' && isRecord(value)) {
-      rendered.variants = Object.entries(value).map(([id, settings]) => ({ id, settings: clone(settings) }));
-    } else if (key === 'cost' && isRecord(value)) {
-      const cost: UnknownRecord = {};
-      const longContext = isRecord(value.context_over_200k) ? value.context_over_200k : undefined;
-      const cache: UnknownRecord = {};
-      for (const [costKey, costValue] of Object.entries(value)) {
-        if (costKey === 'cache_read') cache.read = clone(costValue);
-        else if (costKey === 'cache_write') cache.write = clone(costValue);
-        else if (costKey === 'context_over_200k') continue;
-        else cost[costKey] = clone(costValue);
-      }
-      if (Object.keys(cache).length > 0) cost.cache = cache;
-      if (version === 'v2' && longContext) {
-        const longCache: UnknownRecord = {};
-        if (longContext.cache_read !== undefined) longCache.read = clone(longContext.cache_read);
-        if (longContext.cache_write !== undefined) longCache.write = clone(longContext.cache_write);
-        rendered.cost = [
-          cost,
-          {
-            tier: { type: 'context', size: contextTierSize(modelProvider, providerPackage) },
-            input: clone(longContext.input),
-            output: clone(longContext.output),
-            ...(Object.keys(longCache).length > 0 ? { cache: longCache } : {}),
-          },
-        ];
-      } else {
-        if (version === 'v2') rendered.cost = cost;
-        else rendered.cost = clone(value);
-      }
-    } else if (key === 'provider' && modelProvider) {
-      for (const [providerKey, providerValue] of Object.entries(modelProvider)) {
-        if (providerKey === 'npm') {
-          const packageValue = typeof providerValue === 'string' && providerValue.startsWith('aisdk:')
-            ? providerValue
-            : `aisdk:${String(providerValue)}`;
-          rendered.package = packageValue;
-          effectivePackage = packageValue;
-        } else {
-          rendered[providerKey] = clone(providerValue);
-        }
-      }
-    } else if (key !== 'reasoning') {
-      rendered[key] = clone(value);
-    }
+    if (key === 'package') packageName = withoutAisdkPrefix(value);
+    else if (key === 'settings') raw.options = clone(value);
+    else if (key === 'capabilities' && isRecord(value)) {
+      if (value.attachment !== undefined) raw.attachment = clone(value.attachment);
+      const modalities = Object.fromEntries(
+        ['input', 'output'].filter((name) => value[name] !== undefined).map((name) => [name, clone(value[name])]),
+      );
+      if (Object.keys(modalities).length > 0) raw.modalities = modalities;
+    } else if (key === 'variants' && Array.isArray(value)) {
+      raw.variants = Object.fromEntries(value.flatMap((entry) =>
+        isRecord(entry) && typeof entry.id === 'string' ? [[entry.id, clone(entry.settings ?? {})]] : []));
+    } else if (key === 'cost') raw.cost = rawCost(value);
+    else raw[key] = clone(value);
   }
 
-  return withAnthropicOutputLimit(rendered, effectivePackage);
+  if (packageName !== undefined) raw.provider = { npm: packageName };
+  if (packageName === '@ai-sdk/openai') raw.reasoning ??= true;
+  return raw;
 }
 
-function renderProvider(provider: unknown, version: OpenCodeVersion): unknown {
+function rawProvider(provider: unknown): unknown {
   if (!isRecord(provider)) return clone(provider);
-  const rendered: UnknownRecord = {};
-  const npm = provider.npm;
-  const packageName: unknown = typeof npm === 'string' && npm.startsWith('aisdk:')
-    ? npm
-    : typeof npm === 'string' ? `aisdk:${npm}` : undefined;
+  const raw: UnknownRecord = {};
+  let packageName: unknown;
 
   for (const [key, value] of Object.entries(provider)) {
-    if (key === 'npm') {
-      rendered.package = packageName ?? `aisdk:${String(value)}`;
-    } else if (key === 'options' && isRecord(value)) {
-      const { headers, ...options } = value;
-      if (Object.keys(options).length > 0) rendered.settings = clone(options);
-      if (headers !== undefined) rendered.headers = clone(headers);
+    if (key === 'package') packageName = withoutAisdkPrefix(value);
+    else if (key === 'settings') raw.options = clone(value);
+    else if (key === 'headers') {
+      const options = isRecord(raw.options) ? raw.options : {};
+      raw.options = { ...options, headers: clone(value) };
     } else if (key === 'models' && isRecord(value)) {
-      const models: UnknownRecord = {};
-      for (const [modelID, model] of Object.entries(value)) models[modelID] = renderModel(model, packageName, version);
-      rendered.models = models;
-    } else {
-      rendered[key] = clone(value);
-    }
+      raw.models = Object.fromEntries(Object.entries(value).map(([id, model]) => [id, rawModel(model)]));
+    } else raw[key] = clone(value);
   }
-  return rendered;
+
+  if (packageName !== undefined) raw.npm = packageName;
+  return raw;
+}
+
+function rawProviders(providers: unknown): UnknownRecord {
+  if (!isRecord(providers)) return {};
+  return Object.fromEntries(Object.entries(providers).map(([id, provider]) => [id, rawProvider(provider)]));
+}
+
+function providersFromSettings(settings: UnknownRecord): UnknownRecord {
+  return {
+    ...rawProviders(settings.providers),
+    ...(isRecord(settings.provider) ? settings.provider : {}),
+  };
 }
 
 function splitModel(model: unknown): { providerID: string; modelID: string } | undefined {
@@ -193,9 +166,7 @@ function agentVariantSettings(agent: UnknownRecord): UnknownRecord {
   return settings;
 }
 
-export function renderOpenCodeAgent(metadata: Record<string, unknown>, version: OpenCodeVersion): Record<string, unknown> {
-  if (version === 'v1') return clone(metadata);
-
+export function renderOpenCodeAgent(metadata: Record<string, unknown>): Record<string, unknown> {
   const rendered: UnknownRecord = {};
   const variantSettings = agentVariantSettings(metadata);
   const agentName = typeof metadata._agentName === 'string' ? metadata._agentName : undefined;
@@ -215,14 +186,7 @@ export function renderOpenCodeAgent(metadata: Record<string, unknown>, version: 
   return rendered;
 }
 
-export function renderOpenCodeSettings(settings: Record<string, unknown>, version: OpenCodeVersion): Record<string, unknown> {
-  if (version === 'v1') {
-    const rendered = clone(settings);
-    if (Array.isArray(rendered.plugin)) rendered.plugin = withoutChatGPTWebSearchPlugin(rendered.plugin);
-    if (isRecord(rendered.websearch) && rendered.websearch.provider === 'chatgpt') delete rendered.websearch;
-    return rendered;
-  }
-
+export function renderOpenCodeSettings(settings: Record<string, unknown>): Record<string, unknown> {
   const rendered: UnknownRecord = {};
   const agentVariants: Array<{ providerID: string; modelID: string; id: string; settings: UnknownRecord }> = [];
 
@@ -233,18 +197,16 @@ export function renderOpenCodeSettings(settings: Record<string, unknown>, versio
       const existing = Array.isArray(rendered.plugins) ? rendered.plugins : [];
       rendered.plugins = [...new Map([...existing, ...configured].map((entry) => [JSON.stringify(entry), entry])).values()];
     }
-    else if (key === 'provider' && isRecord(value)) {
-      const providers: UnknownRecord = {};
-      for (const [providerID, provider] of Object.entries(value)) providers[providerID] = renderProvider(provider, 'v2');
-      rendered.providers = providers;
-    } else if (key === 'agent' && isRecord(value)) {
+    else if (key === 'provider' && isRecord(value)) rendered.provider = clone(value);
+    else if (key === 'providers' && isRecord(value)) rendered.provider = rawProviders(value);
+    else if (key === 'agent' && isRecord(value)) {
       const agents: UnknownRecord = {};
       for (const [name, agent] of Object.entries(value)) {
         if (!isRecord(agent)) {
           agents[name] = clone(agent);
           continue;
         }
-        const renderedAgent = renderOpenCodeAgent({ ...agent, _agentName: name }, 'v2');
+        const renderedAgent = renderOpenCodeAgent({ ...agent, _agentName: name });
         const descriptor = renderedAgent._modelVariant;
         delete renderedAgent._modelVariant;
         agents[name] = renderedAgent;
@@ -271,7 +233,7 @@ export interface OpenCodeModelVariant {
 export function renderOpenCodeAgentVariants(agents: CanonicalItem[]): OpenCodeModelVariant[] {
   const variants: OpenCodeModelVariant[] = [];
   for (const agent of agents) {
-    const rendered = renderOpenCodeAgent({ ...agent.metadata, _agentName: agent.name }, 'v2');
+    const rendered = renderOpenCodeAgent({ ...agent.metadata, _agentName: agent.name });
     const descriptor = rendered._modelVariant;
     if (!isRecord(descriptor)
       || typeof descriptor.providerID !== 'string'
@@ -291,15 +253,17 @@ export function renderOpenCodeAgentVariants(agents: CanonicalItem[]): OpenCodeMo
 export function removeOpenCodeAgentVariants(settings: Record<string, unknown>, staleAgentNames: string[]): void {
   const staleVariantIDs = new Set(staleAgentNames.map((name) => `agent-${sanitizedAgentName(name)}`));
   if (staleVariantIDs.size === 0) return;
-  const providers = isRecord(settings.providers) ? settings.providers : {};
+  const providers = providersFromSettings(settings);
+  settings.provider = providers;
+  delete settings.providers;
   for (const [providerID, provider] of Object.entries(providers)) {
     if (!isRecord(provider) || !isRecord(provider.models)) continue;
     for (const [modelID, model] of Object.entries(provider.models)) {
-      if (!isRecord(model) || !Array.isArray(model.variants)) continue;
-      model.variants = model.variants.filter((entry) => !isRecord(entry)
-        || typeof entry.id !== 'string'
-        || !staleVariantIDs.has(entry.id));
-      if (model.variants.length === 0 && Object.keys(model).every((key) => key === 'variants')) {
+      if (!isRecord(model) || !isRecord(model.variants)) continue;
+      for (const variantID of Object.keys(model.variants)) {
+        if (staleVariantIDs.has(variantID)) delete model.variants[variantID];
+      }
+      if (Object.keys(model.variants).length === 0 && Object.keys(model).every((key) => key === 'variants')) {
         delete provider.models[modelID];
       }
     }
@@ -312,40 +276,40 @@ export function removeOpenCodeAgentVariants(settings: Record<string, unknown>, s
 export function mergeOpenCodeSettings(
   existing: Record<string, unknown>,
   rendered: Record<string, unknown>,
-  version: OpenCodeVersion,
 ): Record<string, unknown> {
   const next = structuredClone(existing);
   let output = structuredClone(rendered);
-  const remove = version === 'v1'
-    ? ['permissions', 'agents', 'plugins', 'providers', 'websearch']
-    : ['permission', 'agent', 'plugin'];
-  for (const key of remove) delete next[key];
+  for (const key of ['permission', 'agent', 'plugin']) delete next[key];
 
-  if (isRecord(next.provider)) next.provider = withoutRetiredProviders(next.provider);
-  if (isRecord(next.providers)) next.providers = withoutRetiredProviders(next.providers);
-  if (isRecord(output.provider)) output.provider = withoutRetiredProviders(output.provider);
-  if (isRecord(output.providers)) output.providers = withoutRetiredProviders(output.providers);
+  if (isRecord(output.mcp)) output.mcp = mergeOpenCodeMcp(existing.mcp, output.mcp);
 
-  if (isRecord(output.mcp)) output.mcp = mergeOpenCodeMcp(existing.mcp, output.mcp, version);
-
-  if (version === 'v2' && isRecord(existing.provider) && isRecord(output.providers)) {
-    const legacyProviders = withoutRetiredProviders(existing.provider);
-    if ('foundry' in output.providers || (isRecord(existing.providers) && 'foundry' in existing.providers)) {
-      delete legacyProviders.foundry;
-    }
-    if (Object.keys(legacyProviders).length > 0) next.provider = legacyProviders;
+  const hasProviderOutput = isRecord(output.provider) || isRecord(output.providers);
+  if (hasProviderOutput) {
+    const existingProviders = {
+      ...rawProviders(next.providers),
+      ...(isRecord(next.provider) ? withoutRetiredProviders(next.provider) : {}),
+    };
+    const renderedProviders = {
+      ...rawProviders(output.providers),
+      ...(isRecord(output.provider) ? withoutRetiredProviders(output.provider) : {}),
+    };
+    delete next.providers;
+    delete output.providers;
+    delete output.provider;
+    const providers = withoutRetiredProviders({ ...existingProviders, ...renderedProviders });
+    if (Object.keys(providers).length > 0) next.provider = providers;
     else delete next.provider;
   }
 
-  const providerKey = version === 'v1' ? 'provider' : 'providers';
-  const existingProviders = next[providerKey];
-  const renderedProviders = output[providerKey];
-  if (isRecord(existingProviders) && isRecord(renderedProviders)) {
-    output = { ...output, [providerKey]: { ...existingProviders, ...renderedProviders } };
+  if (Array.isArray(output.disabled_providers)) {
+    output.disabled_providers = [...new Set([
+      ...(Array.isArray(existing.disabled_providers) ? existing.disabled_providers : []),
+      ...output.disabled_providers,
+    ])];
   }
+
   Object.assign(next, output);
-  if (version === 'v1' && Array.isArray(next.plugin)) next.plugin = withoutChatGPTWebSearchPlugin(next.plugin);
-  if (version === 'v2' && Array.isArray(next.plugins)) next.plugins = withoutChatGPTWebSearchPlugin(next.plugins);
+  if (Array.isArray(next.plugins)) next.plugins = withoutChatGPTWebSearchPlugin(next.plugins);
   return next;
 }
 
@@ -364,8 +328,10 @@ export function preserveOpenCodeAgentVariants(
   staleAgentNames: string[] = [],
 ): void {
   const staleVariantIDs = new Set(staleAgentNames.map((name) => `agent-${sanitizedAgentName(name)}`));
-  const renderedProviders = isRecord(settings.providers) ? settings.providers : {};
-  const existingProviders = isRecord(existing.providers) ? existing.providers : {};
+  const renderedProviders = providersFromSettings(settings);
+  const existingProviders = providersFromSettings(existing);
+  settings.provider = renderedProviders;
+  delete settings.providers;
   for (const [providerID, renderedProviderValue] of Object.entries(renderedProviders)) {
     if (!isRecord(renderedProviderValue)) continue;
     const existingProvider = isRecord(existingProviders[providerID]) ? existingProviders[providerID] : {};
@@ -375,17 +341,12 @@ export function preserveOpenCodeAgentVariants(
     for (const [modelID, existingModelValue] of Object.entries(existingModels)) {
       if (!isRecord(existingModelValue)) continue;
       const renderedModelValue = isRecord(renderedModels[modelID]) ? renderedModels[modelID] : {};
-      const renderedVariants = Array.isArray(renderedModelValue.variants) ? renderedModelValue.variants : [];
-      const ids = new Set(renderedVariants.flatMap((entry) => isRecord(entry) && typeof entry.id === 'string' ? [entry.id] : []));
-      const profileVariants = Array.isArray(existingModelValue.variants)
-        ? existingModelValue.variants.filter((entry) => isRecord(entry)
-          && typeof entry.id === 'string'
-          && entry.id.startsWith('agent-')
-          && !ids.has(entry.id)
-          && !staleVariantIDs.has(entry.id))
-        : [];
-      if (profileVariants.length > 0) {
-        renderedModelValue.variants = [...clone(renderedVariants), ...clone(profileVariants)];
+      const renderedVariants = isRecord(renderedModelValue.variants) ? renderedModelValue.variants : {};
+      const existingVariants = isRecord(existingModelValue.variants) ? existingModelValue.variants : {};
+      const profileVariants = Object.fromEntries(Object.entries(existingVariants).filter(([id]) =>
+        id.startsWith('agent-') && renderedVariants[id] === undefined && !staleVariantIDs.has(id)));
+      if (Object.keys(profileVariants).length > 0) {
+        renderedModelValue.variants = { ...clone(renderedVariants), ...clone(profileVariants) };
         renderedModels[modelID] = renderedModelValue;
       }
     }
@@ -397,8 +358,9 @@ export function applyOpenCodeAgentVariants(
   variantsToAdd: OpenCodeModelVariant[],
 ): Record<string, unknown> {
   const rendered = clone(settings);
-  const providers = isRecord(rendered.providers) ? rendered.providers : {};
-  rendered.providers = providers;
+  const providers = providersFromSettings(rendered);
+  rendered.provider = providers;
+  delete rendered.providers;
   for (const variant of variantsToAdd) {
     const provider = isRecord(providers[variant.providerID]) ? providers[variant.providerID] : {};
     providers[variant.providerID] = provider;
@@ -406,9 +368,9 @@ export function applyOpenCodeAgentVariants(
     provider.models = models;
     const model = isRecord(models[variant.modelID]) ? models[variant.modelID] : {};
     models[variant.modelID] = model;
-    const variants = Array.isArray(model.variants) ? clone(model.variants) : [];
-    const withoutExisting = variants.filter((entry) => !isRecord(entry) || entry.id !== variant.id);
-    model.variants = [...withoutExisting, { id: variant.id, settings: clone(variant.settings) }];
+    const variants = isRecord(model.variants) ? clone(model.variants) : {};
+    variants[variant.id] = clone(variant.settings);
+    model.variants = variants;
   }
   return rendered;
 }
@@ -418,24 +380,12 @@ function isOpenCodeMcpServerConfig(value: unknown): value is UnknownRecord {
   return ['type', 'command', 'url', 'enabled', 'disabled'].some((key) => key in value);
 }
 
-function convertOpenCodeMcpConfig(value: UnknownRecord, version: OpenCodeVersion): UnknownRecord {
+function convertOpenCodeMcpConfig(value: UnknownRecord): UnknownRecord {
   const converted = clone(value);
-  if (version === 'v2') {
-    if (typeof converted.enabled === 'boolean' && converted.disabled === undefined) converted.disabled = !converted.enabled;
-    delete converted.enabled;
-    if (typeof converted.timeout === 'number') {
-      converted.timeout = { catalog: converted.timeout, execution: converted.timeout };
-    }
-    return converted;
-  }
-
-  if (typeof converted.disabled === 'boolean' && converted.enabled === undefined) converted.enabled = !converted.disabled;
-  delete converted.disabled;
-  if (isRecord(converted.timeout)) {
-    const timeout = typeof converted.timeout.execution === 'number'
-      ? converted.timeout.execution
-      : typeof converted.timeout.catalog === 'number' ? converted.timeout.catalog : undefined;
-    if (timeout !== undefined) converted.timeout = timeout;
+  if (typeof converted.enabled === 'boolean' && converted.disabled === undefined) converted.disabled = !converted.enabled;
+  delete converted.enabled;
+  if (typeof converted.timeout === 'number') {
+    converted.timeout = { catalog: converted.timeout, execution: converted.timeout };
   }
   return converted;
 }
@@ -459,34 +409,24 @@ function existingOpenCodeMcpParts(value: unknown): {
   return { legacy, native, extras };
 }
 
-function mergeOpenCodeMcp(existing: unknown, rendered: UnknownRecord, version: OpenCodeVersion): UnknownRecord {
+function mergeOpenCodeMcp(existing: unknown, rendered: UnknownRecord): UnknownRecord {
   const current = existingOpenCodeMcpParts(existing);
-  const renderedServers = version === 'v2' && isRecord(rendered.servers)
+  const renderedServers = isRecord(rendered.servers)
     ? rendered.servers
     : rendered;
   const legacy = Object.fromEntries(
-    Object.entries(current.legacy).map(([name, config]) => [name, convertOpenCodeMcpConfig(config, version)]),
+    Object.entries(current.legacy).map(([name, config]) => [name, convertOpenCodeMcpConfig(config)]),
   );
   const native = Object.fromEntries(
-    Object.entries(current.native).map(([name, config]) => [name, convertOpenCodeMcpConfig(config, version)]),
+    Object.entries(current.native).map(([name, config]) => [name, convertOpenCodeMcpConfig(config)]),
   );
-
-  if (version === 'v2') {
-    return {
-      ...current.extras,
-      servers: { ...legacy, ...native, ...clone(renderedServers) },
-    };
-  }
-
   return {
     ...current.extras,
-    ...legacy,
-    ...native,
-    ...clone(renderedServers),
+    servers: { ...legacy, ...native, ...clone(renderedServers) },
   };
 }
 
-export function renderOpenCodeMcp(servers: MCPServer[], version: OpenCodeVersion, target: TargetName = 'opencode'): Record<string, unknown> {
+export function renderOpenCodeMcp(servers: MCPServer[], target: TargetName = 'opencode'): Record<string, unknown> {
   const renderedServers: UnknownRecord = {};
   for (const server of servers) {
     if (server.disabledFor?.includes(target)) continue;
@@ -504,12 +444,9 @@ export function renderOpenCodeMcp(servers: MCPServer[], version: OpenCodeVersion
     delete targetOptions.enabled;
     Object.assign(config, targetOptions);
 
-    if (version === 'v1') config.enabled = targetEnabled;
-    else {
-      config.disabled = !targetEnabled;
-      if (typeof config.timeout === 'number') config.timeout = { catalog: config.timeout, execution: config.timeout };
-    }
+    config.disabled = !targetEnabled;
+    if (typeof config.timeout === 'number') config.timeout = { catalog: config.timeout, execution: config.timeout };
     renderedServers[server.name] = config;
   }
-  return version === 'v1' ? renderedServers : { servers: renderedServers };
+  return { servers: renderedServers };
 }

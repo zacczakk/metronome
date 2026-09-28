@@ -13,7 +13,6 @@ read_when:
   - `commands/` — Slash commands (8 .md files)
   - `agents/` — Subagent definitions (10 .md files)
   - `skills/` — Skill bundles (28 active directories)
-  - `plugins/` — metronome-managed OpenCode V1 plugins (3 .ts files, identity-rendered)
   - `opencode/v2/plugins/` — profile-owned native V2 plugins
   - `mcp/` — MCP server definitions (9 .json files)
   - `settings/` — Per-CLI settings (4 .json files)
@@ -65,12 +64,7 @@ Hook scripts receive JSON on stdin (session_id, source, cwd, etc.) and communica
 
 ### OpenCode plugins
 
-OpenCode uses a **plugin system** instead of shell hooks. Local plugins are auto-loaded from `~/.config/opencode/plugins/`. See [OpenCode plugins docs](https://opencode.ai/docs/plugins/).
-
-V1 plugin source files live in `configs/plugins/` and are deployed by generic
-V1 sync to `~/.config/opencode/plugins/`. The V2 adapter reports no generic
-plugin capability: V2 plugin files are profile-owned and deployed only by
-`metronome opencode use v2`.
+OpenCode uses a **plugin system** instead of shell hooks. Local plugins are auto-loaded from `~/.config/opencode/plugins/`. See [OpenCode plugins docs](https://opencode.ai/v2/docs/plugins/).
 
 | Plugin | Event(s) | Purpose |
 |--------|----------|---------|
@@ -78,61 +72,36 @@ plugin capability: V2 plugin files are profile-owned and deployed only by
 | `read-guard.ts` | `tool.execute.after`, `tool.execute.before` | Blocks edits to existing files that have not been read in the session. |
 | `validate-commit.ts` | `tool.execute.before` | Enforces Conventional Commit messages for `git commit`. |
 
-V1 plugins are raw `.ts` files — identity-rendered (no frontmatter, no
-transformation). Stale cleanup only removes plugins recorded as
-Metronome-owned in the manifest; third-party files are preserved. The `"plugin"`
-key in V1 `opencode.json` is separately managed via settings sync.
+`configs/opencode/v2/plugins/` is the sole Metronome OpenCode plugin source.
+The profile service deploys these files to `~/.config/opencode/plugins/` and
+generic sync does not copy plugin files.
 
-#### V1/V2 compatibility profiles
-
-`configs/settings/opencode.json` remains V1-shaped canonical semantic input.
-`src/opencode/version-renderer.ts` emits either V1 or native V2 configuration,
-including ordered permissions, provider/model migration, MCP nesting, and
-agent-specific model variants. Per-agent `reasoningEffort` and `textVerbosity`
-become actual model variants in V2 because V2 retains but does not apply agent
-`request.body` overlays.
-
-`metronome opencode use v1|v2` activates a profile; `update v1|v2` refreshes it;
-and `upgrade v1|v2` updates the runtime before refreshing it. These commands
-persist the active profile in `~/.config/opencode/migration-manifest.json` only
-after successful non-dry-run operations. Dry runs do not write, and failed or
-interrupted operations restore the previous manifest.
-Generic `check`,
-`push`, `pull`, `render`, and `diff` operations resolve target `opencode` from
-that manifest; missing or invalid manifests select V1. `opencode2` forces V2,
-uses the same paths, is excluded from `ALL_TARGETS`, and cannot be combined
-with `opencode` in one operation.
-
-The switcher backs up `opencode.json`, agents, both global plugin roots, CLI
-settings, package manifests, and lockfiles before writing. Unknown plugins and
-Tux's V1 `provider.tux` overlay are preserved. Native `providers` wins in V2,
-so Tux may continue writing its V1 integration without breaking the active V2
-catalog. Profile activation also folds mixed legacy/native MCP entries into the
-selected shape, preserving noncanonical servers and letting canonical entries
-win on name collisions. The stale legacy `foundry` duplicate and retired
-`uptimize-*` providers are removed from the projection; unrelated legacy
-overlays, including Tux's, remain.
+The profile service backs up `opencode.json`, agents, plugin roots, CLI settings,
+package manifests, and lockfiles before writing. Unknown plugins and Tux's
+native `provider.tux` entry are preserved. Legacy `providers` entries are
+migrated into the native provider shape, while profile activation folds mixed
+MCP entries into the native shape and preserves noncanonical servers. The
+stale `foundry` duplicate and retired `uptimize-*` providers are removed from
+the projection.
 
 Versioned V2 plugins live under `configs/opencode/v2/plugins/`. V2 ports the
 instruction loader, Memory advisor, read guard, commit validator, and Muxy
 notifications. The native Muxy V2 port is deployed globally as
 `metronome-muxy-notify.js` so Muxy's app-owned `muxy-notify.js` cannot overwrite
 it; the app-owned file is preserved because Muxy continuously regenerates it.
-Current Muxy releases still emit a V1 plugin load warning under V2, but the
-Metronome port remains the active notification integration. Muxy is optional
-for V2 readiness. Cursor OAuth is disabled in V2 because the
+The Metronome port remains the active notification integration. Muxy is optional
+for V2 readiness. The stable runtime uses the `opencode` executable;
+`opencode2` remains only as the explicit Metronome target name. Cursor OAuth is
+disabled in V2 because the
 public V2 catalog API cannot add a provider. Switching back to
-V1 restores the remembered Cursor symlink target and V1 plugin files.
+another profile is not supported.
 
 The canonical settings file includes `websearch.provider: chatgpt`. ChatGPT
 websearch is a vendored, profile-owned plugin
 (`configs/opencode/v2/plugins/chatgpt-websearch.js`) deployed like the other
-managed V2 plugins, not a `plugin`/`plugins` array entry: OpenCode2's newer
-betas resolve array entries strictly as npm/git package specifiers and
-silently drop relative directory paths, and upstream
+managed V2 plugins, not a package entry: upstream
 `opencode-chatgpt-websearch` is unmaintained. V2 runtime verification requires
-`opencode.chatgpt-websearch`; `metronome.muxy-notify` is optional. V1
-rendering omits these V2-only integrations.
+`opencode.chatgpt-websearch`; `metronome.muxy-notify` is optional.
 
 Generic V2 sync handles settings, agents, MCP, commands, skills, and
 instructions. V2 preserves but does not natively resolve the config
@@ -140,27 +109,9 @@ instructions. V2 preserves but does not natively resolve the config
 Memory files and adds them through the supported session context hook.
 `AGENTS.md` remains excluded from that plugin because V2 discovers it natively.
 
-**Cursor OAuth (local fork, NOT npm, NOT metronome-copied)**: Cursor-backed
-models in OpenCode are served by a maintained fork at
-[`github.com/zacczakk/opencode-cursor`](https://github.com/zacczakk/opencode-cursor)
-(cloned to `~/Repos/zacczakk/opencode-cursor`, upstream
-`ephraimduncan/opencode-cursor`). It's a **built multi-file bundle** (a direct
-gRPC→OpenAI proxy that talks straight to `api2.cursor.sh`), so it does **not**
-fit metronome's single-`.ts`-file plugin model and is **not** in
-`configs/plugins/`. Deploy: `bun run build` in the fork, then symlink
-`dist/plugin.js` → `~/.config/opencode/plugins/cursor-oauth.js`. OpenCode
-auto-discovers it from that directory. It self-injects a static
-`@ai-sdk/openai-compatible` provider (display name "Cursor") via the `config`
-hook — so it is deliberately **absent from `opencode.json`'s `plugin[]` array**
-(a bare-name entry there would npm-resolve and double-load, which caused an
-EADDRINUSE port conflict). Auth borrows Cursor's OAuth tokens from the macOS
-Keychain (`cursor-agent login`). The fork remains the source of truth. Profile
-switching only disables/restores its symlink because the implementation is V1-only.
-
-**Context Mode**: not configured for OpenCode (V1 or V2). The renderer still
-strips any `context-mode` entry it finds in an existing/external `plugin`
-array during V2 rendering, as a defensive guard against drift, but canonical
-settings do not declare it.
+**Context Mode**: not configured for OpenCode. The renderer strips any
+`context-mode` entry it finds in an existing plugin array; canonical settings
+do not declare it.
 
 ### Codex hooks
 
@@ -190,10 +141,9 @@ without forwarding OpenAI credentials.
 
 1. Create the script in `configs/hooks/`.
 2. **Claude Code:** Add registration entry to `~/.claude/settings.json` → `hooks` key. Use absolute path to `configs/hooks/`.
-3. **OpenCode V1:** Create a plugin `.ts` file in `configs/plugins/` and run
-   `metronome push --type plugins` to deploy. For V2, add a native plugin under
-   `configs/opencode/v2/plugins/` and activate it with `metronome opencode use v2`.
-   Reference shared logic from `configs/hooks/` if possible.
+3. **OpenCode:** Add a native plugin under `configs/opencode/v2/plugins/` and
+   activate it with `metronome opencode use`. Reference shared logic from
+   `configs/hooks/` if possible.
 4. **Codex:** Add canonical registration to `configs/hook-configs/codex.json`. Ensure Codex settings enable `features.hooks = true`.
 5. Restart the CLI session for hooks to take effect.
 

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs"
 import { resolve } from "node:path"
-import { Plugin } from "@opencode-ai/plugin"
+import { Plugin } from "@opencode/plugin"
 
 function inputPath(input: unknown): string | undefined {
   if (typeof input !== "object" || input === null) return undefined

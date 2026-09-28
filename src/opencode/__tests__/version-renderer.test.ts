@@ -9,41 +9,21 @@ import {
 } from '../version-renderer';
 
 describe('renderOpenCodeSettings', () => {
-  test('preserves V1 syntax in an independent deep clone', () => {
-    const settings = { permission: { bash: { '*': 'allow' } }, plugin: ['context-mode'] };
-
-    const rendered = renderOpenCodeSettings(settings, 'v1');
-    settings.permission.bash['*'] = 'deny';
-
-    expect(rendered).toEqual({ permission: { bash: { '*': 'allow' } }, plugin: ['context-mode'] });
-  });
-
-  test('keeps ChatGPT websearch config in V2 and omits it from V1', () => {
-    const settings = {
-      plugin: ['context-mode'],
-      websearch: { provider: 'chatgpt' },
-    };
-
-    expect(renderOpenCodeSettings(settings, 'v2')).toMatchObject({
-      plugins: ['context-mode'],
+  test('keeps ChatGPT websearch config and removes managed plugin paths', () => {
+    const rendered = renderOpenCodeSettings({
+      plugin: ['./chatgpt-websearch'],
       websearch: { provider: 'chatgpt' },
     });
-    expect(renderOpenCodeSettings(settings, 'v1')).toEqual({ plugin: ['context-mode'] });
-  });
-
-  test('removes stale profile-owned ChatGPT plugin paths from V2 entries', () => {
-    expect(renderOpenCodeSettings({ plugin: ['./chatgpt-websearch'] }, 'v2').plugins).toEqual([]);
-
-    const rendered = renderOpenCodeSettings({}, 'v2');
+    expect(rendered.plugins).toEqual([]);
+    expect(rendered.websearch).toEqual({ provider: 'chatgpt' });
 
     configureOpenCodeV2Plugins(rendered, {
       plugins: ['./chatgpt-websearch', 'third-party', { package: './chatgpt-websearch' }],
     });
-
     expect(rendered.plugins).toEqual(['third-party']);
   });
 
-  test('migrates settings, providers, models, permissions, and explore agent variants to V2', () => {
+  test('keeps Tux provider shape while rendering permissions and agent variants', () => {
     const rendered = renderOpenCodeSettings({
       permission: { bash: { '*': 'allow' }, task: 'ask', write: 'deny', patch: 'allow' },
       agent: { explore: { model: 'acme/model', options: { reasoningEffort: 'low', textVerbosity: 'brief' } } },
@@ -56,15 +36,15 @@ describe('renderOpenCodeSettings', () => {
             model: {
               options: { temperature: 0.2 },
               modalities: { input: ['text'], output: ['text'] },
-              tool_call: true,
-              reasoning: true,
+               tool_call: true,
+               reasoning: true,
               cost: { input: 1, output: 2, cache_read: 0.1, cache_write: 0.2 },
               variants: { fast: { temperature: 0 } },
             },
           },
         },
       },
-    }, 'v2');
+    });
 
     expect(rendered.permissions).toEqual([
       { action: 'shell', resource: '*', effect: 'allow' },
@@ -74,21 +54,21 @@ describe('renderOpenCodeSettings', () => {
     ]);
     expect(rendered.agents).toEqual({ explore: { model: 'acme/model#agent-explore' } });
     expect(rendered.plugins).toEqual(['context-mode']);
-    expect(rendered.providers).toEqual({
+    expect(rendered.provider).toEqual({
       acme: {
-        package: 'aisdk:@ai-sdk/anthropic',
-        settings: { apiKey: '{env:KEY}' },
-        headers: { 'x-client': 'metronome' },
+        npm: '@ai-sdk/anthropic',
+        options: { apiKey: '{env:KEY}', headers: { 'x-client': 'metronome' } },
         models: {
           model: {
-            settings: { temperature: 0.2 },
-            capabilities: { tools: true, input: ['text'], output: ['text'] },
-            cost: { input: 1, output: 2, cache: { read: 0.1, write: 0.2 } },
-            variants: [
-              { id: 'fast', settings: { temperature: 0 } },
-              { id: 'agent-explore', settings: { reasoningEffort: 'low', textVerbosity: 'brief' } },
-            ],
-            limit: { output: 64000 },
+            options: { temperature: 0.2 },
+            modalities: { input: ['text'], output: ['text'] },
+            tool_call: true,
+            reasoning: true,
+            cost: { input: 1, output: 2, cache_read: 0.1, cache_write: 0.2 },
+            variants: {
+              fast: { temperature: 0 },
+              'agent-explore': { reasoningEffort: 'low', textVerbosity: 'brief' },
+            },
           },
         },
       },
@@ -97,8 +77,8 @@ describe('renderOpenCodeSettings', () => {
     expect(rendered).not.toHaveProperty('agent');
   });
 
-  test('maps attachment metadata into V2 capabilities while preserving V1 metadata', () => {
-    const settings = {
+  test('preserves attachment and modality metadata in Tux shape', () => {
+    const rendered = renderOpenCodeSettings({
       provider: {
         tux: {
           npm: '@ai-sdk/anthropic',
@@ -110,104 +90,63 @@ describe('renderOpenCodeSettings', () => {
           },
         },
       },
-    };
+    });
+    expect(rendered.provider).toMatchObject({
+      tux: { models: { luna: {
+        attachment: true,
+        modalities: { input: ['image', 'pdf', 'text'], output: ['text'] },
+      } } },
+    });
+  });
 
-    expect(renderOpenCodeSettings(settings, 'v1')).toEqual(settings);
-    expect(renderOpenCodeSettings(settings, 'v2')).toMatchObject({
+  test('converts legacy rendered providers to Tux shape', () => {
+    const rendered = renderOpenCodeSettings({
       providers: {
         tux: {
+          package: 'aisdk:@ai-sdk/anthropic',
+          settings: { apiKey: 'does-not-matter' },
           models: {
             luna: {
-              capabilities: {
-                attachment: true,
-                input: ['image', 'pdf', 'text'],
-                output: ['text'],
-              },
+              package: 'aisdk:@ai-sdk/openai',
+              cost: [
+                { input: 0.2, output: 1.2, cache: { read: 0.02, write: 0.25 } },
+                { tier: { type: 'context', size: 272000 }, input: 0.4, output: 1.8, cache: { read: 0.04, write: 0.5 } },
+              ],
+              variants: [{ id: 'fast', settings: { reasoningEffort: 'low' } }],
             },
           },
         },
       },
     });
-  });
-
-  test('renders legacy context pricing as a V2 context tier', () => {
-    const rendered = renderOpenCodeSettings({
-      provider: {
-        tux: {
-          npm: '@ai-sdk/anthropic',
-          models: {
-            luna: {
-              provider: { npm: '@ai-sdk/openai' },
-              cost: {
-                input: 0.2,
-                output: 1.2,
-                cache_read: 0.02,
-                cache_write: 0.25,
-                context_over_200k: { input: 0.4, output: 1.8, cache_read: 0.04, cache_write: 0.5 },
-              },
-            },
-          },
-        },
-      },
-    }, 'v2');
-
-    expect(rendered.providers).toEqual({
+    expect(rendered.provider).toEqual({
       tux: {
-        package: 'aisdk:@ai-sdk/anthropic',
+        npm: '@ai-sdk/anthropic',
+        options: { apiKey: 'does-not-matter' },
         models: {
           luna: {
-            package: 'aisdk:@ai-sdk/openai',
-            cost: [
-              { input: 0.2, output: 1.2, cache: { read: 0.02, write: 0.25 } },
-              {
-                tier: { type: 'context', size: 272000 },
-                input: 0.4,
-                output: 1.8,
-                cache: { read: 0.04, write: 0.5 },
-              },
-            ],
+            provider: { npm: '@ai-sdk/openai' },
+            reasoning: true,
+            cost: { input: 0.2, output: 1.2, cache_read: 0.02, cache_write: 0.25, context_over_200k: { input: 0.4, output: 1.8, cache_read: 0.04, cache_write: 0.5 } },
+            variants: { fast: { reasoningEffort: 'low' } },
           },
         },
       },
     });
   });
 
-  test('keeps legacy context pricing in V1 output', () => {
-    const settings = {
-      provider: {
-        tux: {
-          models: {
-            luna: {
-              cost: {
-                input: 0.2,
-                output: 1.2,
-                cache_read: 0.02,
-                cache_write: 0.25,
-                context_over_200k: { input: 0.4, output: 1.8, cache_read: 0.04, cache_write: 0.5 },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    expect(renderOpenCodeSettings(settings, 'v1')).toEqual(settings);
-  });
-
-  test('preserves Anthropic context limits and does not invent tool capabilities', () => {
+  test('preserves Anthropic limits without inventing metadata', () => {
     const rendered = renderOpenCodeSettings({
       provider: { anthropic: { npm: '@ai-sdk/anthropic', models: { claude: { limit: { context: 200000 } } } } },
-    }, 'v2');
-
-    expect(rendered.providers).toEqual({
+    });
+    expect(rendered.provider).toEqual({
       anthropic: {
-        package: 'aisdk:@ai-sdk/anthropic',
-        models: { claude: { limit: { context: 200000, output: 64000 } } },
+        npm: '@ai-sdk/anthropic',
+        models: { claude: { limit: { context: 200000 } } },
       },
     });
   });
 
-  test('preserves unowned MCP servers and the Tux overlay while removing stale Foundry', () => {
+  test('preserves unowned providers and MCP servers while removing retired providers', () => {
     const merged = mergeOpenCodeSettings({
       provider: {
         foundry: { name: 'legacy duplicate' },
@@ -219,32 +158,25 @@ describe('renderOpenCodeSettings', () => {
         external: { package: 'aisdk:external' },
         foundry: { package: 'aisdk:legacy-foundry' },
       },
+      disabled_providers: ['local-provider'],
       mcp: {
-        servers: {
-          native: { type: 'local', command: ['native'], disabled: true },
-        },
+        servers: { native: { type: 'local', command: ['native'], disabled: true } },
         legacy: { type: 'remote', url: 'https://legacy.example/mcp', enabled: true },
         native: { type: 'remote', url: 'https://legacy-native.example/mcp', enabled: true },
       },
     }, {
-      providers: {
-        foundry: { package: 'aisdk:managed-foundry' },
-      },
-      mcp: {
-        servers: {
-          managed: { type: 'local', command: ['managed'], disabled: false },
-        },
-      },
-    }, 'v2');
+      providers: { foundry: { package: 'aisdk:managed-foundry' } },
+      disabled_providers: ['opencode', 'opencode-go'],
+      mcp: { servers: { managed: { type: 'local', command: ['managed'], disabled: false } } },
+    });
 
     expect(merged.provider).toEqual({
       tux: { name: 'Tux overlay' },
       external: { name: 'external provider' },
+      foundry: { npm: 'managed-foundry' },
     });
-    expect(merged.providers).toEqual({
-      external: { package: 'aisdk:external' },
-      foundry: { package: 'aisdk:managed-foundry' },
-    });
+    expect(merged.providers).toBeUndefined();
+    expect(merged.disabled_providers).toEqual(['local-provider', 'opencode', 'opencode-go']);
     expect(merged.mcp).toEqual({
       servers: {
         legacy: { type: 'remote', url: 'https://legacy.example/mcp', disabled: false },
@@ -254,64 +186,29 @@ describe('renderOpenCodeSettings', () => {
     });
   });
 
-  test('does not reintroduce retired providers through V1 provider merging', () => {
-    const merged = mergeOpenCodeSettings({
-      provider: {
-        'uptimize-openai': { name: 'retired Uptimize provider' },
-        tux: { name: 'Tux overlay' },
-      },
-    }, {
-      provider: { acme: { name: 'managed' } },
-    }, 'v1');
-
-    expect(merged.provider).toEqual({
-      tux: { name: 'Tux overlay' },
-      acme: { name: 'managed' },
-    });
-  });
-
-  test('applies Anthropic output limits when models precede the package declaration', () => {
-    const rendered = renderOpenCodeSettings({
-      provider: { anthropic: { models: { claude: { limit: { context: 200000 } } }, npm: '@ai-sdk/anthropic' } },
-    }, 'v2');
-
-    expect(rendered.providers).toEqual({
-      anthropic: {
-        package: 'aisdk:@ai-sdk/anthropic',
-        models: { claude: { limit: { context: 200000, output: 64000 } } },
-      },
-    });
-  });
-
-  test('preserves explicit context and output limits for Anthropic and OpenAI models', () => {
+  test('preserves explicit context and output limits', () => {
     const rendered = renderOpenCodeSettings({
       provider: {
         tux: {
           npm: '@ai-sdk/anthropic',
           models: {
             claude: { limit: { context: 1000000, output: 128000 } },
-            gpt: {
-              provider: { npm: '@ai-sdk/openai' },
-              limit: { context: 1050000, output: 128000 },
-            },
+            gpt: { provider: { npm: '@ai-sdk/openai' }, limit: { context: 1050000, output: 128000 } },
           },
         },
       },
-    }, 'v2');
-
-    expect(rendered.providers).toMatchObject({
-      tux: {
-        models: {
-          claude: { limit: { context: 1000000, output: 128000 } },
-          gpt: { limit: { context: 1050000, output: 128000 } },
-        },
-      },
+    });
+    expect(rendered.provider).toMatchObject({
+      tux: { models: {
+        claude: { limit: { context: 1000000, output: 128000 } },
+        gpt: { limit: { context: 1050000, output: 128000 } },
+      } },
     });
   });
 });
 
 describe('renderOpenCodeAgent', () => {
-  test('creates a named V2 model variant descriptor and removes inert overlays', () => {
+  test('creates a named model variant descriptor and removes inert overlays', () => {
     const rendered = renderOpenCodeAgent({
       _agentName: 'Research Review!',
       model: 'github-copilot/gpt-5',
@@ -319,7 +216,7 @@ describe('renderOpenCodeAgent', () => {
       reasoningEffort: 'high',
       textVerbosity: 'low',
       permission: { bash: 'allow', write: 'deny' },
-    }, 'v2');
+    });
 
     expect(rendered).toEqual({
       model: 'github-copilot/gpt-5#agent-research-review',
@@ -335,28 +232,22 @@ describe('renderOpenCodeAgent', () => {
       },
     });
   });
-
-  test('preserves V1 agent metadata in an independent clone', () => {
-    const metadata = { permission: { bash: 'allow' } };
-    const rendered = renderOpenCodeAgent(metadata, 'v1');
-    metadata.permission.bash = 'deny';
-
-    expect(rendered).toEqual({ permission: { bash: 'allow' } });
-  });
 });
 
 describe('renderOpenCodeMcp', () => {
-  const servers: MCPServer[] = [{ name: 'local', transport: 'stdio', command: 'node', args: ['server.js'], env: { TOKEN: '${TOKEN}' }, enabled: false, targetOptions: { opencode: { timeout: 30 } } }];
+  const servers: MCPServer[] = [{
+    name: 'local', transport: 'stdio', command: 'node', args: ['server.js'], env: { TOKEN: '${TOKEN}' }, enabled: false,
+    targetOptions: { opencode: { timeout: 30 } },
+  }];
 
-  test('renders V1 as an enabled flat map', () => {
-    expect(renderOpenCodeMcp(servers, 'v1')).toEqual({
-      local: { type: 'local', command: ['node', 'server.js'], environment: { TOKEN: '{env:TOKEN}' }, enabled: false, timeout: 30 },
-    });
-  });
-
-  test('renders V2 servers with disabled inverse and split timeout', () => {
-    expect(renderOpenCodeMcp(servers, 'v2')).toEqual({
-      servers: { local: { type: 'local', command: ['node', 'server.js'], environment: { TOKEN: '{env:TOKEN}' }, disabled: true, timeout: { catalog: 30, execution: 30 } } },
+  test('renders native servers with inverse enablement and split timeout', () => {
+    expect(renderOpenCodeMcp(servers)).toEqual({
+      servers: {
+        local: {
+          type: 'local', command: ['node', 'server.js'], environment: { TOKEN: '{env:TOKEN}' }, disabled: true,
+          timeout: { catalog: 30, execution: 30 },
+        },
+      },
     });
   });
 });

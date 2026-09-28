@@ -12,7 +12,7 @@
 
 - Use canonical files under `configs/` as the source of truth.
 - Preserve unowned target settings and third-party hooks/plugins.
-- Do not change OpenCode V1/V2 projection behavior.
+- Do not change OpenCode projection behavior.
 - Add regression coverage for every corrected drift class.
 - Keep user-specific secrets out of tracked files.
 
@@ -49,7 +49,7 @@
 1. [x] Add stable normalized hashing for parsed MCP servers.
 2. [x] Compare rendered and target MCP configs by server name, preserving target-specific managed options such as OpenCode timeout/codemode.
 3. [x] Add a settings comparison projection hook; make Codex compare only managed parsed keys so TOML quoting/order and unowned keys do not cause drift.
-4. [x] Use the projection in `runCheck` while leaving OpenCode's existing V1/V2 settings projection behavior unchanged.
+4. [x] Use the projection in `runCheck` while leaving OpenCode's existing settings projection behavior unchanged.
 5. [x] Add regression tests for no-op formatting/co-located-state changes, single-server drift, and generated skill artifacts.
 
 ## Task 3: Derive the CLI version from package metadata

@@ -15,8 +15,8 @@ const DESCRIPTION = `Agent Config Sync — single source of truth for AI coding 
 
 Manages canonical configs in configs/ and syncs them to 4 CLI targets:
   claude-code  (~/.claude/)
-  opencode     (~/.config/opencode/, active V1/V2 profile)
-  opencode2    (~/.config/opencode/, explicit V2 for CI/scripts)
+  opencode     (~/.config/opencode/, stable V2 profile)
+  opencode2    (~/.config/opencode/, explicit V2 target for CI/scripts)
   antigravity  (~/.gemini/antigravity-cli/)
   codex        (~/.codex/)
 
@@ -36,9 +36,9 @@ Typical workflow:
   metronome pull -s claude     Pull configs from Claude Code back to canonical
   metronome helpers -p <path>  Copy helper scripts to a repo's scripts/ dir
   metronome codex-provider tux Switch Codex Desktop between Enterprise and Tux
-  metronome opencode use v2     Activate native OpenCode V2 compatibility
-  metronome opencode update v2  Refresh the V2 profile
-  metronome opencode upgrade v2 Upgrade the V2 runtime and profile
+  metronome opencode use       Activate the OpenCode V2 profile
+  metronome opencode update    Refresh the OpenCode V2 profile
+  metronome opencode upgrade   Upgrade the OpenCode V2 runtime and profile
 
 Exit codes:
   0  Success / no drift

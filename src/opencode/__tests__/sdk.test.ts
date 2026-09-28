@@ -13,197 +13,135 @@ describe('OpenCode V2 SDK alignment', () => {
     await expect(command).rejects.toThrow('interrupted');
   });
 
-  test('parses the exact global next build', () => {
-    expect(parseGlobalOpenCodeVersion('└── @opencode-ai/cli@0.0.0-next-17098')).toBe('0.0.0-next-17098');
+  test('parses the stable global package version', () => {
+    expect(parseGlobalOpenCodeVersion('├── @opencode/cli@2.0.18')).toBe('2.0.18');
   });
 
-  test('parses the executable build reported by opencode2', () => {
-    expect(parseOpenCodeExecutableVersion('opencode2 v0.0.0-beta-17595')).toBe('0.0.0-beta-17595');
+  test('parses the stable executable version', () => {
+    expect(parseOpenCodeExecutableVersion('opencode v2.0.18')).toBe('2.0.18');
   });
 
-  test('compares build numbers before release channels', () => {
-    expect(compareOpenCodeVersions('0.0.0-next-17498', '0.0.0-beta-17595')).toBeLessThan(0);
+  test('compares stable releases', () => {
+    expect(compareOpenCodeVersions('2.0.18', '2.0.17')).toBeGreaterThan(0);
   });
 
-  test('aligns the local SDK to the global CLI build', async () => {
+  test('aligns the local stable SDK to the global CLI release', async () => {
     const calls: Array<[string, string[], string | undefined]> = [];
     const runner: CommandRunner = async (command, args, cwd) => {
       calls.push([command, args, cwd]);
       return {
         stdout: command === 'bun' && args[0] === 'pm'
-          ? '@opencode-ai/cli@0.0.0-next-17098'
-          : command === 'opencode2' ? 'opencode2 v0.0.0-next-17098' : '',
+          ? '@opencode/cli@2.0.18'
+          : command === 'opencode' ? 'opencode v2.0.18' : '',
         stderr: '',
       };
     };
-    expect(await alignOpenCodePluginSdk('/config', runner)).toBe('0.0.0-next-17098');
-    expect(calls.at(-1)).toEqual(['bun', ['add', '--exact', '--minimum-release-age=0', '@opencode-ai/plugin@0.0.0-next-17098'], '/config']);
+    expect(await alignOpenCodePluginSdk('/config', runner)).toBe('2.0.18');
+    expect(calls.at(-1)).toEqual(['bun', ['add', '--exact', '--minimum-release-age=0', '@opencode/plugin@2.0.18'], '/config']);
   });
 
-  test('skips SDK installation when the exact local package is already aligned', async () => {
+  test('skips SDK installation when the exact stable package is already aligned', async () => {
     const configDir = await mkdtemp(join(tmpdir(), 'metronome-opencode-sdk-'));
     try {
-      await mkdir(join(configDir, 'node_modules', '@opencode-ai', 'plugin'), { recursive: true });
-      await writeFile(join(configDir, 'package.json'), JSON.stringify({ dependencies: { '@opencode-ai/plugin': '0.0.0-next-17098' } }));
-      await writeFile(join(configDir, 'node_modules', '@opencode-ai', 'plugin', 'package.json'), JSON.stringify({ version: '0.0.0-next-17098' }));
+      await mkdir(join(configDir, 'node_modules', '@opencode', 'plugin'), { recursive: true });
+      await writeFile(join(configDir, 'package.json'), JSON.stringify({ dependencies: { '@opencode/plugin': '2.0.18' } }));
+      await writeFile(join(configDir, 'node_modules', '@opencode', 'plugin', 'package.json'), JSON.stringify({ version: '2.0.18' }));
       const calls: string[] = [];
       const runner: CommandRunner = async (command, args) => {
         calls.push(`${command} ${args.join(' ')}`);
-        return { stdout: '@opencode-ai/cli@0.0.0-next-17098', stderr: '' };
+        return { stdout: '@opencode/cli@2.0.18', stderr: '' };
       };
 
-      expect(await alignOpenCodePluginSdk(configDir, runner)).toBe('0.0.0-next-17098');
+      expect(await alignOpenCodePluginSdk(configDir, runner)).toBe('2.0.18');
       expect(calls).toEqual(['bun pm ls -g']);
     } finally {
       await rm(configDir, { recursive: true, force: true });
     }
   });
 
-  test('updates the global CLI and returns its resolved build', async () => {
+  test('aligns a stale local stable SDK', async () => {
+    const configDir = await mkdtemp(join(tmpdir(), 'metronome-opencode-sdk-'));
+    try {
+      await mkdir(join(configDir, 'node_modules', '@opencode', 'plugin'), { recursive: true });
+      await writeFile(join(configDir, 'package.json'), JSON.stringify({ dependencies: { '@opencode/plugin': '2.0.17' } }));
+      await writeFile(join(configDir, 'node_modules', '@opencode', 'plugin', 'package.json'), JSON.stringify({ version: '2.0.17' }));
+      const calls: string[] = [];
+      const runner: CommandRunner = async (command, args) => {
+        calls.push(`${command} ${args.join(' ')}`);
+        return { stdout: '@opencode/cli@2.0.18', stderr: '' };
+      };
+
+      expect(await alignOpenCodePluginSdk(configDir, runner)).toBe('2.0.18');
+      expect(calls).toEqual([
+        'bun pm ls -g',
+        'bun add --exact --minimum-release-age=0 @opencode/plugin@2.0.18',
+      ]);
+    } finally {
+      await rm(configDir, { recursive: true, force: true });
+    }
+  });
+
+  test('updates the global CLI to the stable latest tag', async () => {
     const calls: string[] = [];
+    let packageVersion = '2.0.17';
+    let executable = '2.0.17';
     const runner: CommandRunner = async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);
-      if (args[0] === 'pm') return { stdout: '@opencode-ai/cli@0.0.0-beta-17100', stderr: '' };
-      if (command === 'opencode2') return { stdout: 'opencode2 v0.0.0-beta-17100', stderr: '' };
+      if (args[0] === 'pm') return { stdout: `@opencode/cli@${packageVersion}`, stderr: '' };
+      if (command === 'opencode') return { stdout: `opencode v${executable}`, stderr: '' };
+      if (command === 'bun' && args[0] === 'install' && args.at(-1) === '@opencode/cli@latest') {
+        packageVersion = '2.0.18';
+        executable = '2.0.18';
+      }
       return { stdout: '', stderr: '' };
     };
-    expect(await updateOpenCodeV2('/config', runner)).toBe('0.0.0-beta-17100');
-    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode-ai/cli@beta');
+    expect(await updateOpenCodeV2('/config', runner)).toBe('2.0.18');
+    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode/cli@latest');
   });
 
-  test('repairs a launcher that disagrees with the installed package', async () => {
+  test('repairs a launcher that disagrees with the installed stable package', async () => {
     const calls: string[] = [];
-    let packageVersion = '0.0.0-next-17098';
-    let executable = '0.0.0-next-17098';
+    let executable = '2.0.17';
     const runner: CommandRunner = async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);
-      if (args[0] === 'pm') return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
-      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
-      if (command === 'bun' && args[0] === 'install') {
-        packageVersion = '0.0.0-next-17100';
-        if (args.at(-1)?.includes('17100')) executable = packageVersion;
-      }
+      if (args[0] === 'pm') return { stdout: '@opencode/cli@2.0.18', stderr: '' };
+      if (command === 'opencode') return { stdout: `opencode v${executable}`, stderr: '' };
+      if (command === 'bun' && args[0] === 'install' && args.at(-1) === '@opencode/cli@2.0.18') executable = '2.0.18';
       return { stdout: '', stderr: '' };
     };
 
-    expect(await updateOpenCodeV2('/config', runner)).toBe('0.0.0-next-17100');
-    expect(calls).toContain('bun remove -g @opencode-ai/cli');
-    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode-ai/cli@0.0.0-next-17100');
+    expect(await updateOpenCodeV2('/config', runner)).toBe('2.0.18');
+    expect(calls).toContain('bun remove -g @opencode/cli');
+    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode/cli@2.0.18');
   });
 
-  test('reports update and activation stages', async () => {
-    const progress: string[] = [];
-    const runner: CommandRunner = async (command, args) => ({
-      stdout: args[0] === 'pm'
-        ? '@opencode-ai/cli@0.0.0-beta-17100'
-        : command === 'opencode2' ? 'opencode2 v0.0.0-beta-17100' : '',
-      stderr: '',
-    });
-
-    await updateOpenCodeV2Safely('/config', async () => undefined, runner, (message) => progress.push(message));
-
-    expect(progress[0]).toBe('Resolve current global CLI...');
-    expect(progress.some((message) => message === 'Install @opencode-ai/cli@beta...')).toBe(true);
-    expect(progress.some((message) => message === 'Activate OpenCode V2 at 0.0.0-beta-17100...')).toBe(true);
-    expect(progress.some((message) => message.startsWith('Activate OpenCode V2 at 0.0.0-beta-17100 done'))).toBe(true);
-  });
-
-  test('restores the exact global CLI build when updated profile activation fails', async () => {
+  test('restores an exact stable package when profile activation fails', async () => {
     const calls: string[] = [];
-    const progress: string[] = [];
-    let packageVersion = '0.0.0-next-17098';
-    let executable = '0.0.0-next-17098';
+    let packageName = '@opencode/cli';
+    let packageVersion = '2.0.17';
+    let executable = packageVersion;
     const runner: CommandRunner = async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);
-      if (args[0] === 'pm') {
-        return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
-      }
-      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
+      if (args[0] === 'pm') return { stdout: `${packageName}@${packageVersion}`, stderr: '' };
+      if (command === 'opencode') return { stdout: `opencode v${executable}`, stderr: '' };
+      if (command === 'bun' && args[0] === 'remove' && args.includes('@opencode/cli')) packageName = '';
       if (command === 'bun' && args[0] === 'install') {
-        packageVersion = args.at(-1)?.includes('17102') ? '0.0.0-next-17102' : '0.0.0-next-17098';
-        executable = packageVersion;
-      }
-      return { stdout: '', stderr: '' };
-    };
-
-    await expect(updateOpenCodeV2Safely('/config', async () => { throw new Error('activation failed'); }, runner, (message) => progress.push(message))).rejects.toThrow('activation failed');
-    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode-ai/cli@0.0.0-next-17098');
-    expect(progress.some((message) => message === 'Restore global CLI 0.0.0-next-17098...')).toBe(true);
-  });
-
-  test('does not abort global CLI rollback after an interrupted activation', async () => {
-    const controller = new AbortController();
-    const calls: Array<{ command: string; args: string[]; signal?: AbortSignal }> = [];
-    let packageVersion = '0.0.0-next-17098';
-    let executable = '0.0.0-next-17098';
-    const runner: CommandRunner = async (command, args, _cwd, signal) => {
-      calls.push({ command, args, signal });
-      if (args[0] === 'pm') return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
-      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
-      if (command === 'bun' && args[0] === 'install') {
-        packageVersion = args.at(-1) === '@opencode-ai/cli@beta' ? '0.0.0-next-17102' : '0.0.0-next-17098';
-        executable = packageVersion;
-      }
-      return { stdout: '', stderr: '' };
-    };
-
-    const activation = updateOpenCodeV2Safely('/config', async () => {
-      controller.abort(new Error('interrupted'));
-    }, runner, undefined, controller.signal);
-
-    await expect(activation).rejects.toThrow('interrupted');
-    const restore = calls.find((call) => call.command === 'bun' && call.args.at(-1) === '@opencode-ai/cli@0.0.0-next-17098');
-    expect(restore?.signal).toBeUndefined();
-  });
-
-  test('keeps the current build when the beta channel returns an older build', async () => {
-    const calls: string[] = [];
-    let packageVersion = '0.0.0-beta-17595';
-    let executable = '0.0.0-beta-17595';
-    const activated: string[] = [];
-    const runner: CommandRunner = async (command, args) => {
-      calls.push(`${command} ${args.join(' ')}`);
-      if (args[0] === 'pm') {
-        return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
-      }
-      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
-      if (command === 'bun' && args[0] === 'install') {
-        packageVersion = args.at(-1) === '@opencode-ai/cli@beta' ? '0.0.0-beta-17498' : '0.0.0-beta-17595';
-        executable = packageVersion;
-      }
-      return { stdout: '', stderr: '' };
-    };
-
-    expect(await updateOpenCodeV2Safely('/config', async (version) => { activated.push(version); }, runner)).toBe('0.0.0-beta-17595');
-    expect(activated).toEqual(['0.0.0-beta-17595']);
-    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode-ai/cli@0.0.0-beta-17595');
-  });
-
-  test('does not restore the global CLI twice when an older beta is interrupted after restoration', async () => {
-    const controller = new AbortController();
-    let packageVersion = '0.0.0-beta-17595';
-    let executable = '0.0.0-beta-17595';
-    let restoreCalls = 0;
-    const runner: CommandRunner = async (command, args) => {
-      if (args[0] === 'pm') return { stdout: `@opencode-ai/cli@${packageVersion}`, stderr: '' };
-      if (command === 'opencode2') return { stdout: `opencode2 v${executable}`, stderr: '' };
-      if (command === 'bun' && args[0] === 'install') {
-        if (args.at(-1) === '@opencode-ai/cli@beta') {
-          packageVersion = '0.0.0-beta-17498';
-          executable = packageVersion;
-        } else {
-          restoreCalls += 1;
-          if (restoreCalls > 1) throw new Error('duplicate restore');
-          packageVersion = '0.0.0-beta-17595';
-          executable = packageVersion;
-          controller.abort(new Error('interrupted'));
+        const target = args.at(-1) ?? '';
+        if (target === '@opencode/cli@latest') {
+          packageName = '@opencode/cli';
+          packageVersion = '2.0.18';
+          executable = '2.0.18';
+        } else if (target === '@opencode/cli@2.0.17') {
+          packageName = '@opencode/cli';
+          packageVersion = '2.0.17';
+          executable = '2.0.17';
         }
       }
       return { stdout: '', stderr: '' };
     };
 
-    await expect(updateOpenCodeV2Safely('/config', async () => undefined, runner, undefined, controller.signal)).rejects.toThrow('interrupted');
-    expect(restoreCalls).toBe(1);
+    await expect(updateOpenCodeV2Safely('/config', async () => { throw new Error('activation failed'); }, runner)).rejects.toThrow('activation failed');
+    expect(calls).toContain('bun install -g --force --trust --minimum-release-age=0 @opencode/cli@2.0.17');
   });
 
   test('rejects a parseable response missing required plugins', async () => {
@@ -234,11 +172,7 @@ describe('OpenCode V2 SDK alignment', () => {
       missing: event.missing,
       optionalMissing: event.optionalMissing,
     }))).toEqual(ids);
-    expect(progress).toEqual([{
-      status: 'ready',
-      missing: [],
-      optionalMissing: OPTIONAL_V2_PLUGIN_IDS,
-    }]);
+    expect(progress).toEqual([{ status: 'ready', missing: [], optionalMissing: OPTIONAL_V2_PLUGIN_IDS }]);
   });
 
   test('fails fast after a plugin request failure', async () => {
@@ -294,7 +228,7 @@ describe('OpenCode V2 SDK alignment', () => {
       return { stdout: JSON.stringify({ data: ids.map((id) => ({ id })) }), stderr: '' };
     };
     expect(await verifyOpenCodeV2Plugins(runner, 1, 0)).toEqual(ids);
-    expect(calls).toEqual(['opencode2 api get /api/plugin']);
+    expect(calls).toEqual(['opencode api get /api/plugin']);
   });
 
   test('waits through a partial plugin catalog during service readiness', async () => {

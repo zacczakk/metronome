@@ -46,15 +46,15 @@ Read-only — reports drift without modifying anything.
 
 ### OpenCode profiles
 
-`metronome opencode use v1|v2` activates a profile. `update v1|v2` refreshes a
-profile, and `upgrade v1|v2` updates the runtime before refreshing it.
+`metronome opencode use` activates the stable profile. `update` refreshes it,
+and `upgrade` updates the runtime before refreshing it.
 All profile operations persist the active profile in
 `~/.config/opencode/migration-manifest.json`; `metronome opencode status` reports
 the profile. Generic `check`, `push`, `pull`, `render`, and `diff` target
-`opencode` follows that manifest and defaults to V1 when it is absent or
-invalid. `opencode2` forces native V2 for scripts and CI, shares the same paths,
+`opencode` uses the stable profile. `opencode2` forces native V2 for scripts and CI as a target name, shares the same paths,
 is not part of the default all-target set, and cannot be combined with
-`opencode`. The top-level `metronome status` remains the drift-check alias.
+`opencode`. The stable runtime executable is `opencode`. The top-level
+`metronome status` remains the drift-check alias.
 
 ## Key Design Decisions
 
@@ -90,7 +90,6 @@ metronome/
     commands/*.md              13 slash commands (canonical)
     agents/                    10 agent definitions (canonical)
     skills/                    28 active skill directories (canonical)
-    plugins/*.ts               3 OpenCode V1 plugins (identity-rendered)
     opencode/v2/plugins/       Native V2 profile-owned plugins
     mcp/*.json                 9 MCP server definitions (canonical)
     settings/*.json            3 settings definitions (claude, opencode, token-tracker)

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { lstat, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { switchOpenCodeVersion } from '../profile';
@@ -18,8 +18,6 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
   await mkdir(join(projectDir, 'configs', 'settings'), { recursive: true });
   await mkdir(join(projectDir, 'configs', 'agents'), { recursive: true });
   await mkdir(join(projectDir, 'configs', 'mcp'), { recursive: true });
-  await mkdir(join(projectDir, 'configs', 'plugins'), { recursive: true });
-  await mkdir(join(projectDir, 'configs', 'opencode', 'v1', 'plugins'), { recursive: true });
   await mkdir(join(projectDir, 'configs', 'opencode', 'v2', 'plugins'), { recursive: true });
   await mkdir(join(homeDir, '.config', 'opencode', 'plugins'), { recursive: true });
   await mkdir(join(homeDir, '.opencode', 'plugins'), { recursive: true });
@@ -41,13 +39,9 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
       opencode2: { oauth: false, codemode: true },
     },
   }));
-  for (const name of ['memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {
-    await writeFile(join(projectDir, 'configs', 'plugins', name), `// v1 ${name}\n`);
-  }
   for (const name of ['chatgpt-websearch.js', 'instructions-loader.ts', 'memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {
     await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', name), `// v2 ${name}\n`);
   }
-  await writeFile(join(projectDir, 'configs', 'opencode', 'v1', 'plugins', 'muxy-notify.js'), '// v1 muxy\n');
   await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', 'muxy-notify.js'), '// v2 muxy\n');
   await writeFile(join(homeDir, '.config', 'opencode', 'opencode.json'), JSON.stringify({
     provider: { tux: { name: 'Tux overlay' } },
@@ -60,81 +54,16 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
     custom: true,
   }));
   await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'third-party.ts'), '// preserve\n');
-  await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), '// external muxy v1\n');
+  await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), '// external muxy\n');
   await writeFile(join(homeDir, '.opencode', 'plugins', 'muxy-notify.js'), '// external muxy\n');
-  await writeFile(join(root, 'cursor.js'), '// cursor\n');
-  await symlink(join(root, 'cursor.js'), join(homeDir, '.config', 'opencode', 'plugins', 'cursor-oauth.js'));
   return { projectDir, homeDir };
 }
 
 describe('switchOpenCodeVersion', () => {
-  test('round trips V2 and V1 while preserving unknown state and logging backups', async () => {
-    const paths = await fixture();
-    const first = await switchOpenCodeVersion({ ...paths, version: 'v2', now: new Date('2026-08-10T12:00:00Z') });
-    const v2 = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8'));
-    expect(v2.custom).toBe(true);
-    expect(v2.provider.tux.name).toBe('Tux overlay');
-    expect(v2.providers.acme.models.claude.limit).toEqual({ output: 64000 });
-    expect(v2.permissions[0]).toEqual({ action: 'shell', resource: '*', effect: 'allow' });
-    expect(v2.mcp.servers.tool.disabled).toBe(false);
-    expect(v2.mcp.servers.github).toMatchObject({ oauth: false, codemode: true });
-    expect(v2.mcp.servers.legacy).toEqual({ type: 'remote', url: 'https://legacy.example/mcp', disabled: false });
-    expect(v2.mcp.servers.native).toEqual({ type: 'local', command: ['native'], disabled: true });
-    expect(v2.mcp.legacy).toBeUndefined();
-    expect(v2.plugins).not.toContain('context-mode');
-    expect(v2.plugins).toEqual([]);
-    expect(v2.websearch).toEqual({ provider: 'chatgpt' });
-    expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'plugins', 'third-party.ts'), 'utf8')).toBe('// preserve\n');
-    expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'plugins', 'chatgpt-websearch.js'), 'utf8')).toBe('// v2 chatgpt-websearch.js\n');
-    expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'plugins', 'metronome-muxy-notify.js'), 'utf8')).toBe('// v2 muxy\n');
-    expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), 'utf8')).toBe('// external muxy v1\n');
-    expect(await readFile(join(paths.homeDir, '.opencode', 'plugins', 'muxy-notify.js'), 'utf8')).toBe('// external muxy\n');
-    expect(await Bun.file(join(paths.homeDir, '.config', 'opencode', 'plugins', 'cursor-oauth.js')).exists()).toBe(false);
-    expect(await Bun.file(join(first.backupPath, '.config', 'opencode', 'plugins', 'cursor-oauth.js')).exists()).toBe(true);
-
-    await switchOpenCodeVersion({ ...paths, version: 'v1', now: new Date('2026-08-10T13:00:00Z') });
-    const v1 = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8'));
-    expect(v1.permission.bash['*']).toBe('allow');
-    expect(v1.provider.acme.models.claude.limit).toBeUndefined();
-    expect(v1.provider.tux.name).toBe('Tux overlay');
-    expect(v1.mcp.tool.enabled).toBe(true);
-    expect(v1.mcp.github).toMatchObject({ oauth: false });
-    expect(v1.mcp.legacy).toEqual({ type: 'remote', url: 'https://legacy.example/mcp', enabled: true });
-    expect(v1.mcp.native).toEqual({ type: 'local', command: ['native'], enabled: false });
-    expect(v1.plugin).toEqual(['context-mode']);
-    expect(v1.websearch).toBeUndefined();
-    expect(await Bun.file(join(paths.homeDir, '.config', 'opencode', 'plugins', 'chatgpt-websearch.js')).exists()).toBe(false);
-    expect(await Bun.file(join(paths.homeDir, '.config', 'opencode', 'plugins', 'metronome-muxy-notify.js')).exists()).toBe(false);
-    expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), 'utf8')).toBe('// external muxy v1\n');
-    expect(await readFile(join(paths.homeDir, '.opencode', 'plugins', 'muxy-notify.js'), 'utf8')).toBe('// external muxy\n');
-    expect(await Bun.file(join(paths.homeDir, '.config', 'opencode', 'plugins', 'cursor-oauth.js')).exists()).toBe(true);
-    const manifest = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'migration-manifest.json'), 'utf8'));
-    expect(manifest.active).toBe('v1');
-    expect(manifest.history).toHaveLength(2);
-    expect(manifest.history[0].plugins['context-mode']).toBe('unsupported');
-    expect(manifest.history[0].plugins['opencode.chatgpt-websearch']).toBe('inactive');
-  });
-
-  test('records observed V1 plugin state instead of assuming optional integrations exist', async () => {
-    const paths = await fixture();
-    await rm(join(paths.homeDir, '.opencode', 'plugins', 'muxy-notify.js'));
-    await rm(join(paths.homeDir, '.config', 'opencode', 'plugins', 'cursor-oauth.js'));
-
-    await switchOpenCodeVersion({ ...paths, version: 'v1', now: new Date('2026-08-10T13:30:00Z') });
-
-    const manifest = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'migration-manifest.json'), 'utf8'));
-    expect(manifest.history[0].plugins).toMatchObject({
-      'memory-vault-advisor': 'active',
-      'muxy-notify': 'inactive',
-      'cursor-oauth': 'inactive',
-      'context-mode': 'active',
-    });
-  });
-
   test('dry run writes nothing', async () => {
     const paths = await fixture();
     const before = await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8');
-    const result = await switchOpenCodeVersion({ ...paths, version: 'v2', dryRun: true });
+    const result = await switchOpenCodeVersion({ ...paths, dryRun: true });
     expect(result.written).toEqual([]);
     expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8')).toBe(before);
   });
@@ -143,13 +72,13 @@ describe('switchOpenCodeVersion', () => {
     const paths = await fixture();
     const progress: string[] = [];
 
-    await switchOpenCodeVersion({ ...paths, version: 'v1', progress: (message) => progress.push(message) });
+    await switchOpenCodeVersion({ ...paths, progress: (message) => progress.push(message) });
 
     expect(progress).toHaveLength(6);
     expect(progress[0]).toContain('Back up current OpenCode state');
     expect(progress[1]).toContain(' done (');
-    expect(progress[2]).toContain('Render and write OpenCode V1 profile');
-    expect(progress[3]).toContain('Render and write OpenCode V1 profile done');
+    expect(progress[2]).toContain('Render and write OpenCode V2 profile');
+    expect(progress[3]).toContain('Render and write OpenCode V2 profile done');
     expect(progress[4]).toContain('Record migration manifest');
     expect(progress[5]).toContain('Record migration manifest done');
   });
@@ -161,7 +90,7 @@ describe('switchOpenCodeVersion', () => {
       "custom": true,
       "provider": { "tux": { "name": "Tux overlay" } },
     }`);
-    await switchOpenCodeVersion({ ...paths, version: 'v2', now: new Date('2026-08-10T14:00:00Z') });
+    await switchOpenCodeVersion({ ...paths, now: new Date('2026-08-10T14:00:00Z') });
     const config = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8'));
     expect(config.custom).toBe(true);
     expect(config.provider.tux.name).toBe('Tux overlay');
@@ -176,7 +105,6 @@ describe('switchOpenCodeVersion', () => {
     let rolledBack = false;
     await expect(switchOpenCodeVersion({
       ...paths,
-      version: 'v2',
       now: new Date('2026-08-10T15:00:00Z'),
       prepare: async () => {
         await writeFile(configPath, '{"broken":true}\n');
@@ -199,7 +127,6 @@ describe('switchOpenCodeVersion', () => {
 
     await expect(switchOpenCodeVersion({
       ...paths,
-      version: 'v2',
       now: new Date('2026-08-10T16:00:00Z'),
     })).rejects.toThrow('Failed to write file atomically');
 
@@ -215,7 +142,6 @@ describe('switchOpenCodeVersion', () => {
 
     await expect(switchOpenCodeVersion({
       ...paths,
-      version: 'v2',
       signal: controller.signal,
       verifyPlugins: async () => {
         controller.abort(new Error('interrupted'));

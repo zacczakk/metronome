@@ -1,7 +1,7 @@
 // Vendored bundle of opencode-chatgpt-websearch@0.1.1 (MIT, (c) 2026 OpenCode ChatGPT
 // Web Search contributors: https://github.com/neriousy/opencode-chatgpt-websearch).
 // Upstream ships only as an npm package meant for `plugins: ["./chatgpt-websearch"]`-style
-// directory resolution; OpenCode2's local-plugin auto-discovery only loads flat files under
+// directory resolution; OpenCode's local-plugin auto-discovery loads flat files under
 // plugins/, so this bundles upstream's dist output into one file placed there directly.
 // Upstream is unmaintained (single 2026-08-08 release) -- re-bundle from a newer release
 // if one ships, otherwise keep this in sync by hand.

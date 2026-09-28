@@ -4,8 +4,8 @@ import { opencodeVersionCommand, verificationReporter } from '../opencode-versio
 describe('opencode version command', () => {
   test('exposes consistent use, update, upgrade, and status commands', () => {
     expect(opencodeVersionCommand.commands.map((command) => command.name())).toEqual(['use', 'update', 'upgrade', 'status', 'update-v2', 'upgrade-v2']);
-    expect(opencodeVersionCommand.helpInformation()).toContain('update [options] <version>');
-    expect(opencodeVersionCommand.helpInformation()).toContain('upgrade [options] <version>');
+    expect(opencodeVersionCommand.helpInformation()).toContain('update [options]');
+    expect(opencodeVersionCommand.helpInformation()).toContain('upgrade [options]');
     expect(opencodeVersionCommand.helpInformation()).not.toContain('update-v2');
   });
 

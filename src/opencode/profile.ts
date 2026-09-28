@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cp, lstat, mkdir, readFile, readlink, rm, stat, symlink, unlink } from 'node:fs/promises';
+import { cp, lstat, mkdir, readFile, rm, stat, unlink } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { atomicWrite } from '../infra/atomic-write';
 import { stringifyFrontmatter } from '../formats/markdown';
@@ -13,7 +13,6 @@ import {
   renderOpenCodeMcp,
   renderOpenCodeSettings,
   type OpenCodeModelVariant,
-  type OpenCodeVersion,
 } from './version-renderer';
 
 const MANAGED_GLOBAL_PLUGINS = [
@@ -29,23 +28,21 @@ const V2_MUXY_PLUGIN_NAME = 'metronome-muxy-notify.js';
 
 interface ManifestHistory {
   timestamp: string;
-  from: OpenCodeVersion | 'unknown';
-  to: OpenCodeVersion;
+  from: 'v2' | 'unknown';
+  to: 'v2';
   backup: string;
   files: Record<string, string>;
   plugins: Record<string, 'active' | 'inactive' | 'unsupported'>;
   sdk?: string;
-  cursorTarget?: string;
 }
 
 interface MigrationManifest {
   version: 1;
-  active: OpenCodeVersion;
+  active: 'v2';
   history: ManifestHistory[];
 }
 
 export interface SwitchOpenCodeOptions {
-  version: OpenCodeVersion;
   projectDir: string;
   homeDir: string;
   now?: Date;
@@ -58,7 +55,6 @@ export interface SwitchOpenCodeOptions {
 }
 
 export interface SwitchOpenCodeResult {
-  version: OpenCodeVersion;
   backupPath: string;
   manifestPath: string;
   written: string[];
@@ -123,7 +119,7 @@ async function readOpenCodeConfig(path: string): Promise<Record<string, unknown>
 
 async function readManifest(path: string): Promise<MigrationManifest | undefined> {
   const parsed = await readJson(path);
-  if (parsed.version !== 1 || (parsed.active !== 'v1' && parsed.active !== 'v2') || !Array.isArray(parsed.history)) return undefined;
+  if (parsed.version !== 1 || parsed.active !== 'v2' || !Array.isArray(parsed.history)) return undefined;
   return parsed as unknown as MigrationManifest;
 }
 
@@ -176,14 +172,14 @@ async function restoreCompleteBackup(homeDir: string, backupRoot: string): Promi
   }
 }
 
-async function renderAgents(projectDir: string, version: OpenCodeVersion): Promise<{ files: Map<string, string>; variants: OpenCodeModelVariant[] }> {
-  const target = version === 'v2' ? 'opencode2' : 'opencode';
+async function renderAgents(projectDir: string): Promise<{ files: Map<string, string>; variants: OpenCodeModelVariant[] }> {
+  const target = 'opencode2';
   const agents = (await readCanonicalAgents(projectDir, () => false))
     .filter((agent) => isCanonicalAgentForTarget(agent, target));
   const files = new Map<string, string>();
   const variants: OpenCodeModelVariant[] = [];
   for (const agent of agents) {
-    const metadata = renderOpenCodeAgent({ ...agent.metadata, _agentName: agent.name }, version);
+    const metadata = renderOpenCodeAgent({ ...agent.metadata, _agentName: agent.name });
     const descriptor = metadata._modelVariant;
     delete metadata._modelVariant;
     if (descriptor && typeof descriptor === 'object') variants.push(descriptor as OpenCodeModelVariant);
@@ -195,31 +191,15 @@ async function renderAgents(projectDir: string, version: OpenCodeVersion): Promi
 async function deployPlugins(options: SwitchOpenCodeOptions, written: string[]): Promise<void> {
   const globalDir = join(options.homeDir, '.config', 'opencode', 'plugins');
   await mkdir(globalDir, { recursive: true });
-  const sourceDir = options.version === 'v1'
-    ? join(options.projectDir, 'configs', 'plugins')
-    : join(options.projectDir, 'configs', 'opencode', 'v2', 'plugins');
-  const nativeMuxy = await readFile(join(options.projectDir, 'configs', 'opencode', 'v2', 'plugins', 'muxy-notify.js'), 'utf8');
-  const active = options.version === 'v1'
-    ? ['memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']
-    : MANAGED_GLOBAL_PLUGINS;
+  try { await unlink(join(globalDir, 'cursor-oauth.js')); } catch {}
+  const sourceDir = join(options.projectDir, 'configs', 'opencode', 'v2', 'plugins');
   for (const name of MANAGED_GLOBAL_PLUGINS) {
-    const targetName = options.version === 'v2' && name === 'muxy-notify.js' ? V2_MUXY_PLUGIN_NAME : name;
+    const targetName = name === 'muxy-notify.js' ? V2_MUXY_PLUGIN_NAME : name;
     const target = join(globalDir, targetName);
-    if (!active.includes(name)) {
-      if (options.version === 'v1' && name === 'muxy-notify.js') {
-        try { await unlink(join(globalDir, V2_MUXY_PLUGIN_NAME)); } catch {}
-        try {
-          if (await readFile(target, 'utf8') === nativeMuxy) await unlink(target);
-        } catch {}
-      } else {
-        try { await unlink(target); } catch {}
-      }
-      continue;
-    }
     const content = await readFile(join(sourceDir, name), 'utf8');
     await atomicWrite(target, content);
     written.push(target);
-    if (options.version === 'v2' && name === 'muxy-notify.js') {
+    if (name === 'muxy-notify.js') {
       const legacyTarget = join(globalDir, name);
       try {
         if (await readFile(legacyTarget, 'utf8') === content) await unlink(legacyTarget);
@@ -229,46 +209,9 @@ async function deployPlugins(options: SwitchOpenCodeOptions, written: string[]):
 
 }
 
-async function switchCursorPlugin(homeDir: string, version: OpenCodeVersion, previous?: MigrationManifest): Promise<string | undefined> {
-  const link = join(homeDir, '.config', 'opencode', 'plugins', 'cursor-oauth.js');
-  let target: string | undefined;
-  try {
-    if ((await lstat(link)).isSymbolicLink()) target = await readlink(link);
-  } catch {}
-  target ??= [...(previous?.history ?? [])].reverse().find((entry) => entry.cursorTarget)?.cursorTarget;
-  if (version === 'v2') {
-    try { await unlink(link); } catch {}
-  } else if (target) {
-    try { await lstat(link); } catch { await symlink(target, link); }
-  }
-  return target;
-}
-
 async function installedSdkVersion(configDir: string): Promise<string | undefined> {
-  const pkg = await readJson(join(configDir, 'node_modules', '@opencode-ai', 'plugin', 'package.json'));
+  const pkg = await readJson(join(configDir, 'node_modules', '@opencode', 'plugin', 'package.json'));
   return typeof pkg.version === 'string' ? pkg.version : undefined;
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await lstat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function observeV1Plugins(homeDir: string, settings: Record<string, unknown>): Promise<Record<string, 'active' | 'inactive'>> {
-  const globalPlugins = join(homeDir, '.config', 'opencode', 'plugins');
-  const configured = Array.isArray(settings.plugin) ? settings.plugin : [];
-  return {
-    'memory-vault-advisor': await pathExists(join(globalPlugins, 'memory-vault-advisor.ts')) ? 'active' : 'inactive',
-    'read-guard': await pathExists(join(globalPlugins, 'read-guard.ts')) ? 'active' : 'inactive',
-    'validate-commit': await pathExists(join(globalPlugins, 'validate-commit.ts')) ? 'active' : 'inactive',
-    'muxy-notify': await pathExists(join(homeDir, '.opencode', 'plugins', 'muxy-notify.js')) ? 'active' : 'inactive',
-    'cursor-oauth': await pathExists(join(globalPlugins, 'cursor-oauth.js')) ? 'active' : 'inactive',
-    'context-mode': configured.includes('context-mode') ? 'active' : 'inactive',
-  };
 }
 
 export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Promise<SwitchOpenCodeResult> {
@@ -278,8 +221,8 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
   const timestamp = (options.now ?? new Date()).toISOString().replace(/[:.]/g, '-');
   const previousManifest = await readManifest(manifestPath);
   const from = previousManifest?.active ?? 'unknown';
-  const backupRoot = join(options.homeDir, '.config', 'opencode-backups', 'metronome', `${timestamp}-${from}-to-${options.version}`);
-  if (options.dryRun) return { version: options.version, backupPath: backupRoot, manifestPath, written: [] };
+  const backupRoot = join(options.homeDir, '.config', 'opencode-backups', 'metronome', `${timestamp}-${from}-to-v2`);
+  if (options.dryRun) return { backupPath: backupRoot, manifestPath, written: [] };
 
   throwIfAborted(options.signal);
   await timedStage(options.progress, `Back up current OpenCode state to ${backupRoot}`, () => createCompleteBackup(options.homeDir, backupRoot));
@@ -287,21 +230,19 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
   try {
     throwIfAborted(options.signal);
     if (options.prepare) {
-      await timedStage(options.progress, `Prepare OpenCode ${options.version.toUpperCase()} dependencies`, () => options.prepare!(options.signal));
+      await timedStage(options.progress, 'Prepare OpenCode V2 dependencies', () => options.prepare!(options.signal));
       throwIfAborted(options.signal);
     }
-    const renderedState = await timedStage(options.progress, `Render and write OpenCode ${options.version.toUpperCase()} profile`, async () => {
+    const renderedState = await timedStage(options.progress, 'Render and write OpenCode V2 profile', async () => {
       const canonical = await readJson(join(options.projectDir, 'configs', 'settings', 'opencode.json'));
       const existing = await readOpenCodeConfig(configPath);
       const mcp = await readCanonicalMCPServers(options.projectDir);
-      const renderedAgents = await renderAgents(options.projectDir, options.version);
-      let rendered = renderOpenCodeSettings(canonical, options.version);
-      rendered.mcp = renderOpenCodeMcp(mcp, options.version, options.version === 'v2' ? 'opencode2' : 'opencode');
-      if (options.version === 'v2') {
-        rendered = applyOpenCodeAgentVariants(rendered, renderedAgents.variants);
-        configureOpenCodeV2Plugins(rendered, existing);
-      }
-      const merged = mergeOpenCodeSettings(existing, rendered, options.version);
+      const renderedAgents = await renderAgents(options.projectDir);
+      let rendered = renderOpenCodeSettings(canonical);
+      rendered.mcp = renderOpenCodeMcp(mcp, 'opencode2');
+      rendered = applyOpenCodeAgentVariants(rendered, renderedAgents.variants);
+      configureOpenCodeV2Plugins(rendered, existing);
+      const merged = mergeOpenCodeSettings(existing, rendered);
       await mkdir(join(configDir, 'agents'), { recursive: true });
       await atomicWrite(configPath, `${JSON.stringify(merged, null, 2)}\n`);
       written.push(configPath);
@@ -311,8 +252,7 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
         written.push(path);
       }
       await deployPlugins(options, written);
-      const cursorTarget = await switchCursorPlugin(options.homeDir, options.version, previousManifest);
-      return { merged, cursorTarget };
+      return { merged };
     });
     throwIfAborted(options.signal);
     const observedPlugins = options.verifyPlugins
@@ -325,30 +265,28 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
     const history: ManifestHistory = {
       timestamp: (options.now ?? new Date()).toISOString(),
       from,
-      to: options.version,
+      to: 'v2',
       backup: backupRoot,
       files,
-      plugins: options.version === 'v1' ? await observeV1Plugins(options.homeDir, renderedState.merged) : {
+      plugins: {
         'metronome.instructions-loader': observedPlugins?.includes('metronome.instructions-loader') ? 'active' : 'inactive',
         'memory-vault-advisor': observedPlugins?.includes('memory-vault-advisor') ? 'active' : 'inactive',
         'metronome.read-guard': observedPlugins?.includes('metronome.read-guard') ? 'active' : 'inactive',
         'metronome.validate-commit': observedPlugins?.includes('metronome.validate-commit') ? 'active' : 'inactive',
         'metronome.muxy-notify': observedPlugins?.includes('metronome.muxy-notify') ? 'active' : 'inactive',
         'opencode.chatgpt-websearch': observedPlugins?.includes('opencode.chatgpt-websearch') ? 'active' : 'inactive',
-        'cursor-oauth': 'unsupported',
-        'context-mode': 'unsupported',
       },
       ...(sdk ? { sdk } : {}),
-      ...(renderedState.cursorTarget ? { cursorTarget: renderedState.cursorTarget } : {}),
     };
-    const manifest: MigrationManifest = { version: 1, active: options.version, history: [...(previousManifest?.history ?? []), history] };
+    const priorHistory = (previousManifest?.history ?? []).filter((entry) => entry.to === 'v2' && (entry.from === 'v2' || entry.from === 'unknown'));
+    const manifest: MigrationManifest = { version: 1, active: 'v2', history: [...priorHistory, history] };
     await timedStage(options.progress, 'Record migration manifest', async () => {
       throwIfAborted(options.signal);
       await atomicWrite(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
       written.push(manifestPath);
     });
     throwIfAborted(options.signal);
-    return { version: options.version, backupPath: backupRoot, manifestPath, written };
+    return { backupPath: backupRoot, manifestPath, written };
   } catch (error) {
     try {
       await timedStage(options.progress, 'Restore previous OpenCode state', async () => {

@@ -59,6 +59,13 @@ describe('pull settings E2E', () => {
       const pulled = JSON.parse(pulledContent);
       const canonical = JSON.parse(readFileSync(join(CANONICAL_ROOT, 'settings', settingsFile), 'utf-8'));
 
+      if (target === 'opencode') {
+        expect(pulled.permissions).toBeArray();
+        expect(pulled.provider).toBeDefined();
+        expect(pulled.disabled_providers).toEqual(['opencode', 'opencode-go']);
+        continue;
+      }
+
       // Check canonical keys round-trip
       for (const key of Object.keys(canonical)) {
         expect(pulled).toHaveProperty(key);

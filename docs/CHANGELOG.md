@@ -8,32 +8,33 @@ read_when:
 
 ## 2026-08-10
 
-- Added atomic `metronome opencode use v1|v2` compatibility profiles with complete backups and an append-only migration manifest.
+- Added atomic `metronome opencode use` profile activation with complete backups and an append-only migration manifest.
 - Generic OpenCode sync now follows the persisted profile; explicit `opencode2` forces V2, shares paths with `opencode`, is excluded from default all-target sync, and cannot be combined with it.
 - Added native V2 ports for separate instruction loading, Memory advice, read guarding, Conventional Commit validation, and Muxy notifications; V2 plugin files remain profile-owned.
-- Canonical OpenCode settings now include ChatGPT websearch for V2, with runtime verification for `opencode.chatgpt-websearch`; V1 rendering omits the V2-only integration.
+- Canonical OpenCode settings now include ChatGPT websearch, with runtime verification for `opencode.chatgpt-websearch`.
 - Added durable Bun V2 update and exact plugin-SDK alignment through `metronome opencode update-v2`.
 
 ## Unreleased
 
+- **OpenCode 2 stable cutover** — switched the Bun runtime to stable
+  `@opencode/cli` / `@opencode/plugin` and kept `opencode2` as the explicit
+  native V2 target name.
 - **OpenCode command safety and UI** — added signal-safe rollback with child
-  cleanup, fail-fast service verification, consistent `use|update|upgrade
-  v1|v2` commands, hidden legacy V2 aliases, and a compact terminal progress UI
+  cleanup, fail-fast service verification, consistent profile commands, hidden
+  legacy aliases, and a compact terminal progress UI
 - **OpenCode V2 ChatGPT websearch** — vendored the unmaintained upstream
   `opencode-chatgpt-websearch` plugin as a bundled, profile-owned file
   (`configs/opencode/v2/plugins/chatgpt-websearch.js`) instead of a
-  `plugin`/`plugins` array entry, since newer OpenCode2 betas resolve array
-  entries strictly as npm/git package specifiers and silently drop relative
-  directory paths, breaking `metronome opencode upgrade v2` plugin
-  verification
+  `plugin`/`plugins` array entry. Runtime verification covers the required
+  plugin catalog.
 - **OpenCode context pricing** — added legacy long-context costs for Tux's
   OpenAI models and translated them into native V2 tiers at the OpenAI 272K
   boundary.
-- **OpenCode profile diagnostics** — timed profile-switch stages now go to
+- **OpenCode profile diagnostics** — timed profile stages now go to
   stderr, plugin readiness retries report missing IDs, and redundant exact SDK
-  installs are skipped; corrected docs to distinguish `use v2` hot reload from
-  `upgrade v2` service restart
-- **OpenCode V2 update diagnostics** — `upgrade v2` now reports global CLI
+  installs are skipped; corrected docs to distinguish profile hot reload from
+  runtime upgrade service restart
+- **OpenCode V2 update diagnostics** — `upgrade` now reports global CLI
   resolution/install, profile activation, service restart, verification, and
   exact global rollback stages
 - **OpenCode V2 update hardening** — refuse to activate beta-channel
@@ -42,8 +43,8 @@ read_when:
   filename Muxy cannot overwrite
 - **Sessions CLI clarity** — added `sessions latest`, documented `opencode2` as
   the OpenCode V2 source, and hint when a source name is passed as `--project`
-- **OpenCode V2 sessions** — extended `sessions` list/read/export/search/stats and FTS indexing to the native V2 database at `~/.local/share/opencode-v2/opencode/opencode.db`; `opencode2` is available as an explicit source and included in default flows when present
-- **GitHub MCP** — added a canonical PAT-authenticated remote definition; OpenCode V1/V2 render its `${VAR}` Authorization placeholder as `{env:VAR}`, disable OAuth, enable V2 `codemode`, and round-trip headers and target options on pull
+- **OpenCode sessions** — extended `sessions` list/read/export/search/stats and FTS indexing to the stable database at `~/.local/share/opencode/opencode.db`; `opencode2` remains available as an explicit source
+- **GitHub MCP** — added a canonical PAT-authenticated remote definition; OpenCode renders its `${VAR}` Authorization placeholder as `{env:VAR}`, disables OAuth, enables `codemode`, and round-trips headers and target options on pull
 - **Skill portfolio reduction** — removed eleven overlapping workflow skills, blocked them from upstream resync, and replaced Superpowers debugging/TDD with manually synced Matt Pocock `diagnosing-bugs` and `tdd`
 - **Claude palantir MCP allowlist** — added `mcp__palantir-mcp` to managed Claude Code always-allowed tools
 - **Claude context-mode MCP allowlist** — added `mcp__context-mode` to managed Claude Code always-allowed tools

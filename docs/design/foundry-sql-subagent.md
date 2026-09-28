@@ -23,7 +23,7 @@ compact evidence brief instead of raw MCP transcripts or result tables.
 - The prompt prioritizes read-only discovery, schema, SQL, ontology,
   documentation, and API-catalog tools. Mutation safety is instruction-level,
   not permission-level.
-- `palantir-mcp` is enabled for OpenCode V1 and V2, with direct tool exposure;
+- `palantir-mcp` is enabled for OpenCode, with direct tool exposure;
   other CLI targets keep it disabled.
 
 ## Query Workflow

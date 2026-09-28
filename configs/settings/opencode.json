@@ -1,6 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "autoupdate": false,
   "instructions": [
     "~/.config/opencode/AGENTS.md",
     "~/Vaults/Memory/SOUL.md",
@@ -8,101 +7,297 @@
     "~/Vaults/Memory/USER.md",
     "~/Vaults/Memory/MEMORY.md"
   ],
-  "model": "tux/gpt-5.6-luna",
-  "permission": {
-    "*": "allow",
-    "bash": {
-      "*": "allow",
-      "rm *": "deny",
-      "cat *.env": "deny",
-      "cat *.env.*": "deny",
-      "cat */.env": "deny",
-      "cat */.env.*": "deny",
-      "cat */.env.example": "allow",
-      "cat ~/.zshrc_secrets": "deny",
-      "cat ~/.zsh_secrets": "deny",
-      "rg * ~/.zsh_secrets": "deny",
-      "rg * ~/.zshrc_secrets": "deny",
-      "git push *": "ask",
-      "committer *": "allow",
-      "git reset --hard *": "deny"
+  "model": "tux/gpt-6-luna",
+  "permissions": [
+    {
+      "action": "*",
+      "resource": "*",
+      "effect": "allow"
     },
-    "external_directory": {
-      "*": "ask",
-      "~/Vaults/**": "allow",
-      "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/**": "allow",
-      "~/Vaults/Memory/system/grooming-reports/*": "allow",
-      "~/Repos/**": "allow",
-      "~/.config/opencode/*": "allow",
-      "~/.config/opencode/agents/*": "allow",
-      "~/.config/opencode/get-shit-done/templates/*": "allow",
-      "~/.mcporter/**": "allow",
-      "~/.agent-browser/**": "allow",
-      "~/.agents/**": "allow",
-      "~/.config/oe/**": "allow",
-      "/private/tmp/**": "allow",
-      "/tmp/**": "allow",
-      "~/Downloads/**": "allow",
-      "/var/folders/**": "allow",
-      "/private/var/folders/**": "allow"
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
     },
-    "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "*.env.example": "allow",
-      "~/.zshrc_secrets": "deny",
-      "~/.zsh_secrets": "deny",
-      "~/.config/opencode/agents/*": "allow",
-      "~/.config/opencode/commands/*": "allow",
-      "~/.agents/**": "allow",
-      "~/Downloads/**": "allow"
+    {
+      "action": "shell",
+      "resource": "rm *",
+      "effect": "deny"
     },
-    "edit": {
-      "*": "allow",
-      "~/.config/oe/**": "allow",
-      "~/Repos/**": "deny"
+    {
+      "action": "shell",
+      "resource": "cat *.env",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat */.env.example",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat ~/.zshrc_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "cat ~/.zsh_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg * ~/.zsh_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg * ~/.zshrc_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "committer *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git reset --hard *",
+      "effect": "deny"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Vaults/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Vaults/Memory/system/grooming-reports/*",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Repos/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.config/opencode/*",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.config/opencode/agents/*",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.config/opencode/get-shit-done/templates/*",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.mcporter/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.agent-browser/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.agents/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/.config/oe/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "/private/tmp/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "/tmp/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "~/Downloads/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "/var/folders/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "/private/var/folders/**",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*.env",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*.env.*",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*.env.example",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.zshrc_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "~/.zsh_secrets",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "~/.config/opencode/agents/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.config/opencode/commands/*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/.agents/**",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "~/Downloads/**",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "~/.config/oe/**",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "~/Repos/**",
+      "effect": "deny"
     }
-  },
-  "agent": {
+  ],
+  "agents": {
     "explore": {
-      "model": "github-copilot/gpt-5.6-luna",
-      "options": {
-        "reasoningEffort": "max"
-      }
+      "model": "github-copilot/gpt-5.6-luna#agent-explore"
     }
   },
   "websearch": {
     "provider": "chatgpt"
   },
+  "update": "disable",
   "provider": {
     "foundry": {
-      "npm": "@ai-sdk/anthropic",
       "name": "Foundry",
       "options": {
         "baseURL": "{env:ANTHROPIC_BASE_URL}/v1",
         "apiKey": "{env:FOUNDRY_TOKEN}",
+        "toolStreaming": false,
         "headers": {
           "Authorization": "Bearer {env:FOUNDRY_TOKEN}"
-        },
-        "toolStreaming": false
+        }
       },
       "models": {
         "claude-opus-5-0": {
           "name": "Claude Opus 5",
-          "limit": { "output": 64000 },
-          "options": { "toolStreaming": false },
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "limit": {
+            "output": 64000
+          },
+          "options": {
+            "toolStreaming": false
+          },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         }
-      }
+      },
+      "npm": "@ai-sdk/anthropic"
     },
     "tux": {
-      "npm": "@ai-sdk/anthropic",
       "name": "Tux",
       "options": {
         "baseURL": "http://127.0.0.1:18080/v1",
@@ -110,129 +305,574 @@
         "toolStreaming": false
       },
       "models": {
+        "claude-opus-5-5": {
+          "name": "Claude Opus 5.5",
+          "cost": {
+            "input": 4,
+            "output": 20,
+            "cache_read": 0.2,
+            "cache_write": 5
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "options": {
+            "toolStreaming": false
+          },
+          "attachment": true,
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "variants": {
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
+          }
+        },
+        "claude-opus-5": {
+          "name": "Claude Opus 5",
+          "cost": {
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "options": {
+            "toolStreaming": false
+          },
+          "attachment": true,
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "variants": {
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
+          }
+        },
         "claude-opus-4-8": {
           "name": "Claude Opus 4.8",
-          "cost": { "input": 5, "output": 25, "cache_read": 0.5, "cache_write": 6.25 },
-          "limit": { "context": 1000000, "output": 128000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "claude-opus-4-7": {
           "name": "Claude Opus 4.7",
-          "cost": { "input": 5, "output": 25, "cache_read": 0.5, "cache_write": 6.25 },
-          "limit": { "context": 1000000, "output": 128000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "claude-opus-4-6": {
           "name": "Claude Opus 4.6",
-          "cost": { "input": 5, "output": 25, "cache_read": 0.5, "cache_write": 6.25 },
-          "limit": { "context": 1000000, "output": 128000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 5,
+            "output": 25,
+            "cache_read": 0.5,
+            "cache_write": 6.25
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "claude-sonnet-5": {
           "name": "Claude Sonnet 5",
-          "cost": { "input": 2, "output": 10, "cache_read": 0.2, "cache_write": 2.5 },
-          "limit": { "context": 1000000, "output": 128000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 2,
+            "output": 10,
+            "cache_read": 0.2,
+            "cache_write": 2.5
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "claude-sonnet-4-6": {
           "name": "Claude Sonnet 4.6",
-          "cost": { "input": 3, "output": 15, "cache_read": 0.3, "cache_write": 3.75 },
-          "limit": { "context": 200000, "output": 64000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 0.3,
+            "cache_write": 3.75
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
+          }
+        },
+        "claude-sonnet-4-5": {
+          "name": "Claude Sonnet 4.5",
+          "cost": {
+            "input": 3,
+            "output": 15,
+            "cache_read": 0.3,
+            "cache_write": 3.75
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "options": {
+            "toolStreaming": false
+          },
+          "attachment": true,
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "variants": {
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "claude-haiku-4-5-20251001": {
           "name": "Claude Haiku 4.5",
-          "cost": { "input": 1, "output": 5, "cache_read": 0.1, "cache_write": 1.25 },
-          "limit": { "context": 200000, "output": 64000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 1,
+            "output": 5,
+            "cache_read": 0.1,
+            "cache_write": 1.25
+          },
+          "limit": {
+            "context": 200000,
+            "output": 64000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
-        "gpt-5.5": {
-          "name": "GPT-5.5",
+        "gpt-6-sol": {
+          "name": "GPT-6 Sol",
           "cost": {
-            "input": 5,
-            "output": 30,
-            "cache_read": 0.5,
-            "cache_write": 6.25,
-            "context_over_200k": { "input": 10, "output": 45, "cache_read": 1, "cache_write": 12.5 }
+            "input": 2,
+            "output": 10,
+            "cache_read": 0.2,
+            "cache_write": 2.5,
+            "context_over_200k": {
+              "input": 4,
+              "output": 15,
+              "cache_read": 0.4,
+              "cache_write": 5
+            }
           },
-          "provider": { "npm": "@ai-sdk/openai" },
-          "limit": { "context": 1050000, "output": 128000 },
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
           "reasoning": true,
           "attachment": true,
-          "options": { "reasoningSummary": "auto" },
-          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "options": {
+            "reasoningSummary": "auto"
+          },
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "max": {
+              "reasoningEffort": "max",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
           }
         },
         "gpt-5.6-sol": {
           "name": "GPT-5.6 Sol",
           "cost": {
-            "input": 5,
-            "output": 30,
-            "cache_read": 0.5,
-            "cache_write": 6.25,
-            "context_over_200k": { "input": 10, "output": 45, "cache_read": 1, "cache_write": 12.5 }
+            "input": 4,
+            "output": 20,
+            "cache_read": 0.4,
+            "cache_write": 5,
+            "context_over_200k": {
+              "input": 8,
+              "output": 30,
+              "cache_read": 0.8,
+              "cache_write": 10
+            }
           },
-          "provider": { "npm": "@ai-sdk/openai" },
-          "limit": { "context": 1050000, "output": 128000 },
-          "reasoning": true,
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
           "attachment": true,
-          "options": { "reasoningSummary": "auto" },
-          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "options": {
+            "reasoningSummary": "auto"
+          },
           "variants": {
-            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
-          }
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
+          "reasoning": true
         },
         "gpt-5.6-terra": {
           "name": "GPT-5.6 Terra",
@@ -241,21 +881,159 @@
             "output": 12,
             "cache_read": 0.2,
             "cache_write": 2.5,
-            "context_over_200k": { "input": 4, "output": 18, "cache_read": 0.4, "cache_write": 5 }
+            "context_over_200k": {
+              "input": 4,
+              "output": 18,
+              "cache_read": 0.4,
+              "cache_write": 5
+            }
           },
-          "provider": { "npm": "@ai-sdk/openai" },
-          "limit": { "context": 1050000, "output": 128000 },
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
+          "attachment": true,
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "options": {
+            "reasoningSummary": "auto"
+          },
+          "variants": {
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "max": {
+              "reasoningEffort": "max",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
+          "reasoning": true
+        },
+        "gpt-6-luna": {
+          "name": "GPT-6 Luna",
+          "cost": {
+            "input": 0.1,
+            "output": 0.5,
+            "cache_read": 0.01,
+            "cache_write": 0.125,
+            "context_over_200k": {
+              "input": 0.2,
+              "output": 0.9,
+              "cache_read": 0.024,
+              "cache_write": 0.3
+            }
+          },
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
           "reasoning": true,
           "attachment": true,
-          "options": { "reasoningSummary": "auto" },
-          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "options": {
+            "reasoningSummary": "auto"
+          },
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "max": { "reasoningEffort": "max", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "max": {
+              "reasoningEffort": "max",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
           }
         },
         "gpt-5.6-luna": {
@@ -265,54 +1043,283 @@
             "output": 1.2,
             "cache_read": 0.02,
             "cache_write": 0.25,
-            "context_over_200k": { "input": 0.4, "output": 1.8, "cache_read": 0.04, "cache_write": 0.5 }
+            "context_over_200k": {
+              "input": 0.4,
+              "output": 1.8,
+              "cache_read": 0.04,
+              "cache_write": 0.5
+            }
           },
-          "provider": { "npm": "@ai-sdk/openai" },
-          "limit": { "context": 1050000, "output": 128000 },
-          "reasoning": true,
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
           "attachment": true,
-          "options": { "reasoningSummary": "auto", "reasoningEffort": "max" },
-          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "options": {
+            "reasoningSummary": "auto",
+            "reasoningEffort": "max"
+          },
           "variants": {
-            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "max": { "reasoningEffort": "max", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
-          }
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "max": {
+              "reasoningEffort": "max",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
+          "reasoning": true
+        },
+        "gpt-5.5": {
+          "name": "GPT-5.5",
+          "cost": {
+            "input": 5,
+            "output": 30,
+            "cache_read": 0.5,
+            "context_over_200k": {
+              "input": 10,
+              "output": 45,
+              "cache_read": 1
+            }
+          },
+          "limit": {
+            "context": 1050000,
+            "output": 128000
+          },
+          "attachment": true,
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "options": {
+            "reasoningSummary": "auto"
+          },
+          "variants": {
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
+          "reasoning": true
         },
         "deepseek-v4-pro": {
           "name": "DeepSeek V4 Pro",
-          "cost": { "input": 1.74, "output": 3.48, "cache_read": 0.145, "cache_write": 1.74 },
-          "limit": { "context": 1000000, "output": 384000 },
-          "options": { "toolStreaming": false },
+          "cost": {
+            "input": 1.74,
+            "output": 3.48,
+            "cache_read": 0.145,
+            "cache_write": 1.74
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 384000
+          },
+          "options": {
+            "toolStreaming": false
+          },
           "attachment": true,
-          "modalities": { "input": ["image", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
           "variants": {
-            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
-            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
-            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+            "low": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "low"
+            },
+            "medium": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "medium"
+            },
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            }
           }
         },
         "glm-5.2": {
           "name": "GLM 5.2",
-          "cost": { "input": 1.54, "output": 4.84, "cache_read": 0.15 },
-          "provider": { "npm": "@ai-sdk/openai" },
-          "limit": { "context": 1000000, "output": 128000 },
-          "reasoning": true,
+          "cost": {
+            "input": 1.54,
+            "output": 4.84,
+            "cache_read": 0.15
+          },
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
           "attachment": true,
-          "options": { "reasoningSummary": "auto" },
-          "modalities": { "input": ["image", "pdf", "text"], "output": ["text"] },
+          "modalities": {
+            "input": [
+              "image",
+              "pdf",
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "options": {
+            "reasoningSummary": "auto"
+          },
           "variants": {
-            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
-            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
+            "none": {
+              "reasoningEffort": "none",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "low": {
+              "reasoningEffort": "low",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "medium": {
+              "reasoningEffort": "medium",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          },
+          "provider": {
+            "npm": "@ai-sdk/openai"
+          },
+          "reasoning": true
+        }
+      },
+      "npm": "@ai-sdk/anthropic"
+    },
+    "github-copilot": {
+      "models": {
+        "gpt-5.6-luna": {
+          "variants": {
+            "agent-explore": {
+              "reasoningEffort": "max"
+            }
           }
         }
       }
     }
-  }
+  },
+  "disabled_providers": [
+    "opencode",
+    "opencode-go"
+  ]
 }

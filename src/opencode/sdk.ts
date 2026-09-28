@@ -10,7 +10,9 @@ export interface CommandResult {
 export type CommandRunner = (command: string, args: string[], cwd?: string, signal?: AbortSignal) => Promise<CommandResult>;
 export type OperationProgressReporter = (message: string) => void;
 
-const GLOBAL_CLI_PACKAGE = '@opencode-ai/cli';
+const GLOBAL_CLI_PACKAGE = '@opencode/cli';
+const GLOBAL_PLUGIN_PACKAGE = '@opencode/plugin';
+const V2_CLI_COMMAND = 'opencode';
 
 function abortError(signal: AbortSignal): Error {
   const reason = signal.reason;
@@ -112,38 +114,72 @@ function runVerificationCommand(command: string, args: string[], cwd?: string, s
 }
 
 export function parseGlobalOpenCodeVersion(output: string): string | undefined {
-  return output.match(/@opencode-ai\/cli@(0\.0\.0-(?:next|beta)-[^\s]+)/)?.[1];
+  return output.match(/@opencode\/cli@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/)?.[1];
 }
 
 export function parseOpenCodeExecutableVersion(output: string): string | undefined {
-  return output.match(/(0\.0\.0-(?:next|beta)-[^\s]+)/)?.[1];
+  return output.match(/(?:^|\s)v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?=\s|$)/m)?.[1];
 }
 
-function versionParts(version: string): { channel: 'beta' | 'next'; build: number } | undefined {
-  const match = version.match(/^0\.0\.0-(beta|next)-(\d+)$/);
-  return match ? { channel: match[1] as 'beta' | 'next', build: Number(match[2]) } : undefined;
+interface ParsedVersion {
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease: string[];
+}
+
+function parseVersion(version: string): ParsedVersion | undefined {
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
+  if (!match) return undefined;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    prerelease: match[4]?.split(/[.-]/) ?? [],
+  };
+}
+
+function comparePrerelease(left: string[], right: string[]): number {
+  if (left.length === 0 || right.length === 0) return left.length === 0 ? (right.length === 0 ? 0 : 1) : -1;
+
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const leftPart = left[index];
+    const rightPart = right[index];
+    if (leftPart === undefined) return -1;
+    if (rightPart === undefined) return 1;
+    if (leftPart === rightPart) continue;
+    const leftNumber = /^\d+$/.test(leftPart) ? Number(leftPart) : undefined;
+    const rightNumber = /^\d+$/.test(rightPart) ? Number(rightPart) : undefined;
+    if (leftNumber !== undefined && rightNumber !== undefined) return leftNumber - rightNumber;
+    if (leftNumber !== undefined) return -1;
+    if (rightNumber !== undefined) return 1;
+    return leftPart.localeCompare(rightPart);
+  }
+  return 0;
 }
 
 export function compareOpenCodeVersions(left: string, right: string): number {
-  const leftParts = versionParts(left);
-  const rightParts = versionParts(right);
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
   if (!leftParts || !rightParts) return left.localeCompare(right);
-  if (leftParts.build !== rightParts.build) return leftParts.build - rightParts.build;
-  if (leftParts.channel !== rightParts.channel) return leftParts.channel === 'next' ? 1 : -1;
-  return 0;
+  for (const key of ['major', 'minor', 'patch'] as const) {
+    if (leftParts[key] !== rightParts[key]) return leftParts[key] - rightParts[key];
+  }
+  return comparePrerelease(leftParts.prerelease, rightParts.prerelease);
 }
 
 export async function installedGlobalOpenCodeVersion(runner: CommandRunner = runCommand, signal?: AbortSignal): Promise<string> {
   const result = await runner('bun', ['pm', 'ls', '-g'], undefined, signal);
   const version = parseGlobalOpenCodeVersion(`${result.stdout}\n${result.stderr}`);
-  if (!version) throw new Error('Unable to find global @opencode-ai/cli next/beta installation');
+  if (!version) throw new Error('Unable to find a global OpenCode CLI installation');
   return version;
 }
 
 export async function runningGlobalOpenCodeVersion(runner: CommandRunner = runCommand, signal?: AbortSignal): Promise<string> {
-  const result = await runner('opencode2', ['--version'], undefined, signal);
+  const result = await runner(V2_CLI_COMMAND, ['--version'], undefined, signal);
   const version = parseOpenCodeExecutableVersion(`${result.stdout}\n${result.stderr}`);
-  if (!version) throw new Error('Unable to determine the version reported by the opencode2 launcher');
+  if (!version) throw new Error('Unable to determine the version reported by the opencode launcher');
   return version;
 }
 
@@ -186,12 +222,12 @@ async function ensureGlobalOpenCodeVersion(
 export async function alignOpenCodePluginSdk(configDir: string, runner: CommandRunner = runCommand, signal?: AbortSignal): Promise<string> {
   const version = await installedGlobalOpenCodeVersion(runner, signal);
   const [declared, installed] = await Promise.all([
-    readPackageDependencyVersion(join(configDir, 'package.json')),
-    readPackageVersion(join(configDir, 'node_modules', '@opencode-ai', 'plugin', 'package.json')),
+    readPackageDependencyVersion(join(configDir, 'package.json'), GLOBAL_PLUGIN_PACKAGE),
+    readPackageVersion(join(configDir, 'node_modules', '@opencode', 'plugin', 'package.json')),
   ]);
   if (declared === version && installed === version) return version;
   throwIfAborted(signal);
-  await runner('bun', ['add', '--exact', '--minimum-release-age=0', `@opencode-ai/plugin@${version}`], configDir, signal);
+  await runner('bun', ['add', '--exact', '--minimum-release-age=0', `${GLOBAL_PLUGIN_PACKAGE}@${version}`], configDir, signal);
   throwIfAborted(signal);
   return version;
 }
@@ -231,10 +267,10 @@ async function readPackageVersion(path: string): Promise<string | undefined> {
   }
 }
 
-async function readPackageDependencyVersion(path: string): Promise<string | undefined> {
+async function readPackageDependencyVersion(path: string, packageName: string): Promise<string | undefined> {
   try {
     const parsed = JSON.parse(await readFile(path, 'utf8')) as { dependencies?: Record<string, unknown> };
-    const version = parsed.dependencies?.['@opencode-ai/plugin'];
+    const version = parsed.dependencies?.[packageName];
     return typeof version === 'string' ? version : undefined;
   } catch {
     return undefined;
@@ -247,7 +283,7 @@ export async function updateOpenCodeV2(
   progress?: OperationProgressReporter,
   signal?: AbortSignal,
 ): Promise<string> {
-  await runner('bun', ['install', '-g', '--force', '--trust', '--minimum-release-age=0', '@opencode-ai/cli@beta'], undefined, signal);
+  await runner('bun', ['install', '-g', '--force', '--trust', '--minimum-release-age=0', `${GLOBAL_CLI_PACKAGE}@latest`], undefined, signal);
   throwIfAborted(signal);
   const version = await installedGlobalOpenCodeVersion(runner, signal);
   await ensureGlobalOpenCodeVersion(version, runner, progress, signal);
@@ -265,16 +301,17 @@ export async function updateOpenCodeV2Safely(
   const previous = await timedStage(progress, 'Resolve current global CLI', () => installedGlobalOpenCodeVersion(runner, signal));
   progress?.(`Current global CLI: ${previous}`);
   const restorePrevious = () => timedStage(progress, `Restore global CLI ${previous}`, async () => {
+    await runner('bun', ['remove', '-g', GLOBAL_CLI_PACKAGE]);
     await installGlobalOpenCodeVersion(previous, runner);
     await ensureGlobalOpenCodeVersion(previous, runner, progress);
   });
   let restoredPrevious = false;
   let resolved: string;
   try {
-    resolved = await timedStage(progress, 'Install @opencode-ai/cli@beta', () => updateOpenCodeV2(configDir, runner, progress, signal));
+    resolved = await timedStage(progress, `Install ${GLOBAL_CLI_PACKAGE}@latest`, () => updateOpenCodeV2(configDir, runner, progress, signal));
     progress?.(`Resolved global CLI: ${resolved}`);
     if (compareOpenCodeVersions(resolved, previous) < 0) {
-      progress?.(`Beta channel returned ${resolved}; keeping current global CLI ${previous}`);
+      progress?.(`Stable channel returned ${resolved}; keeping current global CLI ${previous}`);
       await restorePrevious();
       restoredPrevious = true;
       throwIfAborted(signal);
@@ -338,7 +375,7 @@ export async function restartAndVerifyOpenCodeV2(
   throwIfAborted(signal);
   await timedStage(progress, 'Restart OpenCode V2 service', async () => {
     try {
-      await runner('opencode2', ['service', 'restart'], undefined, signal);
+      await runner(V2_CLI_COMMAND, ['service', 'restart'], undefined, signal);
     } catch {
       if (signal?.aborted) throw abortError(signal);
       // Restart closes its own client connection; readiness is proven by the API loop below.
@@ -363,7 +400,7 @@ export async function verifyOpenCodeV2Plugins(
     let ids: string[] = [];
     let failure: PluginVerificationProgress['failure'];
     try {
-      const result = await runner('opencode2', ['api', 'get', '/api/plugin'], undefined, signal);
+      const result = await runner(V2_CLI_COMMAND, ['api', 'get', '/api/plugin'], undefined, signal);
       try {
         ids = parsePluginIDs(result.stdout);
       } catch {
@@ -388,9 +425,9 @@ export async function verifyOpenCodeV2Plugins(
     });
     if (ready) return ids;
     if (failure === 'request-failed') {
-      throw new Error('OpenCode V2 service request failed; check `opencode2 service status` before retrying.');
+      throw new Error('OpenCode V2 service request failed; check `opencode service status` before retrying.');
     }
     if (attempt < attempts - 1) await waitFor(intervalMs, signal);
   }
-  throw new Error(`OpenCode V2 did not activate required plugins after ${attempts} attempt(s) in ${Date.now() - startedAt}ms: ${missing.join(', ')}. Check \`opencode2 api get /api/plugin\` and the OpenCode service logs.`);
+  throw new Error(`OpenCode V2 did not activate required plugins after ${attempts} attempt(s) in ${Date.now() - startedAt}ms: ${missing.join(', ')}. Check \`opencode api get /api/plugin\` and the OpenCode service logs.`);
 }

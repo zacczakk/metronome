@@ -10,7 +10,6 @@ import {
   ALL_TARGETS,
   COMMANDS_DIR,
   AGENTS_DIR,
-  PLUGINS_DIR,
   HOOKS_DIR,
   PROJECT_ROOT,
   createAdapter,
@@ -25,7 +24,6 @@ import {
   readCanonicalInstructions,
   readCanonicalSkills,
   readCanonicalSettings,
-  readCanonicalPlugins,
   readCanonicalHooks,
 } from './canonical';
 import { mapTargets, mapTypes, collect, validateTargets, validateTypes } from './cli-helpers';
@@ -48,16 +46,12 @@ export interface OrchestratorCheckResult {
  * Returns delete operations for non-canonical, non-excluded items.
  *
  * Items matching the exclusion filter (e.g. gsd-*) are never flagged as stale.
- * Plugins additionally require prior manifest ownership so third-party files
- * are never treated as Metronome cleanup candidates.
  */
 async function detectStaleItems(
   adapter: ToolAdapter,
   canonicalCommandNames: Set<string>,
   canonicalAgentNames: Set<string>,
   canonicalSkillNames: Set<string>,
-  canonicalPluginNames: Set<string>,
-  ownedPluginNames: Set<string>,
   isExcluded: (name: string) => boolean,
   types?: ItemType[],
 ): Promise<Operation[]> {
@@ -117,23 +111,6 @@ async function detectStaleItems(
     }
   }
 
-  if ((!types || types.includes('plugin')) && caps.plugins) {
-    const existingPlugins = await adapter.listExistingPluginNames();
-    for (const name of existingPlugins) {
-      const entry = classifyEntry(name, canonicalPluginNames, isExcluded);
-      if (entry.status === 'non-canonical' && ownedPluginNames.has(name)) {
-        deleteOps.push({
-          type: 'delete',
-          itemType: 'plugin',
-          name,
-          target,
-          reason: 'Item not in canonical source (stale)',
-          targetPath: paths.getPluginFilePath(name),
-        });
-      }
-    }
-  }
-
   return deleteOps;
 }
 
@@ -161,19 +138,15 @@ export function staleAgentNamesForTarget(
 export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorCheckResult> {
   const projectDir = options.projectDir ?? PROJECT_ROOT;
   const targets = options.targets && options.targets.length > 0 ? options.targets : ALL_TARGETS;
-  if (targets.includes('opencode') && targets.includes('opencode2')) {
-    throw new Error('OpenCode targets opencode and opencode2 share one installation; select only one');
-  }
   const isExcluded = createExclusionFilter();
 
   const manifest = await loadManifest(projectDir);
 
-  const [commands, agents, mcpServers, skills, plugins] = await Promise.all([
+  const [commands, agents, mcpServers, skills] = await Promise.all([
     readCanonicalCommands(projectDir, isExcluded),
     readCanonicalAgents(projectDir, isExcluded),
     readCanonicalMCPServers(projectDir),
     readCanonicalSkills(projectDir, isExcluded),
-    readCanonicalPlugins(projectDir, isExcluded),
   ]);
 
   const diffs: DiffResult[] = [];
@@ -352,27 +325,6 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
         }
     }
 
-    // Plugins
-    if (!options.types || options.types.includes('plugin')) {
-      if (caps.plugins) {
-        for (const item of plugins) {
-          const rendered = adapter.renderPlugin(item);
-          const sourceHash = hashRendered(rendered.content);
-          const targetHash = await hashTargetFile(rendered.relativePath);
-          sourceItems.push({
-            type: 'plugin',
-            name: item.name,
-            hash: sourceHash,
-            sourcePath: join(projectDir, PLUGINS_DIR, `${item.name}.ts`),
-            targetPath: rendered.relativePath,
-          });
-          if (targetHash !== null) {
-            targetHashes.set(`plugin/${item.name}`, targetHash);
-          }
-        }
-      }
-    }
-
     // Hooks
     if (!options.types || options.types.includes('hook')) {
       if (caps.hooks) {
@@ -455,16 +407,10 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
 
     const canonicalCommandNames = new Set(commands.map((c) => c.name));
     const canonicalSkillNames = new Set(skills.map((s) => s.name));
-    const canonicalPluginNames = new Set(plugins.map((p) => p.name));
-    const ownedPluginNames = new Set(
-      Object.values(manifest.items)
-        .filter((item) => item.type === 'plugin' && target in item.targets)
-        .map((item) => item.name),
-    );
     const staleTypes = includeSkills
       ? options.types
-      : options.types?.filter((type) => type !== 'skill') ?? ['command', 'agent', 'mcp', 'instruction', 'plugin', 'hook', 'settings'];
-    const staleOps = await detectStaleItems(adapter, canonicalCommandNames, canonicalAgentNames, canonicalSkillNames, canonicalPluginNames, ownedPluginNames, isExcluded, staleTypes);
+      : options.types?.filter((type) => type !== 'skill') ?? ['command', 'agent', 'mcp', 'instruction', 'hook', 'settings'];
+    const staleOps = await detectStaleItems(adapter, canonicalCommandNames, canonicalAgentNames, canonicalSkillNames, isExcluded, staleTypes);
     if (staleOps.length > 0) {
       diff.operations.push(...staleOps);
       diff.summary.delete = staleOps.length;
@@ -508,7 +454,7 @@ Exit codes: 0 = no drift, 2 = drift detected, 1 = error`)
   .option('--json', 'Machine-readable JSON output')
   .option('-v, --verbose', 'Show all items including up-to-date')
   .option('-t, --target <name>', 'Scope to specific target (repeatable): claude, antigravity, codex, opencode, opencode2', collect, [] as string[])
-  .option('--type <name>', 'Scope to config type (repeatable): commands, agents, mcps, instructions, skills, settings, plugins, hooks', collect, [] as string[])
+  .option('--type <name>', 'Scope to config type (repeatable): commands, agents, mcps, instructions, skills, settings, hooks', collect, [] as string[])
   .action(async (options: { json?: boolean; verbose?: boolean; target: string[]; type: string[] }) => {
     try {
       validateTargets(options.target);

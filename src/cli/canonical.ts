@@ -7,7 +7,6 @@ import { ClaudeCodeAdapter } from '../adapters/claude-code';
 import { OpenCodeAdapter } from '../adapters/opencode';
 import { AntigravityAdapter } from '../adapters/antigravity';
 import { CodexAdapter } from '../adapters/codex';
-import { getOpenCodeVersionStatus } from '../opencode/profile';
 import type { ToolAdapter } from '../adapters/base';
 import type { TargetName, ItemType, CanonicalItem, CanonicalSettings, CanonicalHookConfig, MCPServer } from '../types';
 import type { SkillProjectionOperation } from '../core/skill-projection';
@@ -25,7 +24,6 @@ export const MCP_DIR = join(CANONICAL_ROOT, 'mcp');
 export const INSTRUCTIONS_DIR = join(CANONICAL_ROOT, 'instructions');
 export const SKILLS_DIR = join(CANONICAL_ROOT, 'skills');
 export const SETTINGS_DIR = join(CANONICAL_ROOT, 'settings');
-export const PLUGINS_DIR = join(CANONICAL_ROOT, 'plugins');
 export const HOOKS_DIR = join(CANONICAL_ROOT, 'hook-configs');
 
 export interface SyncOptions {
@@ -48,20 +46,15 @@ export function createAdapter(target: TargetName, homeDir?: string): ToolAdapter
   switch (target) {
     case 'claude-code': return new ClaudeCodeAdapter(homeDir);
     case 'opencode':    return new OpenCodeAdapter(homeDir);
-    case 'opencode2':   return new OpenCodeAdapter(homeDir, 'v2', 'opencode2');
+    case 'opencode2':   return new OpenCodeAdapter(homeDir, 'opencode2');
     case 'antigravity': return new AntigravityAdapter(homeDir);
     case 'codex':       return new CodexAdapter(homeDir);
   }
 }
 
-/** Resolve the active OpenCode profile; invalid or absent manifests remain V1-safe. */
+/** Resolve the stable OpenCode adapter. */
 export async function createTargetAdapter(target: TargetName, homeDir?: string): Promise<ToolAdapter> {
-  if (target === 'opencode2') return new OpenCodeAdapter(homeDir, 'v2', 'opencode2');
-  if (target === 'opencode') {
-    const home = homeDir ?? createAdapter('codex').getPaths().expandHome('~');
-    const status = await getOpenCodeVersionStatus(home);
-    return new OpenCodeAdapter(homeDir, status?.active ?? 'v1');
-  }
+  if (target === 'opencode' || target === 'opencode2') return new OpenCodeAdapter(homeDir, target);
   return createAdapter(target, homeDir);
 }
 
@@ -214,6 +207,7 @@ export async function readCanonicalInstructions(
 function settingsFileName(target: TargetName): string {
   switch (target) {
     case 'claude-code': return 'claude.json';
+    case 'opencode':
     case 'opencode2': return 'opencode.json';
     default:            return `${target}.json`;
   }
@@ -255,34 +249,6 @@ export async function readCanonicalHooks(
   } catch {
     return null;
   }
-}
-
-/**
- * Read canonical plugins from configs/plugins/*.ts
- * Plugins are raw TypeScript files — no frontmatter parsing.
- */
-export async function readCanonicalPlugins(
-  projectDir: string,
-  isExcluded: (name: string) => boolean,
-): Promise<CanonicalItem[]> {
-  const dir = join(projectDir, PLUGINS_DIR);
-  let entries: string[];
-  try {
-    entries = await readdir(dir);
-  } catch {
-    return [];
-  }
-
-  const items: CanonicalItem[] = [];
-  for (const entry of entries) {
-    if (!entry.endsWith('.ts')) continue;
-    const name = entry.slice(0, -3); // strip .ts
-    if (isExcluded(name)) continue;
-
-    const raw = await readFile(join(dir, entry), 'utf-8');
-    items.push({ name, content: raw, metadata: {} });
-  }
-  return items;
 }
 
 /**

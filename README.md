@@ -53,7 +53,6 @@ configs/
   commands/*.md              Slash commands (7)
   agents/                    Agent definitions (2)
   skills/                    Skill directories (28 active, with upstream sync)
-  plugins/*.ts               OpenCode V1 plugins (3, identity-rendered)
   opencode/v2/plugins/       OpenCode V2 profile-owned plugins
   mcp/*.json                 MCP server definitions
   settings/*.json            Settings definitions (claude, opencode, token-tracker)
@@ -79,7 +78,7 @@ src/                         TypeScript sync engine
 scripts/
   committer                  Git commit helper
   ask-model                  Cross-model consultation (Claude/Codex/Gemini)
-  sessions                   Session history search/export/browse (OpenCode V1/V2 + Claude + Codex)
+  sessions                   Session history search/export/browse (OpenCode + Claude + Codex)
   sessions_opencode.py       OpenCode V2 session database adapter
   sync-upstream-skills.ts    Upstream skill sync
   docs-list.ts               Docs catalog generator
@@ -99,82 +98,72 @@ The `metronome` CLI handles all sync operations programmatically:
 - Tracks sync state via `.metronome/manifest.json` (3-way hash comparison)
 - Atomic writes with backup/rollback on failure
 
-### OpenCode V1/V2 profiles
+### OpenCode V2 profile
 
-OpenCode V1 remains the canonical authoring format. Metronome can render and
-atomically activate either runtime profile:
+Metronome renders and atomically activates the stable OpenCode V2 profile:
 
 ```sh
-metronome opencode use v1
-metronome opencode use v2
-metronome opencode update v1
-metronome opencode update v2
-metronome opencode upgrade v1
-metronome opencode upgrade v2
+metronome opencode use
+metronome opencode update
+metronome opencode upgrade
 metronome opencode status
 ```
 
-`use`, `update`, and `upgrade` take `v1` or `v2`. `use` activates a profile;
-`update` refreshes and verifies that profile; `upgrade` updates the runtime and
-then refreshes the profile. `upgrade v1` runs the installed V1 CLI's upgrade
-command. Every profile operation persists the active profile in
+`use` activates the profile; `update` refreshes and verifies it; `upgrade`
+updates the runtime and then refreshes the profile. Every profile operation persists the active profile in
 `~/.config/opencode/migration-manifest.json`. `metronome opencode status`
 reports that profile; it is unrelated to `metronome status`, which remains the
 drift check alias.
 
 For generic `check`, `push`, `pull`, `render`, and `diff` operations, target
-`opencode` reads that manifest and follows the active profile. An absent or
-invalid manifest safely defaults to V1. Use `opencode2` to force native V2 in
+`opencode` uses the stable V2 profile. Use the `opencode2` target name to force native V2 in
 scripts and CI (`metronome check -t opencode2`,
 `metronome push -t opencode2 --force`). Both names resolve the same
 `~/.config/opencode/` paths and cannot be combined. `opencode2` is intentionally
-not in the default `ALL_TARGETS` list.
+not in the default `ALL_TARGETS` list; the stable executable is `opencode`.
 
 Generic V2 sync covers settings, agents, MCP, commands, skills, and
 instructions. V2 plugin files are profile-owned and deployed by
-`metronome opencode use v2`; generic V2 plugin sync intentionally does nothing.
+`metronome opencode use`; generic V2 plugin sync intentionally does nothing.
 
 Canonical `configs/settings/opencode.json` includes `websearch.provider:
 chatgpt`. ChatGPT websearch itself ships as a vendored, profile-owned plugin
 (`configs/opencode/v2/plugins/chatgpt-websearch.js`, deployed the same way as
-the other managed V2 plugins) rather than a `plugin` array entry — OpenCode2's
-newer betas resolve `plugin`/`plugins` array entries strictly as npm/git
-package specifiers and silently drop relative directory paths, and upstream
-`opencode-chatgpt-websearch` is unmaintained, so it's bundled into a single
-file under OpenCode2's local-plugin auto-discovery directory instead. Runtime
-verification requires the `opencode.chatgpt-websearch` plugin. Muxy is an
-optional V2 integration, so a Muxy load problem never aborts profile
-activation. V1 rendering omits these V2-only integrations.
+the other managed V2 plugins) rather than a package entry. The upstream
+`opencode-chatgpt-websearch` package is unmaintained, so the integration is
+bundled into a single file under OpenCode's local-plugin auto-discovery
+directory instead. Runtime verification requires the
+`opencode.chatgpt-websearch` plugin. Muxy is an optional V2 integration, so a
+Muxy load problem never aborts profile activation.
 
 The native V2 Muxy port is deployed as
 `~/.config/opencode/plugins/metronome-muxy-notify.js`; Muxy's app-owned
 `muxy-notify.js` file is left untouched because Muxy regenerates it.
 The canonical global profile sets `autoupdate: false`; use
-`metronome opencode upgrade v2` for trusted, verified CLI updates.
+`metronome opencode upgrade` for trusted, verified CLI updates.
 
-Every switch creates a complete compatibility backup under
+Every activation creates a complete compatibility backup under
 `~/.config/opencode-backups/metronome/` and appends hashes, plugin status, SDK
 version, and the restore source to
-`~/.config/opencode/migration-manifest.json`. Ordinary `use v2` and `update v2`
+`~/.config/opencode/migration-manifest.json`. Ordinary `use` and `update`
 wait for the hot-reloaded plugin catalog without restarting the shared service.
-`upgrade v2` refreshes the Bun-installed `@opencode-ai/cli@beta`, pins the
-local plugin SDK to the exact resolved build, restarts the V2 service because
-hot reload does not reliably register newly deployed plugin files, and verifies
-the plugin API. The package metadata and `opencode2 --version` must agree;
-older builds returned by the beta channel are not activated; the current build
-is retained. Failed or interrupted activation restores the complete profile
-backup and, for V2 upgrades, the previous exact global CLI build.
+`upgrade` refreshes the Bun-installed stable `@opencode/cli@latest`, pins
+the local `@opencode/plugin` SDK to the exact resolved build, restarts the V2
+service because hot reload does not reliably register newly deployed plugin
+files, and verifies the plugin API. The package metadata and `opencode
+--version` must agree. Failed or interrupted activation restores the complete
+profile backup and, for V2 upgrades, the previous exact global CLI build.
 
 Profile operations show a compact live TUI in a terminal and plain indented
 stages when piped. Required-plugin state changes are shown immediately;
 unchanged partial-catalog retries are periodic. A failed service request stops
 verification immediately instead of spawning more service clients. Optional
 plugin gaps are warnings, not failures. SDK alignment skips `bun add` when the
-global CLI, local package manifest, and installed `@opencode-ai/plugin` already
+global CLI, local package manifest, and installed `@opencode/plugin` already
 match. Use `--no-align-sdk` to skip alignment explicitly; plugin readiness
 still runs.
 
-Profile switches use atomic writes with rollback on failure.
+Profile activation uses atomic writes with rollback on failure.
 
 ## Helper Scripts
 
@@ -189,13 +178,9 @@ metronome helpers -p . --dry-run                  # preview only
 Writes all files from `scripts/` into `<path>/scripts/`, skipping files
 already up to date (SHA-256 match). Supports `--json` for machine output.
 
-The `sessions` helper reads OpenCode V1 from
-`~/.local/share/opencode/opencode.db` and OpenCode V2 from
-`~/.local/share/opencode-v2/opencode/opencode.db`. Use
-`sessions latest --source opencode2` or `sessions list --source opencode2` to
-target V2 explicitly; `--source` selects the runtime/database, while
-`--project` filters the project directory. Default list/export/stats flows
-include both when the databases exist.
+The `sessions` helper reads OpenCode from `~/.local/share/opencode/opencode.db`.
+Use `sessions latest --source opencode` or `sessions list --source opencode`
+to select the OpenCode database; `--project` filters the project directory.
 
 ## Secrets
 

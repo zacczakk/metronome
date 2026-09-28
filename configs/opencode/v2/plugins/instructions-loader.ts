@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { resolve } from "node:path"
-import { Plugin } from "@opencode-ai/plugin"
+import { Plugin } from "@opencode/plugin"
 
 const DEFAULT_PATHS = [
   "~/Vaults/Memory/SOUL.md",

@@ -40,12 +40,12 @@ describe('terminal UI', () => {
     const output = stream(false);
     const ui = createTerminalUI(output);
 
-    ui.start('OpenCode V1 · profile refresh');
+    ui.start('OpenCode V2 · profile refresh');
     ui.report('Render profile done (12ms)');
     ui.failure('interrupted');
     ui.close();
 
-    expect(output.output).toBe('◆ OpenCode V1 · profile refresh\n  ✓ Render profile · 12ms\n  ✗ interrupted\n');
+    expect(output.output).toBe('◆ OpenCode V2 · profile refresh\n  ✓ Render profile · 12ms\n  ✗ interrupted\n');
     expect(output.output).not.toContain('\u001b[');
   });
 

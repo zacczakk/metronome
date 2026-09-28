@@ -119,7 +119,7 @@ describe('OpenCodeAdapter.renderAgent', () => {
       },
     };
     const result = adapter.renderAgent(item);
-    expect(result.content).toContain('permission:');
+    expect(result.content).toContain('permissions:');
     expect(result.content).toContain('git push *');
   });
 
@@ -155,7 +155,7 @@ describe('OpenCodeAdapter.renderAgent', () => {
     expect(result.content).toContain("color: '#22C55E'");
   });
 
-  it('passes through GPT model options in agent frontmatter', () => {
+  it('does not leave inert model overlays in agent frontmatter', () => {
     const item = {
       ...agentItem,
       metadata: {
@@ -165,8 +165,8 @@ describe('OpenCodeAdapter.renderAgent', () => {
       },
     };
     const result = adapter.renderAgent(item);
-    expect(result.content).toContain('reasoningEffort: medium');
-    expect(result.content).toContain('textVerbosity: low');
+    expect(result.content).not.toContain('reasoningEffort: medium');
+    expect(result.content).not.toContain('textVerbosity: low');
   });
 });
 
@@ -186,9 +186,9 @@ describe('OpenCodeAdapter capabilities', () => {
   });
 });
 
-describe('OpenCodeAdapter V2', () => {
-  it('renders native V2 settings and V2 MCP semantics', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
+describe('OpenCodeAdapter native settings', () => {
+  it('renders native settings and MCP semantics', () => {
+    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
     const settings = v2.renderSettings({
       target: 'opencode2',
       keys: { permission: { bash: 'allow' } },
@@ -205,7 +205,7 @@ describe('OpenCodeAdapter V2', () => {
   });
 
   it('preserves native providers and configured external plugins', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
+    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
     const settings = JSON.parse(v2.renderSettings({
       target: 'opencode2',
       keys: {
@@ -220,12 +220,11 @@ describe('OpenCodeAdapter V2', () => {
 
     expect(settings.plugins).toEqual(['./third-party', 'some-plugin']);
     expect(settings.websearch).toEqual({ provider: 'chatgpt' });
-    expect(Object.keys(settings.providers)).toEqual(['external', 'canonical']);
-    expect(v2.getCapabilities().plugins).toBe(false);
+    expect(Object.keys(settings.provider)).toEqual(['external', 'canonical']);
   });
 
   it('preserves profile-owned agent variants during generic V2 settings sync', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2', 'opencode2');
+    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
     const existing = JSON.stringify({
       providers: {
         acme: {
@@ -255,14 +254,14 @@ describe('OpenCodeAdapter V2', () => {
       },
     }, existing));
 
-    expect(rendered.providers.acme.models.model.variants).toEqual([
-      { id: 'canonical', settings: { effort: 'new' } },
-      { id: 'agent-review', settings: { effort: 'high' } },
-    ]);
+    expect(rendered.provider.acme.models.model.variants).toEqual({
+      canonical: { effort: 'new' },
+      'agent-review': { effort: 'high' },
+    });
   });
 
   it('uses opencode2 MCP overrides for the active V2 profile', () => {
-    const v2 = new OpenCodeAdapter(undefined, 'v2');
+    const v2 = new OpenCodeAdapter(undefined, 'opencode2');
     const mcp = v2.renderMCPServers([{
       name: 'native', transport: 'stdio', command: 'tool',
       targetOptions: { opencode: { timeout: 3 }, opencode2: { timeout: 12 } },

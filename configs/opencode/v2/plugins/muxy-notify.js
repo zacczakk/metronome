@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises"
 import { spawn } from "node:child_process"
-import { Plugin } from "@opencode-ai/plugin"
+import { Plugin } from "@opencode/plugin"
 
 function record(value) {
   return typeof value === "object" && value !== null ? value : {}

@@ -4,7 +4,7 @@
 
 **Goal:** Make Ponytail's portable rules and six skills available through Metronome's canonical V2-safe configuration while automatically tracking upstream skill updates.
 
-**Architecture:** Treat Ponytail as an upstream content source, not an OpenCode runtime plugin. Import its six `agentskills.io` skill directories into `configs/skills/`, register them for automatic upstream synchronization, and merge only the small missing rule set into Metronome's existing canonical `AGENTS.md`. Do not add Ponytail's current V1 OpenCode plugin to the V2 plugin catalog.
+**Architecture:** Treat Ponytail as an upstream content source, not an OpenCode runtime plugin. Import its six `agentskills.io` skill directories into `configs/skills/`, register them for automatic upstream synchronization, and merge only the small missing rule set into Metronome's existing canonical `AGENTS.md`. Do not add Ponytail's incompatible plugin to the V2 plugin catalog.
 
 **Tech Stack:** Markdown skill bundles, JSON registry, Bun/TypeScript `sync-upstream-skills.ts`, Metronome skill projection.
 
@@ -13,7 +13,7 @@
 - Keep Metronome's `configs/instructions/AGENTS.md` as the source of truth; never replace it with Ponytail's root `AGENTS.md`.
 - Keep Ponytail's six skill directories intact, including any support files.
 - Use `sync: "auto"` for the six Ponytail skills so `sync-upstream-skills.ts` pulls HEAD changes automatically.
-- Do not add `@dietrichgebert/ponytail` to OpenCode V2; Ponytail `v4.9.0` ships a V1-only plugin.
+- Do not add `@dietrichgebert/ponytail` to OpenCode; Ponytail `v4.9.0` ships an incompatible plugin.
 - Push skills and instructions through Metronome, then verify the projected V2 paths and clean worktree scope.
 
 ---
@@ -144,7 +144,7 @@ Expected: JSON parsing succeeds and all three files contain the Ponytail integra
 
 **Interfaces:**
 - Consumes: canonical skills, instructions, and registry from Tasks 1-3.
-- Produces: OpenCode V2-visible skill projections and synchronized instructions without any V1 plugin entry.
+- Produces: OpenCode-visible skill projections and synchronized instructions without any legacy plugin entry.
 
 - [x] **Step 1: Push the approved V2-safe scope**
 
@@ -166,7 +166,7 @@ metronome check --target opencode
 
 Expected: no drift for the pushed skills and instructions.
 
-- [x] **Step 3: Verify the V2 runtime does not contain the V1 package plugin**
+- [x] **Step 3: Verify the V2 runtime does not contain the incompatible package plugin**
 
 Run:
 

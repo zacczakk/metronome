@@ -5,7 +5,7 @@ export interface ErrorContext {
 }
 
 // Config item types synced by metronome
-export type ItemType = 'command' | 'agent' | 'mcp' | 'instruction' | 'skill' | 'settings' | 'plugin' | 'hook';
+export type ItemType = 'command' | 'agent' | 'mcp' | 'instruction' | 'skill' | 'settings' | 'hook';
 
 export type OperationType = 'create' | 'update' | 'skip' | 'delete';
 
@@ -129,6 +129,5 @@ export interface AdapterCapabilities {
   settings: boolean;
   /** Whether agent sync also owns generated model variants in settings. */
   agentVariantsInSettings?: boolean;
-  plugins: boolean;
   hooks: boolean;
 }

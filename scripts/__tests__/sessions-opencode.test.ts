@@ -14,7 +14,7 @@ describe("sessions OpenCode V2 adapter", () => {
     const root = mkdtempSync(join(tmpdir(), "sessions-opencode-"));
     roots.push(root);
     const home = join(root, "home");
-    const database = join(home, ".local", "share", "opencode-v2", "opencode", "opencode.db");
+    const database = join(home, ".local", "share", "opencode", "opencode.db");
     const script = `
 import json
 import sqlite3
@@ -92,7 +92,7 @@ print(json.dumps({
       ["ses-main", "assistant", "Implemented.", 1200],
       ["ses-z", "user", "Same timestamp", 1200],
     ]);
-    expect(parsed.markdown).toContain("source: opencode2");
+    expect(parsed.markdown).toContain("source: opencode");
     expect(parsed.markdown).toContain("Implemented.");
     expect(parsed.markdown).not.toContain("hidden reasoning");
     expect(parsed.markdown).not.toContain("pwd");
@@ -108,26 +108,26 @@ print(json.dumps({
     const env = { ...process.env, HOME: home };
     const listResult = Bun.spawnSync(["python3", cli, "list", "--json"], { env });
     expect(listResult.exitCode).toBe(0);
-    expect(JSON.parse(listResult.stdout.toString())[0]).toMatchObject({ source: "opencode2" });
+    expect(JSON.parse(listResult.stdout.toString())[0]).toMatchObject({ source: "opencode" });
 
-    const latestResult = Bun.spawnSync(["python3", cli, "latest", "--source", "opencode2", "--json"], { env });
+    const latestResult = Bun.spawnSync(["python3", cli, "latest", "--source", "opencode", "--json"], { env });
     expect(latestResult.exitCode).toBe(0);
     expect(JSON.parse(latestResult.stdout.toString())).toHaveLength(1);
-    expect(JSON.parse(latestResult.stdout.toString())[0]).toMatchObject({ source: "opencode2" });
+    expect(JSON.parse(latestResult.stdout.toString())[0]).toMatchObject({ source: "opencode" });
 
-    const sourceHintResult = Bun.spawnSync(["python3", cli, "list", "--project", "opencode2"], { env });
+    const sourceHintResult = Bun.spawnSync(["python3", cli, "list", "--project", "opencode"], { env });
     expect(sourceHintResult.exitCode).toBe(0);
     expect(sourceHintResult.stdout.toString()).toContain(
-      "hint: 'opencode2' is a session source, not a project; use --source opencode2",
+      "hint: 'opencode' is a session source, not a project; use --source opencode",
     );
 
     const exportResult = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
     expect(exportResult.exitCode).toBe(0);
-    expect(exportResult.stdout.toString()).toContain("exported 1 opencode2 sessions");
+    expect(exportResult.stdout.toString()).toContain("exported 1 opencode sessions");
 
-    const searchResult = Bun.spawnSync(["python3", cli, "search", "fixture", "--source", "opencode2", "--json"], { env });
+    const searchResult = Bun.spawnSync(["python3", cli, "search", "fixture", "--source", "opencode", "--json"], { env });
     expect(searchResult.exitCode).toBe(0);
-    expect(JSON.parse(searchResult.stdout.toString())[0]).toMatchObject({ source: "opencode2", title: "V2 fixture" });
+    expect(JSON.parse(searchResult.stdout.toString())[0]).toMatchObject({ source: "opencode", title: "V2 fixture" });
 
     const mutate = `
 import sqlite3
@@ -143,8 +143,8 @@ conn.close()
 
     const updateExportResult = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
     expect(updateExportResult.exitCode).toBe(0);
-    expect(updateExportResult.stdout.toString()).toContain("exported 1 opencode2 sessions");
-    expect(existsSync(join(home, "Vaults", "Sessions", "opencode2", "1970-01-01-v2-fixture.md"))).toBe(true);
-    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode2", "1970-01-01-v2-fixture.md"), "utf8")).toContain("Follow-up");
+    expect(updateExportResult.stdout.toString()).toContain("exported 1 opencode sessions");
+    expect(existsSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture.md"))).toBe(true);
+    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture.md"), "utf8")).toContain("Follow-up");
   });
 });

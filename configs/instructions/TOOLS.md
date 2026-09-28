@@ -23,7 +23,7 @@ imported editor definitions.
 Agent Config Sync CLI. Canonical configs sync to AI CLI targets (`claude`, `opencode`, `opencode2`, `gemini`, `codex`).
 
 - **Source:** `~/Repos/zacczakk/metronome/src/cli/`
-- **Canonical configs:** `~/Repos/zacczakk/metronome/configs/` (commands, agents, mcp, instructions, skills, settings, plugins)
+- **Canonical configs:** `~/Repos/zacczakk/metronome/configs/` (commands, agents, mcp, instructions, skills, settings)
 - **Installed via:** `bun link` (available on PATH as `metronome`)
 
 ### Subcommands
@@ -36,11 +36,11 @@ Agent Config Sync CLI. Canonical configs sync to AI CLI targets (`claude`, `open
 | `metronome diff` | Unified text diff of all drift. |
 | `metronome render` | Render single item to target format (debug). |
 | `metronome helpers` | Copy helper scripts to a target repo's `scripts/`. |
-| `metronome opencode use/update/upgrade/status` | Activate, refresh, upgrade, or inspect the OpenCode V1/V2 profile. |
+| `metronome opencode use/update/upgrade/status` | Activate, refresh, upgrade, or inspect the OpenCode V2 profile. |
 
 ### Common flags
-- `-t, --target <name>` — Scope to target (repeatable): `claude`, `opencode`, `opencode2`, `gemini`, `codex`. `opencode` follows the active profile; `opencode2` is explicit native V2. They share an installation and cannot be combined.
-- `--type <name>` — Scope to config type (repeatable): `commands`, `agents`, `mcps`, `instructions`, `skills`, `settings`, `plugins`
+- `-t, --target <name>` — Scope to target (repeatable): `claude`, `opencode`, `opencode2`, `gemini`, `codex`. `opencode` follows the active profile; `opencode2` is the explicit native V2 target. They share an installation and cannot be combined. The stable runtime executable is `opencode`.
+- `--type <name>` — Scope to config type (repeatable): `commands`, `agents`, `mcps`, `instructions`, `skills`, `settings`
 - `--pretty` / `--json` — Output format
 - `--dry-run` — Preview without writing (push/pull)
 - `--force` — Skip confirmation (push) or overwrite existing (pull)
@@ -49,8 +49,8 @@ Agent Config Sync CLI. Canonical configs sync to AI CLI targets (`claude`, `open
 - `--name <name>` + `--type <type>` — Required for render
 
 Generic `check`, `push`, `pull`, `render`, and `diff` operations resolve
-`opencode` from `~/.config/opencode/migration-manifest.json`; missing or invalid
-manifests default to V1. `opencode2` forces native V2, shares the same paths,
+`opencode` uses the stable profile from `~/.config/opencode/migration-manifest.json`.
+`opencode2` forces native V2 as a target name, shares the same paths,
 is not in the default all-target set, and cannot be combined with `opencode`.
 V2 plugin files are profile-owned; generic V2 plugin sync is intentionally a
 no-op. `metronome status` is the drift check alias; use
@@ -63,11 +63,9 @@ metronome diff                               # Detailed changes
 metronome push --force --delete              # Sync everything
 metronome push -t opencode --type commands   # Narrow scope
 metronome check -t opencode2                 # Explicit native V2 check
-metronome opencode use v2                    # Activate V2 profile
-metronome opencode update v2                 # Refresh V2 profile
-metronome opencode upgrade v2                # Upgrade V2 runtime + profile
-metronome opencode update v1                 # Refresh V1 profile
-metronome opencode upgrade v1                # Upgrade V1 runtime + profile
+metronome opencode use                       # Activate V2 profile
+metronome opencode update                    # Refresh V2 profile
+metronome opencode upgrade                   # Upgrade V2 runtime + profile
 metronome opencode status                    # Show active profile
 metronome pull -s claude --dry-run           # Preview reverse sync
 metronome render --type command --name gate  # Debug single item
@@ -424,11 +422,11 @@ qmd update && qmd embed
 
 ## sessions
 
-Search, browse, and export coding session history from OpenCode V1/V2, Claude Code, and Codex. Three-layer search: Memory vault (curated notes) → FTS5 (keyword precision) → qmd (semantic recall).
+Search, browse, and export coding session history from OpenCode, Claude Code, and Codex. Three-layer search: Memory vault (curated notes) → FTS5 (keyword precision) → qmd (semantic recall).
 
 - **Source:** `~/Repos/zacczakk/metronome/scripts/sessions`
 - **Vault:** `~/Vaults/Sessions/` (iCloud-backed symlink, Obsidian-visible)
-- **Sources:** OpenCode V1 (`~/.local/share/opencode/opencode.db`), OpenCode V2 (`~/.local/share/opencode-v2/opencode/opencode.db`), Claude Code (`~/.claude/projects/`), Codex (`~/.codex/sessions/`)
+- **Sources:** OpenCode (`~/.local/share/opencode/opencode.db`), Claude Code (`~/.claude/projects/`), Codex (`~/.codex/sessions/`)
 - **Indexes:** FTS5 DB + export state at `~/.local/share/sessions/` (machine-local)
 - **qmd collection:** `sessions` (machine-local semantic + BM25 index)
 
@@ -449,7 +447,7 @@ Search, browse, and export coding session history from OpenCode V1/V2, Claude Co
 
 | Flag | Commands | Purpose |
 |------|----------|---------|
-| `--source opencode\|opencode2\|claude\|codex` | list, latest, export, search | Filter by session source/database; `opencode2` = OpenCode V2 |
+| `--source opencode\|claude\|codex` | list, latest, export, search | Filter by session source/database |
 | `--since YYYY-MM-DD` | list, latest, export | Date filter |
 | `--limit N` | list, search, find | Max results |
 | `--project NAME` | list, latest | Filter by project directory name; not a source |
@@ -474,7 +472,7 @@ Search, browse, and export coding session history from OpenCode V1/V2, Claude Co
 sessions list --limit 10
 sessions list --source opencode --project metronome
 sessions list --source codex --project metronome
-sessions latest --source opencode2
+sessions latest --source opencode
 
 # Refresh exported/indexed session history when needed
 sessions export
@@ -585,7 +583,7 @@ Tux resolves Foundry host and keychain-backed authentication at runtime; keep
 Foundry credentials out of editor and repository config.
 
 - Prefer native `palantir-mcp` when it is loaded and responsive. For shell calls, use the compiled `palantir` CLI before MCPorter when its runtime configuration is available.
-- Canonical OpenCode V1 and V2 rendering enables it via Tux with a 20-second catalog/execution timeout and direct tool exposure. Claude Code and Codex render it disabled by default. Antigravity excludes it from its active MCP set. Local/manual config can change the effective state.
+- Canonical OpenCode rendering enables it via Tux with a 20-second catalog/execution timeout and direct tool exposure. Claude Code and Codex render it disabled by default. Antigravity excludes it from its active MCP set. Local/manual config can change the effective state.
 - If native MCP is missing, disabled, or offline, use the `palantir` shell facade on `$PATH`: `palantir --help` is intentionally concise, `palantir search-tools "<task>"` invokes MCP `search_tools` for focused discovery, and returned tools can be invoked directly, for example `palantir list-foundry-namespaces`.
 - `bin/palantir` is a separate mcporter-generated snapshot, not the canonical Tux launcher. Inspect it with `mcporter inspect-cli bin/palantir --json` before relying on its auth/config; generation resolves `FOUNDRY_HOST` into the snapshot and keeps `FOUNDRY_TOKEN` as runtime interpolation.
 - Generation and update runbook: `docs/design/mcporter-hybrid-mcp.md` under “Palantir shell fallback” and “Updating the Palantir CLI”.
@@ -601,6 +599,6 @@ Canonical definitions in `configs/mcp/*.json`. Rendered to each CLI via `metrono
 | `context7` | All CLIs | `context7` | HTTP; library docs |
 | `tavily` | Claude, OpenCode, Antigravity, Codex | `tavily` | Disabled by default; `TAVILY_API_KEY`, `UPTIMIZE_ENV=dev`; extract is approved-domain only |
 | `github` | Claude, OpenCode, Antigravity, Codex | — | HTTP; `GITHUB_PERSONAL_ACCESS_TOKEN`; native MCP, not necessarily MCPorter |
-| `palantir-mcp` | OpenCode V1 enabled; OpenCode V2/Claude/Codex disabled; Antigravity excluded | `palantir` snapshot | Tux launcher for native config; snapshot has separate auth/config |
+| `palantir-mcp` | OpenCode enabled; Claude/Codex disabled; Antigravity excluded | `palantir` snapshot | Tux launcher for native config; snapshot has separate auth/config |
 | `peekaboo` | All CLIs | `npx -y @steipete/peekaboo@latest mcp` | Disabled by default; macOS automation; requires Screen Recording + Accessibility; OpenCode timeout 30s |
 | `shadcn` | OpenCode | `shadcn` | shadcn/ui |
