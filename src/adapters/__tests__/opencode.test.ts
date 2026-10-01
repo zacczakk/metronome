@@ -219,7 +219,8 @@ describe('OpenCodeAdapter native settings', () => {
 
     expect(settings.plugins).toEqual(['./third-party', 'some-plugin']);
     expect(settings.websearch).toEqual({ provider: 'chatgpt' });
-    expect(Object.keys(settings.provider)).toEqual(['external', 'canonical']);
+    expect(settings.provider).toEqual({ canonical: { npm: '@ai-sdk/anthropic' } });
+    expect(settings.providers).toEqual({ external: { package: 'aisdk:external' } });
   });
 
   it('preserves profile-owned agent variants during generic V2 settings sync', () => {

@@ -29,9 +29,11 @@ read_when:
   (`configs/opencode/v2/plugins/chatgpt-websearch.js`) instead of a
   `plugin`/`plugins` array entry. Runtime verification covers the required
   plugin catalog.
-- **OpenCode context pricing** — added legacy long-context costs for Tux's
-  OpenAI models and translated them into native V2 tiers at the OpenAI 272K
-  boundary.
+- **Tux model accuracy** — refreshed all 19 models from latest Tux develop:
+  reviewed context/output limits, Agentic cache rates, all six exact 272K
+  price tiers, and explicit unknown GPT-5.5 pricing. Native provider metadata
+  now survives rendering, merges, and agent updates. Added a repeatable
+  metadata refresh/check command and complete catalog regression coverage.
 - **OpenCode profile diagnostics** — timed profile stages now go to
   stderr, plugin readiness retries report missing IDs, and redundant exact SDK
   installs are skipped; corrected docs to distinguish profile hot reload from

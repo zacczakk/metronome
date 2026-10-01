@@ -80,19 +80,22 @@ describe('canonical agent routing', () => {
   test('matches the current Tux OpenCode catalog and provider policy', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'opencode.json'), 'utf8'),
-    ) as {
-      disabled_providers?: string[];
-      provider?: { tux?: { models?: Record<string, { cost?: Record<string, unknown> }> } };
-    };
-    const models = settings.provider?.tux?.models ?? {};
+    );
+    const models = settings.providers?.tux?.models ?? {};
 
     for (const model of ['claude-opus-5-5', 'claude-sonnet-4-5', 'gpt-6-sol', 'gpt-6-luna']) {
       expect(models[model]).toBeDefined();
     }
     expect(settings.disabled_providers).toEqual(['opencode', 'opencode-go']);
-    expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2.2, output: 11, cache_read: 0.22, cache_write: 2.75 });
-    expect(models['gpt-5.6-sol']?.cost).toEqual({ input: 5.5, output: 33, cache_read: 0.55, cache_write: 6.88 });
-    expect(models['gpt-6-luna']?.cost).toEqual({ input: 0.12, output: 0.6, cache_read: 0.012, cache_write: 0.15 });
+    expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2.2, output: 11, cache: { read: 0.22, write: 2.75 } });
+    expect(models['gpt-5.6-sol']?.cost).toEqual([
+      { input: 5.5, output: 33, cache: { read: 0.55, write: 6.88 } },
+      { tier: { type: 'context', size: 272000 }, input: 11, output: 49.5, cache: { read: 1.1, write: 13.75 } },
+    ]);
+    expect(models['gpt-6-luna']?.cost).toEqual([
+      { input: 0.12, output: 0.6, cache: { read: 0.012, write: 0.15 } },
+      { tier: { type: 'context', size: 272000 }, input: 0.24, output: 0.9, cache: { read: 0.024, write: 0.3 } },
+    ]);
   });
 
   test('allows webfetch for review and verification agents', async () => {
@@ -121,22 +124,13 @@ describe('canonical agent routing', () => {
   test('keeps all validated Tux reasoning variants for Luna and Terra', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'opencode.json'), 'utf8'),
-    ) as {
-      provider?: {
-        tux?: {
-          models?: Record<string, {
-            options?: { reasoningEffort?: string };
-            variants?: Record<string, { reasoningEffort?: string }>;
-          }>;
-        };
-      };
-    };
+    );
     const expected = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
 
     for (const model of ['gpt-5.6-luna', 'gpt-5.6-terra']) {
-      expect(Object.keys(settings.provider?.tux?.models?.[model]?.variants ?? {})).toEqual(expected);
+      expect(settings.providers?.tux?.models?.[model]?.variants.map((variant: { id: string }) => variant.id)).toEqual(expected);
     }
-    expect(settings.provider?.tux?.models?.['gpt-5.6-luna']?.options?.reasoningEffort).toBe('max');
+    expect(settings.providers?.tux?.models?.['gpt-5.6-luna']?.settings?.reasoningEffort).toBe('max');
   });
 });
 

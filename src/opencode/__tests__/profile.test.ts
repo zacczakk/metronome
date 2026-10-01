@@ -96,6 +96,26 @@ describe('switchOpenCodeVersion', () => {
     expect(config.provider.tux.name).toBe('Tux overlay');
   });
 
+  test('activates native Tux metadata without lowering costs or losing agent variants', async () => {
+    const paths = await fixture();
+    const canonicalPath = join(paths.projectDir, 'configs/settings/opencode.json');
+    const canonical = JSON.parse(await readFile(canonicalPath, 'utf8'));
+    const metadata = JSON.parse(await readFile(join(process.cwd(), 'test/fixtures/tux-model-metadata.json'), 'utf8'));
+    canonical.providers = { tux: { package: 'aisdk:@ai-sdk/anthropic', settings: { baseURL: 'http://127.0.0.1:18080/v1' }, models: metadata.models } };
+    await writeFile(canonicalPath, JSON.stringify(canonical));
+    await writeFile(join(paths.projectDir, 'configs/agents/tux-helper.md'), '---\nmodel: tux/gpt-6.1-sol\nreasoningEffort: high\n---\nVerify.\n');
+    await switchOpenCodeVersion(paths);
+    const config = JSON.parse(await readFile(join(paths.homeDir, '.config/opencode/opencode.json'), 'utf8'));
+    expect(config.provider.tux).toBeUndefined();
+    expect(config.custom).toBe(true);
+    const models = config.providers.tux.models;
+    expect(models['gpt-6.1-sol'].variants).toContainEqual({ id: 'agent-tux-helper', settings: { reasoningEffort: 'high' } });
+    models['gpt-6.1-sol'].variants = models['gpt-6.1-sol'].variants.filter((variant: { id: string }) => variant.id !== 'agent-tux-helper');
+    expect(models).toEqual(metadata.models);
+    const agent = await readFile(join(paths.homeDir, '.config/opencode/agents/tux-helper.md'), 'utf8');
+    expect(agent).toContain('tux/gpt-6.1-sol#agent-tux-helper');
+  });
+
   test('restores the complete backup when protected preparation fails', async () => {
     const paths = await fixture();
     const configPath = join(paths.homeDir, '.config', 'opencode', 'opencode.json');

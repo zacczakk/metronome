@@ -117,6 +117,37 @@ describe('push settings E2E', () => {
     expect(config.mcp?.servers?.['palantir-mcp']?.disabled).toBe(false);
   });
 
+  test('pushes all native Tux metadata over stale legacy settings losslessly and idempotently', async () => {
+    const homeDir = createTestHome('native-tux-metadata');
+    const projectDir = createTestProject('native-tux-metadata', FIXTURE_ROOT);
+    cpSync(join(process.cwd(), 'configs/settings/opencode.json'), join(projectDir, 'configs/settings/opencode.json'));
+    seedSettingsTargets(homeDir);
+    const path = createAdapter('opencode', homeDir).getPaths().getSettingsPath();
+    const stale = readJsonc<Record<string, unknown>>(readFileSync(path, 'utf8'));
+    stale.provider = { tux: { models: { 'gpt-6.1-sol': {
+      limit: { context: 200000, output: 32000 }, cost: { input: 2.4, output: 12 },
+      variants: { 'agent-retained': { reasoningEffort: 'medium' } },
+    } } }, neighbor: { name: 'Retained' } };
+    writeFileSync(path, JSON.stringify(stale));
+    const options = { projectDir, homeDir, targets: ['opencode'], types: ['settings'], force: true } satisfies Parameters<typeof runPush>[0];
+    const result = await runPush(options);
+    expect(result.failed).toBe(0);
+    expect(result.written).toBe(1);
+    const config = JSON.parse(readFileSync(path, 'utf8'));
+    const fixture = JSON.parse(readFileSync(join(FIXTURE_ROOT, 'tux-model-metadata.json'), 'utf8'));
+    const models = config.providers.tux.models;
+    expect(models['gpt-6.1-sol'].variants).toContainEqual({ id: 'agent-retained', settings: { reasoningEffort: 'medium' } });
+    models['gpt-6.1-sol'].variants = models['gpt-6.1-sol'].variants.filter((variant: { id: string }) => variant.id !== 'agent-retained');
+    expect(models).toEqual(fixture.models);
+    expect(config.provider.tux).toBeUndefined();
+    expect(config.provider.neighbor).toEqual({ name: 'Retained' });
+    expect(config.customKey).toEqual(stale.customKey);
+    const second = await runPush(options);
+    expect(second.failed).toBe(0);
+    expect(second.hasDrift).toBe(false);
+    expect(second.written).toBe(0);
+  });
+
   test('syncs V2 agent variants when pushing agents alone', async () => {
     const fakeHome = createTestHome('push-v2-agent-variants');
     const projectDir = createTestProject('push-v2-agent-variants', FIXTURE_ROOT);
