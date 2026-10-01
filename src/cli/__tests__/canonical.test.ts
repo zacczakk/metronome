@@ -80,9 +80,9 @@ describe('canonical agent routing', () => {
       expect(models[model]).toBeDefined();
     }
     expect(settings.disabled_providers).toEqual(['opencode', 'opencode-go']);
-    expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2, output: 10, cache_read: 0.2, cache_write: 2.5 });
-    expect(models['gpt-5.6-sol']?.cost).toMatchObject({ input: 4, output: 20, cache_read: 0.4, cache_write: 5 });
-    expect(models['gpt-6-luna']?.cost).toMatchObject({ input: 0.1, output: 0.5, cache_read: 0.01, cache_write: 0.125 });
+    expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2.2, output: 11, cache_read: 0.22, cache_write: 2.75 });
+    expect(models['gpt-5.6-sol']?.cost).toEqual({ input: 5.5, output: 33, cache_read: 0.55, cache_write: 6.88 });
+    expect(models['gpt-6-luna']?.cost).toEqual({ input: 0.12, output: 0.6, cache_read: 0.012, cache_write: 0.15 });
   });
 
   test('allows webfetch for review and verification agents', async () => {

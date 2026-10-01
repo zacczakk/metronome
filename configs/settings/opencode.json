@@ -308,14 +308,14 @@
         "claude-opus-5-5": {
           "name": "Claude Opus 5.5",
           "cost": {
-            "input": 4,
-            "output": 20,
-            "cache_read": 0.2,
-            "cache_write": 5
+            "input": 4.4,
+            "output": 22,
+            "cache_read": 0.22,
+            "cache_write": 5.5
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -354,14 +354,14 @@
         "claude-opus-5": {
           "name": "Claude Opus 5",
           "cost": {
-            "input": 5,
-            "output": 25,
-            "cache_read": 0.5,
-            "cache_write": 6.25
+            "input": 5.5,
+            "output": 27.5,
+            "cache_read": 0.55,
+            "cache_write": 6.875
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -400,14 +400,14 @@
         "claude-opus-4-8": {
           "name": "Claude Opus 4.8",
           "cost": {
-            "input": 5,
-            "output": 25,
-            "cache_read": 0.5,
-            "cache_write": 6.25
+            "input": 5.5,
+            "output": 27.5,
+            "cache_read": 0.55,
+            "cache_write": 6.875
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -446,14 +446,14 @@
         "claude-opus-4-7": {
           "name": "Claude Opus 4.7",
           "cost": {
-            "input": 5,
-            "output": 25,
-            "cache_read": 0.5,
-            "cache_write": 6.25
+            "input": 5.5,
+            "output": 27.5,
+            "cache_read": 0.55,
+            "cache_write": 6.875
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -492,14 +492,14 @@
         "claude-opus-4-6": {
           "name": "Claude Opus 4.6",
           "cost": {
-            "input": 5,
-            "output": 25,
-            "cache_read": 0.5,
-            "cache_write": 6.25
+            "input": 5.5,
+            "output": 27.5,
+            "cache_read": 0.55,
+            "cache_write": 6.875
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -535,17 +535,43 @@
             }
           }
         },
-        "claude-sonnet-5": {
-          "name": "Claude Sonnet 5",
+        "claude-sonnet-5-5": {
+          "name": "Claude Sonnet 5.5",
           "cost": {
-            "input": 2,
-            "output": 10,
-            "cache_read": 0.2,
-            "cache_write": 2.5
+            "input": 2.2,
+            "output": 11,
+            "cache_read": 0.22,
+            "cache_write": 2.75
           },
           "limit": {
             "context": 200000,
-            "output": 64000
+            "output": 32000
+          },
+          "options": {
+            "toolStreaming": false
+          },
+          "attachment": true,
+          "modalities": {
+            "input": ["image", "text"],
+            "output": ["text"]
+          },
+          "variants": {
+            "low": { "thinking": { "type": "adaptive" }, "effort": "low" },
+            "medium": { "thinking": { "type": "adaptive" }, "effort": "medium" },
+            "high": { "thinking": { "type": "adaptive" }, "effort": "high" }
+          }
+        },
+        "claude-sonnet-5": {
+          "name": "Claude Sonnet 5",
+          "cost": {
+            "input": 2.2,
+            "output": 11,
+            "cache_read": 0.22,
+            "cache_write": 2.75
+          },
+          "limit": {
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -584,14 +610,14 @@
         "claude-sonnet-4-6": {
           "name": "Claude Sonnet 4.6",
           "cost": {
-            "input": 3,
-            "output": 15,
-            "cache_read": 0.3,
-            "cache_write": 3.75
+            "input": 3.3,
+            "output": 16.5,
+            "cache_read": 0.33,
+            "cache_write": 4.125
           },
           "limit": {
             "context": 200000,
-            "output": 64000
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -630,14 +656,14 @@
         "claude-sonnet-4-5": {
           "name": "Claude Sonnet 4.5",
           "cost": {
-            "input": 3,
-            "output": 15,
-            "cache_read": 0.3,
-            "cache_write": 3.75
+            "input": 3.3,
+            "output": 16.5,
+            "cache_read": 0.33,
+            "cache_write": 4.125
           },
           "limit": {
             "context": 200000,
-            "output": 64000
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -676,14 +702,14 @@
         "claude-haiku-4-5-20251001": {
           "name": "Claude Haiku 4.5",
           "cost": {
-            "input": 1,
-            "output": 5,
-            "cache_read": 0.1,
-            "cache_write": 1.25
+            "input": 1.1,
+            "output": 5.5,
+            "cache_read": 0.11,
+            "cache_write": 1.375
           },
           "limit": {
             "context": 200000,
-            "output": 64000
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -699,43 +725,51 @@
             ]
           },
           "variants": {
-            "low": {
-              "thinking": {
-                "type": "adaptive"
-              },
-              "effort": "low"
-            },
-            "medium": {
-              "thinking": {
-                "type": "adaptive"
-              },
-              "effort": "medium"
-            },
-            "high": {
-              "thinking": {
-                "type": "adaptive"
-              },
-              "effort": "high"
-            }
+            "low": {},
+            "medium": {},
+            "high": {}
+          }
+        },
+        "gpt-6.1-sol": {
+          "name": "GPT-6.1 Sol",
+          "cost": {
+            "input": 2.4,
+            "output": 12,
+            "cache_read": 0.12,
+            "cache_write": 3
+          },
+          "limit": {
+            "context": 200000,
+            "output": 32000
+          },
+          "provider": { "npm": "@ai-sdk/openai" },
+          "reasoning": true,
+          "attachment": true,
+          "options": { "reasoningSummary": "auto" },
+          "modalities": {
+            "input": ["image", "pdf", "text"],
+            "output": ["text"]
+          },
+          "variants": {
+            "none": { "reasoningEffort": "none", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "low": { "reasoningEffort": "low", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "medium": { "reasoningEffort": "medium", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "high": { "reasoningEffort": "high", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "xhigh": { "reasoningEffort": "xhigh", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] },
+            "max": { "reasoningEffort": "max", "reasoningSummary": "auto", "include": ["reasoning.encrypted_content"] }
           }
         },
         "gpt-6-sol": {
           "name": "GPT-6 Sol",
           "cost": {
-            "input": 2,
-            "output": 10,
-            "cache_read": 0.2,
-            "cache_write": 2.5,
-            "context_over_200k": {
-              "input": 4,
-              "output": 15,
-              "cache_read": 0.4,
-              "cache_write": 5
-            }
+            "input": 2.4,
+            "output": 12,
+            "cache_read": 0.24,
+            "cache_write": 3
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "provider": {
             "npm": "@ai-sdk/openai"
@@ -803,20 +837,14 @@
         "gpt-5.6-sol": {
           "name": "GPT-5.6 Sol",
           "cost": {
-            "input": 4,
-            "output": 20,
-            "cache_read": 0.4,
-            "cache_write": 5,
-            "context_over_200k": {
-              "input": 8,
-              "output": 30,
-              "cache_read": 0.8,
-              "cache_write": 10
-            }
+            "input": 5.5,
+            "output": 33,
+            "cache_read": 0.55,
+            "cache_write": 6.88
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "attachment": true,
           "modalities": {
@@ -877,20 +905,14 @@
         "gpt-5.6-terra": {
           "name": "GPT-5.6 Terra",
           "cost": {
-            "input": 2,
-            "output": 12,
-            "cache_read": 0.2,
-            "cache_write": 2.5,
-            "context_over_200k": {
-              "input": 4,
-              "output": 18,
-              "cache_read": 0.4,
-              "cache_write": 5
-            }
+            "input": 4.4,
+            "output": 19.8,
+            "cache_read": 0.44,
+            "cache_write": 5.5
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "attachment": true,
           "modalities": {
@@ -958,20 +980,14 @@
         "gpt-6-luna": {
           "name": "GPT-6 Luna",
           "cost": {
-            "input": 0.1,
-            "output": 0.5,
-            "cache_read": 0.01,
-            "cache_write": 0.125,
-            "context_over_200k": {
-              "input": 0.2,
-              "output": 0.9,
-              "cache_read": 0.024,
-              "cache_write": 0.3
-            }
+            "input": 0.12,
+            "output": 0.6,
+            "cache_read": 0.012,
+            "cache_write": 0.15
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "provider": {
             "npm": "@ai-sdk/openai"
@@ -1039,20 +1055,14 @@
         "gpt-5.6-luna": {
           "name": "GPT-5.6 Luna",
           "cost": {
-            "input": 0.2,
-            "output": 1.2,
-            "cache_read": 0.02,
-            "cache_write": 0.25,
-            "context_over_200k": {
-              "input": 0.4,
-              "output": 1.8,
-              "cache_read": 0.04,
-              "cache_write": 0.5
-            }
+            "input": 0.22,
+            "output": 1.32,
+            "cache_read": 0.03,
+            "cache_write": 0.28
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "attachment": true,
           "modalities": {
@@ -1067,7 +1077,8 @@
           },
           "options": {
             "reasoningSummary": "auto",
-            "reasoningEffort": "max"
+            "reasoningEffort": "max",
+            "include": ["reasoning.encrypted_content"]
           },
           "variants": {
             "none": {
@@ -1123,16 +1134,11 @@
           "cost": {
             "input": 5,
             "output": 30,
-            "cache_read": 0.5,
-            "context_over_200k": {
-              "input": 10,
-              "output": 45,
-              "cache_read": 1
-            }
+            "cache_read": 0.5
           },
           "limit": {
-            "context": 1050000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "attachment": true,
           "modalities": {
@@ -1199,8 +1205,8 @@
             "cache_write": 1.74
           },
           "limit": {
-            "context": 1000000,
-            "output": 384000
+            "context": 200000,
+            "output": 32000
           },
           "options": {
             "toolStreaming": false
@@ -1244,8 +1250,8 @@
             "cache_read": 0.15
           },
           "limit": {
-            "context": 1000000,
-            "output": 128000
+            "context": 200000,
+            "output": 32000
           },
           "attachment": true,
           "modalities": {
