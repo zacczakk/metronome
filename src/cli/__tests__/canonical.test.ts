@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { isCanonicalAgentForTarget, readCanonicalAgents, readCanonicalMCPServers, readCanonicalSkills } from '../canonical';
 
 describe('canonical agent routing', () => {
-  test('uses the approved GPT-5.6 tiers and reasoning efforts', async () => {
+  test('uses current specialist models and reasoning efforts', async () => {
     const agents = await readCanonicalAgents(process.cwd(), () => false);
     const routing = Object.fromEntries(
       agents.map(({ name, metadata }) => [
@@ -15,16 +15,16 @@ describe('canonical agent routing', () => {
     );
 
     expect(routing).toEqual({
-      'api-review': ['github-copilot/gpt-5.6-terra', 'medium'],
-      docs: ['github-copilot/gpt-5.6-luna', 'max'],
-      execute: ['github-copilot/gpt-5.6-luna', 'max'],
-      'foundry-sql': ['github-copilot/gpt-5.6-luna', 'max'],
-      'infra-review': ['github-copilot/gpt-5.6-terra', 'medium'],
-      release: ['github-copilot/gpt-5.6-luna', 'xhigh'],
-      research: ['github-copilot/gpt-5.6-luna', 'max'],
-      'security-review': ['github-copilot/gpt-5.6-sol', 'high'],
-      'vault-ops': ['github-copilot/gpt-5.6-luna', 'max'],
-      verify: ['github-copilot/gpt-5.6-luna', 'max'],
+      'api-review': ['github-copilot/claude-opus-5.5', 'medium'],
+      docs: ['github-copilot/gpt-6-luna', 'medium'],
+      execute: ['github-copilot/gpt-6-luna', 'max'],
+      'foundry-sql': ['github-copilot/gpt-6.1-sol', 'medium'],
+      'infra-review': ['github-copilot/claude-opus-5.5', 'medium'],
+      release: ['github-copilot/gpt-6.1-sol', 'high'],
+      research: ['github-copilot/gpt-6.1-sol', 'high'],
+      'security-review': ['github-copilot/claude-opus-5.5', 'medium'],
+      'vault-ops': ['github-copilot/gpt-6-luna', 'medium'],
+      verify: ['github-copilot/gpt-6-luna', 'max'],
     });
   });
 
@@ -58,13 +58,23 @@ describe('canonical agent routing', () => {
     expect(agent?.content).toContain('Do not abbreviate, paraphrase');
   });
 
-  test('routes OpenCode explore to Luna with max reasoning effort', () => {
+  test('routes OpenCode explore to GPT-6 Luna with medium reasoning effort', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'opencode.json'), 'utf8'),
-    ) as { model?: string; agents?: Record<string, { model?: string }> };
+    ) as {
+      model?: string;
+      agents?: Record<string, { model?: string }>;
+      provider?: {
+        'github-copilot'?: {
+          models?: Record<string, { variants?: Record<string, { reasoningEffort?: string }> }>;
+        };
+      };
+    };
 
     expect(settings.model).toBe('tux/gpt-6-luna');
-    expect(settings.agents?.explore).toEqual({ model: 'github-copilot/gpt-5.6-luna#agent-explore' });
+    expect(settings.agents?.explore).toEqual({ model: 'github-copilot/gpt-6-luna#agent-explore' });
+    expect(settings.provider?.['github-copilot']?.models?.['gpt-6-luna']?.variants?.['agent-explore'])
+      .toEqual({ reasoningEffort: 'medium' });
   });
 
   test('matches the current Tux OpenCode catalog and provider policy', () => {

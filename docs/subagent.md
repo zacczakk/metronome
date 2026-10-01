@@ -31,21 +31,34 @@ OpenCode-only specialists such as `foundry-sql`; list `opencode` for stable
 OpenCode routing.
 
 ## Current OpenCode routing
-- `explore`, `execute`, `verify`: `github-copilot/gpt-5.6-luna` with max reasoning effort.
-- `docs`, `research`, `vault-ops`: `github-copilot/gpt-5.6-luna` with max reasoning effort.
-- `release`: `github-copilot/gpt-5.6-luna` with xhigh reasoning effort.
-- `api-review`, `infra-review`: `github-copilot/gpt-5.6-terra` with medium reasoning effort.
-- `security-review`: `github-copilot/gpt-5.6-sol` with high reasoning effort.
-- `foundry-sql`: `github-copilot/gpt-5.6-luna` with max reasoning effort; OpenCode only.
+
+| Agent | Model | Effort |
+|---|---|---|
+| `api-review` | `github-copilot/claude-opus-5.5` | medium |
+| `docs` | `github-copilot/gpt-6-luna` | medium |
+| `execute` | `github-copilot/gpt-6-luna` | max |
+| `explore` | `github-copilot/gpt-6-luna` | medium |
+| `foundry-sql` | `github-copilot/gpt-6.1-sol` | medium |
+| `infra-review` | `github-copilot/claude-opus-5.5` | medium |
+| `release` | `github-copilot/gpt-6.1-sol` | high |
+| `research` | `github-copilot/gpt-6.1-sol` | high |
+| `security-review` | `github-copilot/claude-opus-5.5` | medium |
+| `vault-ops` | `github-copilot/gpt-6-luna` | medium |
+| `verify` | `github-copilot/gpt-6-luna` | max |
+
+The built-in `general` agent inherits the session model. `foundry-sql` is OpenCode only.
 
 ## Portable tool derivation
 - Non-OpenCode targets do not consume OpenCode `permission` blocks directly.
-- Adapters derive a best-effort portable `allowed-tools` list from canonical metadata:
-  - always include `Read`, `Glob`, `Grep`
-  - add `Edit` and `Write` when `permission.edit != deny`
-  - add `Bash` when `permission.bash != deny`
-  - add `WebFetch` when `permission.webfetch != deny`
+- Adapters derive a best-effort `allowed-tools` list from canonical metadata.
+  Explicit tool rules override `permission['*']`; a wildcard deny includes only
+  explicitly allowed or asked tools. Without a wildcard deny, unspecified tools
+  keep the portable defaults.
+- Nested Bash command rules flatten to the Bash tool on non-OpenCode targets;
+  command-level restrictions do not transfer.
 - OpenCode-only keys like `permission`, `color`, and `mode` are dropped when the target does not support them.
+- Claude Code maps an explicit Opus 5.5 model to `opus`; effort-only routes map high/xhigh/max to `opus`, medium to `sonnet`, and low to `haiku`. It renders native `effort`.
+- Codex maps Opus 5.5 to GPT-6.1 Sol/medium because Codex uses OpenAI Responses and Opus is Anthropic-Messages-only. Antigravity drops `model` and uses its own model routing.
 - OpenCode GPT model options use camelCase in canonical frontmatter. Codex renders `reasoningEffort` as `model_reasoning_effort` and `textVerbosity` as `model_verbosity`.
 
 ## Render targets — commands

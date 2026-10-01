@@ -7,7 +7,7 @@ description: >-
   or when those delivery/configuration surfaces changed. Generic release readiness
   alone is not a reason to invoke it.
 mode: subagent
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/claude-opus-5.5
 reasoningEffort: medium
 textVerbosity: low
 color: '#61ffca'

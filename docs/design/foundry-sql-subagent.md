@@ -10,9 +10,10 @@ read_when:
 ## Goal
 
 Keep Foundry exploration out of the main session. `foundry-sql` runs as an
-OpenCode child on `github-copilot/gpt-5.6-luna` with max reasoning effort, performs only
-the data discovery and query work needed for the parent question, and returns a
-compact evidence brief instead of raw MCP transcripts or result tables.
+OpenCode child on `github-copilot/gpt-6.1-sol` with medium reasoning effort. It
+performs only the data discovery and query work needed for the parent question,
+and returns a compact evidence brief instead of raw MCP transcripts or result
+tables.
 
 ## Context Boundary
 

@@ -113,6 +113,20 @@ describe('AntigravityAdapter.renderAgent', () => {
     expect(result.content).toContain('allowed-tools');
   });
 
+  it('does not expose edit tools when wildcard permission denies them', () => {
+    const item = {
+      ...agentItem,
+      metadata: {
+        description: 'Read-only agent',
+        permission: { '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow' },
+      },
+    };
+    const result = adapter.renderAgent(item);
+    expect(result.content).toContain('allowed-tools');
+    expect(result.content).not.toContain('Edit');
+    expect(result.content).not.toContain('Write');
+  });
+
   it('does not leak opencode-only fields into Antigravity frontmatter', () => {
     const result = adapter.renderAgent(agentItem);
     expect(result.content).not.toContain('permission:');

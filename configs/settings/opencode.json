@@ -237,7 +237,7 @@
   ],
   "agents": {
     "explore": {
-      "model": "github-copilot/gpt-5.6-luna#agent-explore"
+      "model": "github-copilot/gpt-6-luna#agent-explore"
     }
   },
   "websearch": {
@@ -1314,10 +1314,10 @@
     },
     "github-copilot": {
       "models": {
-        "gpt-5.6-luna": {
+        "gpt-6-luna": {
           "variants": {
             "agent-explore": {
-              "reasoningEffort": "max"
+              "reasoningEffort": "medium"
             }
           }
         }

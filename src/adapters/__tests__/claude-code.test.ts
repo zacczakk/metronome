@@ -79,20 +79,94 @@ describe('ClaudeCodeAdapter.renderAgent', () => {
     expect(result.content).toContain('tools:');
     expect(result.content).not.toContain('allowed-tools');
     expect(result.content).toContain('model: sonnet');
+    expect(result.content).toContain('effort: medium');
     expect(result.content).toContain('name: my-agent');
     expect(result.content).not.toContain('color:');
     expect(result.content).not.toContain('permission:');
     expect(result.content).not.toContain('reasoningEffort:');
   });
 
-  it('maps high reasoningEffort to claude-opus-4-6', () => {
+  it('maps high reasoningEffort to current Opus and preserves native effort', () => {
     const agentItem = {
       name: 'my-agent',
       content: 'Agent body content.\n',
       metadata: { description: 'A description', reasoningEffort: 'high' },
     };
     const result = adapter.renderAgent(agentItem);
-    expect(result.content).toContain('model: claude-opus-4-6');
+    expect(result.content).toContain('model: opus');
+    expect(result.content).toContain('effort: high');
+  });
+
+  it('keeps an explicit Opus model at medium effort', () => {
+    const agentItem = {
+      name: 'api-review',
+      content: 'Review APIs.\n',
+      metadata: {
+        description: 'Reviews backend APIs',
+        model: 'github-copilot/claude-opus-5.5',
+        reasoningEffort: 'medium',
+      },
+    };
+    const result = adapter.renderAgent(agentItem);
+    expect(result.content).toContain('model: opus');
+    expect(result.content).toContain('effort: medium');
+  });
+
+  it('preserves xhigh effort for Opus agents', () => {
+    const agentItem = {
+      name: 'my-agent',
+      content: 'Agent body content.\n',
+      metadata: { description: 'A description', reasoningEffort: 'xhigh' },
+    };
+    const result = adapter.renderAgent(agentItem);
+    expect(result.content).toContain('model: opus');
+    expect(result.content).toContain('effort: xhigh');
+  });
+
+  it('keeps wildcard-denied edit tools out of read-only agents', () => {
+    const agentItem = {
+      name: 'my-agent',
+      content: 'Agent body content.\n',
+      metadata: {
+        description: 'Read-only agent',
+        permission: {
+          '*': 'deny',
+          read: 'allow',
+          glob: 'allow',
+          grep: 'allow',
+          bash: 'allow',
+          webfetch: 'allow',
+        },
+      },
+    };
+    const result = adapter.renderAgent(agentItem);
+    expect(result.content).toContain('- Read');
+    expect(result.content).toContain('- Bash');
+    expect(result.content).toContain('- WebFetch');
+    expect(result.content).not.toContain('- Edit');
+    expect(result.content).not.toContain('- Write');
+  });
+
+  it('keeps Bash when command-scoped rules allow it under wildcard deny', () => {
+    const agentItem = {
+      name: 'my-agent',
+      content: 'Agent body content.\n',
+      metadata: {
+        description: 'Release agent',
+        permission: {
+          '*': 'deny',
+          read: 'allow',
+          glob: 'allow',
+          grep: 'allow',
+          edit: 'allow',
+          bash: { 'git tag *': 'allow' },
+        },
+      },
+    };
+    const result = adapter.renderAgent(agentItem);
+    expect(result.content).toContain('- Bash');
+    expect(result.content).toContain('- Edit');
+    expect(result.content).toContain('- Write');
   });
 
   it('maps low reasoningEffort to haiku', () => {
@@ -103,6 +177,18 @@ describe('ClaudeCodeAdapter.renderAgent', () => {
     };
     const result = adapter.renderAgent(agentItem);
     expect(result.content).toContain('model: haiku');
+    expect(result.content).toContain('effort: low');
+  });
+
+  it('keeps max effort for Opus agents', () => {
+    const agentItem = {
+      name: 'my-agent',
+      content: 'Agent body content.\n',
+      metadata: { description: 'A description', reasoningEffort: 'max' },
+    };
+    const result = adapter.renderAgent(agentItem);
+    expect(result.content).toContain('model: opus');
+    expect(result.content).toContain('effort: max');
   });
 
   it('falls back to sonnet when no reasoningEffort or model set', () => {

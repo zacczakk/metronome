@@ -38,9 +38,9 @@ export class ClaudeCodeAdapter extends BaseAdapter {
   }
 
   private static readonly REASONING_EFFORT_MODEL_MAP: Record<string, string> = {
-    max: 'claude-opus-4-6',
-    xhigh: 'claude-opus-4-6',
-    high: 'claude-opus-4-6',
+    max: 'opus',
+    xhigh: 'opus',
+    high: 'opus',
     medium: 'sonnet',
     low: 'haiku',
   };
@@ -53,8 +53,12 @@ export class ClaudeCodeAdapter extends BaseAdapter {
     if (src.description) metadata.description = src.description;
 
     const effort = typeof src.reasoningEffort === 'string' ? src.reasoningEffort : undefined;
-    const mappedModel = effort ? ClaudeCodeAdapter.REASONING_EFFORT_MODEL_MAP[effort] : undefined;
+    const requestedModel = typeof src.model === 'string' ? src.model.split('/').pop() : undefined;
+    const mappedModel = requestedModel === 'claude-opus-5.5'
+      ? 'opus'
+      : effort ? ClaudeCodeAdapter.REASONING_EFFORT_MODEL_MAP[effort] : undefined;
     metadata.model = mappedModel ?? src.model ?? 'sonnet';
+    if (mappedModel && effort) metadata.effort = effort;
 
     const allowedTools = this.deriveAllowedTools(src);
     if (allowedTools) metadata.tools = allowedTools;

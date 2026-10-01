@@ -189,9 +189,11 @@ export class CodexAdapter extends BaseAdapter {
     const model = metadata.model;
     if (typeof model === 'string') {
       const [provider, modelID] = model.includes('/') ? model.split('/', 2) : [undefined, model];
-      const fastModel = modelID.endsWith('-fast');
-      rendered.model = fastModel ? modelID.slice(0, -5) : modelID;
-      if (provider === 'openai') rendered.model_provider = 'openai';
+      // Codex uses Responses; Opus 5.5 is Anthropic-Messages-only.
+      const codexModelID = modelID === 'claude-opus-5.5' ? 'gpt-6.1-sol' : modelID;
+      const fastModel = codexModelID.endsWith('-fast');
+      rendered.model = fastModel ? codexModelID.slice(0, -5) : codexModelID;
+      if (provider === 'openai' || modelID === 'claude-opus-5.5') rendered.model_provider = 'openai';
       if (fastModel) rendered.service_tier = 'fast';
     }
 
@@ -370,9 +372,10 @@ export class CodexAdapter extends BaseAdapter {
     }
 
     const permission = metadata.permission;
-    if (!permission || typeof permission !== 'object') return undefined;
+    if (!isPlainObject(permission)) return undefined;
+    if (permission.edit === 'allow') return undefined;
 
-    return (permission as Record<string, unknown>).edit === 'deny' ? 'read-only' : undefined;
+    return permission.edit === 'deny' || permission['*'] === 'deny' ? 'read-only' : undefined;
   }
 
   private legacyAgentFilePath(name: string): string {

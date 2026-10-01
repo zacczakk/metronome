@@ -5,8 +5,8 @@ description: >-
   tag, version bump, or publish flow. A standalone changelog or documentation edit
   belongs to the docs agent.
 mode: subagent
-model: github-copilot/gpt-5.6-luna
-reasoningEffort: xhigh
+model: github-copilot/gpt-6.1-sol
+reasoningEffort: high
 textVerbosity: low
 color: '#61ffca'
 permission:

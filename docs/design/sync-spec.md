@@ -155,6 +155,7 @@ Canonical agent frontmatter (source of truth):
 description: Goal-backward task planning. Invoke after implementation.
 mode: subagent
 model: github-copilot/gpt-5.4
+reasoningEffort: high
 permission:
   bash: allow
   edit: deny
@@ -168,19 +169,26 @@ Claude rendered agent frontmatter:
 ---
 name: planner
 description: Goal-backward task planning. Invoke after implementation.
-model: github-copilot/gpt-5.4
+model: opus
+effort: high
 allowed-tools: [Read, Glob, Grep, Bash]
 ---
 ```
 
 Rules:
 - Derive `name` from filename.
-- Keep `description` and `model` if present.
+- Keep `description` if present.
+- If the canonical model ID identifies Claude Opus 5.5, render `model: opus`;
+  otherwise map high/xhigh/max to `opus`, medium to `sonnet`, and low to
+  `haiku` when `reasoningEffort` is set. Render mapped effort as Claude Code's
+  native `effort` field. Otherwise keep `model` if present, or default to
+  `sonnet`.
 - Derive `allowed-tools` from OpenCode-style `permission`:
-  - always include `Read`, `Glob`, `Grep`
-  - include `Edit` and `Write` when `permission.edit != deny`
-  - include `Bash` when `permission.bash != deny`
-  - include `WebFetch` when `permission.webfetch != deny`
+  - explicit tool rules override `permission['*']`
+  - wildcard deny includes only explicitly allowed or asked tools
+  - without wildcard deny, unspecified tools retain portable defaults
+- Nested Bash command rules flatten to `Bash`; command-level restrictions do not
+  transfer to Claude Code.
 - Drop OpenCode-only keys like `mode`, `permission`, and `color`.
 - Body content copied verbatim.
 
@@ -242,7 +250,6 @@ Antigravity rendered agent frontmatter (written to `~/.gemini/antigravity-cli/sk
 ---
 name: planner
 description: Goal-backward task planning...
-model: github-copilot/gpt-5.4
 allowed-tools: [Read, Glob, Grep, Bash]
 kind: local
 ---
@@ -250,7 +257,8 @@ kind: local
 
 Rules:
 - Derive `name` from filename.
-- Keep `description` and `model` if present.
+- Keep `description` if present.
+- Drop `model`; Antigravity uses its own model routing.
 - Derive `allowed-tools` from `permission` using the Claude rules above.
 - Add `kind: local` to frontmatter.
 - Drop OpenCode-only keys like `mode`, `permission`, and `color`.
@@ -273,8 +281,10 @@ Rules:
   `model_reasoning_effort`, `model_verbosity`, `sandbox_mode`, `mcp_servers`, `skills`.
 - Translate OpenCode-style GPT options for Codex: `reasoningEffort` ->
   `model_reasoning_effort`; `textVerbosity` -> `model_verbosity`.
-- If canonical metadata explicitly denies edits and no `sandbox_mode` is set,
-  derive `sandbox_mode = "read-only"` to preserve read-only intent.
+- Map Claude Opus 5.5 to GPT-6.1 Sol with `model_provider = "openai"`; Codex
+  uses OpenAI Responses, while Tux exposes Opus through Anthropic Messages.
+- If canonical metadata denies edits directly or through `'*': deny` without an
+  explicit `edit: allow`, derive `sandbox_mode = "read-only"`.
 - Reverse parsing accepts both the current TOML format and legacy
   `prompts/agent-*.md` markdown for backward compatibility during migration.
 

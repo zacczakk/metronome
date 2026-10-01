@@ -130,12 +130,11 @@ The Codex adapter omits that key from `config.toml` and projects each entry to
 `~/.codex/<name>.config.toml`, matching Codex 0.134+ profile layering. Select one
 with `codex --profile <name>` or `codex exec --profile <name> ...`.
 
-The base configuration uses the local Tux provider with `gpt-5.6-luna` at
-`xhigh` reasoning, with Codex's existing `never` approval policy and
-`workspace-write` sandbox retained under canonical ownership. The `enterprise`
-profile remains available for explicitly selecting ChatGPT Enterprise; the
-`tux` profile remains available for an explicit local-provider selection
-without forwarding OpenAI credentials.
+The base configuration uses OpenAI's `gpt-5.6-terra` at `xhigh` reasoning, with
+Codex's existing `never` approval policy and `workspace-write` sandbox retained
+under canonical ownership. The `enterprise` profile remains available for
+explicitly selecting ChatGPT Enterprise; the `tux` profile uses local
+`gpt-5.6-luna` without forwarding OpenAI credentials.
 
 ### Adding a new hook
 

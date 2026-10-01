@@ -4,8 +4,8 @@ description: >-
   runs bounded SQL or ontology queries, and returns compact evidence summaries
   to the parent session. OpenCode only.
 mode: subagent
-model: github-copilot/gpt-5.6-luna
-reasoningEffort: max
+model: github-copilot/gpt-6.1-sol
+reasoningEffort: medium
 textVerbosity: low
 steps: 12
 targets:

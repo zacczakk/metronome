@@ -129,6 +129,30 @@ describe('CodexAdapter.renderAgent', () => {
     expect(result.content).toContain('sandbox_mode = "read-only"');
   });
 
+  it('derives read-only sandbox from wildcard deny', () => {
+    const item = {
+      ...agentWithoutTools,
+      metadata: {
+        description: 'Read-only reviewer',
+        permission: { '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow' },
+      },
+    };
+    const result = adapter.renderAgent(item);
+    expect(result.content).toContain('sandbox_mode = "read-only"');
+  });
+
+  it('keeps the writable sandbox when edit is explicitly allowed over wildcard deny', () => {
+    const item = {
+      ...agentWithoutTools,
+      metadata: {
+        description: 'Writable agent',
+        permission: { '*': 'deny', edit: 'allow' },
+      },
+    };
+    const result = adapter.renderAgent(item);
+    expect(result.content).not.toContain('sandbox_mode =');
+  });
+
   it('omits sandbox_mode when no restrictive sandbox can be derived', () => {
     const result = adapter.renderAgent(agentWithoutTools);
     expect(result.content).not.toContain('sandbox_mode =');
@@ -149,6 +173,22 @@ describe('CodexAdapter.renderAgent', () => {
     const result = adapter.renderAgent(agentWithOpenCodeModelOptions);
     expect(result.content).toContain('model_reasoning_effort = "medium"');
     expect(result.content).toContain('model_verbosity = "low"');
+  });
+
+  it('routes Opus 5.5 agents to a Responses-compatible Codex model', () => {
+    const item = {
+      name: 'api-review',
+      content: 'Review APIs.\n',
+      metadata: {
+        description: 'Reviews backend APIs',
+        model: 'github-copilot/claude-opus-5.5',
+        reasoningEffort: 'medium',
+      },
+    };
+    const result = adapter.renderAgent(item);
+    expect(result.content).toContain('model = "gpt-6.1-sol"');
+    expect(result.content).toContain('model_provider = "openai"');
+    expect(result.content).toContain('model_reasoning_effort = "medium"');
   });
 
   it('maps OpenAI fast aliases to Codex provider and service tier settings', () => {

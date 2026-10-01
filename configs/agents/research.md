@@ -5,8 +5,8 @@ description: >-
   question remains unresolved after focused local lookup or requires external evidence.
   Use the explore agent for simple repository discovery. Read-only.
 mode: subagent
-model: github-copilot/gpt-5.6-luna
-reasoningEffort: max
+model: github-copilot/gpt-6.1-sol
+reasoningEffort: high
 textVerbosity: low
 color: '#a277ff'
 permission:

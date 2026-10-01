@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { readJson, writeJson } from '../formats/json';
 import { join } from 'node:path';
 import { AdapterPathResolver } from './path-resolver';
+import { isPlainObject } from './merge';
 import { parseFrontmatter, stringifyFrontmatter } from '../formats/markdown';
 import { readSupportFiles } from '../infra/support-files';
 import type {
@@ -388,25 +389,34 @@ export abstract class BaseAdapter implements ToolAdapter {
     }
 
     const permission = metadata.permission;
-    if (!permission || typeof permission !== 'object') return undefined;
+    if (!isPlainObject(permission)) return undefined;
 
-    const tools = ['Read', 'Glob', 'Grep'] as string[];
+    const defaultDenied = permission['*'] === 'deny';
+    const isAvailable = (tool: string): boolean => {
+      const rule = permission[tool];
+      if (rule === 'allow' || rule === 'ask') return true;
+      if (rule === 'deny') return false;
+      if (isPlainObject(rule)) {
+        const defaultRule = rule['*'];
+        if (defaultRule === 'allow' || defaultRule === 'ask') return true;
+        const specificRules = Object.entries(rule)
+          .filter(([pattern]) => pattern !== '*')
+          .map(([, effect]) => effect);
+        if (defaultRule === 'deny' || defaultDenied) {
+          return specificRules.some((effect) => effect === 'allow' || effect === 'ask');
+        }
+        return true;
+      }
+      return !defaultDenied;
+    };
 
-    const edit = (permission as Record<string, unknown>).edit;
-    const bash = (permission as Record<string, unknown>).bash;
-    const webfetch = (permission as Record<string, unknown>).webfetch;
-
-    if (edit !== 'deny') {
-      tools.push('Edit', 'Write');
-    }
-
-    if (bash !== 'deny') {
-      tools.push('Bash');
-    }
-
-    if (webfetch !== 'deny') {
-      tools.push('WebFetch');
-    }
+    const tools: string[] = [];
+    if (isAvailable('read')) tools.push('Read');
+    if (isAvailable('glob')) tools.push('Glob');
+    if (isAvailable('grep')) tools.push('Grep');
+    if (isAvailable('edit')) tools.push('Edit', 'Write');
+    if (isAvailable('bash')) tools.push('Bash');
+    if (isAvailable('webfetch')) tools.push('WebFetch');
 
     return tools;
   }
