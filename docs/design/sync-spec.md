@@ -812,9 +812,11 @@ to honor both sources.
 
 **MCP sections**: `[mcp_servers.*]` TOML sections at end of file.
 
-**Push**: Read system file. Remove all existing `[mcp_servers.*]` sections.
-Append rendered MCP TOML sections. Write back. Non-MCP sections are
-preserved verbatim.
+**Push**: Read system file. Preserve the complete `node_repl` and `computer-use`
+MCP entries owned by the Codex app. Replace other MCP entries with rendered
+canonical definitions, excluding these two reserved names. Write back as TOML;
+non-MCP values are retained.
 
-**Pull**: Read system file. Extract `[mcp_servers.*]` sections. Redact
-secrets. Compare to canonical MCP definitions.
+**Pull**: Read system file. Extract `[mcp_servers.*]` sections except
+`node_repl` and `computer-use`. Redact secrets. Compare to canonical MCP
+definitions. Status and diff also exclude these app-owned entries.

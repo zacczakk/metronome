@@ -156,6 +156,14 @@ Codex supports native lifecycle hooks via `~/.codex/hooks.json` behind the `feat
 
 Canonical Codex hook registrations live in `configs/hook-configs/` and must carry the Metronome ownership marker. Hook scripts still live in `configs/hooks/` and run directly from the repo checkout via absolute path references in `hooks.json`.
 
+### Codex app-owned MCP tools
+
+Codex installs `node_repl` and `computer-use` under `mcp_servers` in
+`~/.codex/config.toml`. These two names belong to the Codex app: Metronome
+ignores them during status/diff checks and pull, preserves their complete
+existing values during push, and excludes same-name canonical definitions.
+Other MCP entries retain normal managed sync and stale-server cleanup.
+
 ### Codex provider profiles
 
 `configs/settings/codex.json` may define a Metronome-only `profile_files` map.

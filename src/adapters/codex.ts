@@ -13,6 +13,8 @@ import type {
   CanonicalSettings,
 } from '../types';
 
+const CODEX_OWNED_MCP_SERVERS = new Set(['node_repl', 'computer-use']);
+
 /** Extract bare variable name from "Bearer ${VAR_NAME}" Authorization header value */
 function extractBearerTokenVar(authHeader: string): string | undefined {
   const match = /^Bearer\s+\$\{([A-Za-z0-9_]+)\}$/.exec(authHeader.trim());
@@ -395,6 +397,7 @@ export class CodexAdapter extends BaseAdapter {
 
       const servers: MCPServer[] = [];
       for (const [name, cfg] of Object.entries(mcpServers)) {
+        if (CODEX_OWNED_MCP_SERVERS.has(name)) continue;
         const transport: 'stdio' | 'http' = typeof cfg.command === 'string' ? 'stdio' : 'http';
         const server: MCPServer = { name, transport };
 
@@ -460,23 +463,34 @@ export class CodexAdapter extends BaseAdapter {
     try {
       const parsed = readToml<Record<string, unknown>>(content);
       const servers = parsed.mcp_servers as Record<string, unknown> | undefined;
-      return servers ? Object.keys(servers) : [];
+      return servers ? Object.keys(servers).filter((name) => !CODEX_OWNED_MCP_SERVERS.has(name)) : [];
     } catch {
       return [];
     }
   }
 
-  /** Codex renders all MCP servers except target-disabled ones */
+  /** Codex app-owned and target-disabled MCP servers stay outside managed sync. */
   override getRenderedServerNames(servers: MCPServer[]): string[] {
     return servers
-      .filter((s) => !s.disabledFor?.includes('codex'))
+      .filter((s) => !CODEX_OWNED_MCP_SERVERS.has(s.name) && !s.disabledFor?.includes('codex'))
       .map((s) => s.name);
   }
 
   renderMCPServers(servers: MCPServer[], existingContent?: string): string {
-    const filtered = servers.filter((s) => !s.disabledFor?.includes('codex'));
+    const filtered = servers.filter((s) => !CODEX_OWNED_MCP_SERVERS.has(s.name) && !s.disabledFor?.includes('codex'));
 
-    const mcp_servers: Record<string, unknown> = {};
+    let base: Record<string, unknown> = {};
+    if (existingContent) {
+      try {
+        base = readToml<Record<string, unknown>>(existingContent);
+      } catch {
+        // Unparseable existing file — start fresh
+      }
+    }
+
+    const mcp_servers: Record<string, unknown> = isPlainObject(base.mcp_servers)
+      ? Object.fromEntries(Object.entries(base.mcp_servers).filter(([name]) => CODEX_OWNED_MCP_SERVERS.has(name)))
+      : {};
     for (const server of filtered) {
       const cfg: Record<string, unknown> = {};
 
@@ -525,15 +539,6 @@ export class CodexAdapter extends BaseAdapter {
       }
 
       mcp_servers[server.name] = cfg;
-    }
-
-    let base: Record<string, unknown> = {};
-    if (existingContent) {
-      try {
-        base = readToml<Record<string, unknown>>(existingContent);
-      } catch {
-        // Unparseable existing file — start fresh
-      }
     }
 
     if (filtered.length === 0 && Object.keys(base).length === 0) return '';
