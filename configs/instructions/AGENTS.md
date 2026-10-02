@@ -25,6 +25,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - **Search before pivoting**. Stuck? Search official docs. No direction change unless asked.
 - Any new work on clean repo-root `.worktrees/{branch}` off develop if present, main/master otherwise.
 - Clean up worktrees, branches after PR merge.
+- Don't tell me what NOT to do. Or what some is NOT. ONLY tell me what do to and the answers to what I ask you for.
 
 ## Tools
 - Full flags and rules in `~/Repos/zacczakk/metronome/configs/instructions/TOOLS.md`.
