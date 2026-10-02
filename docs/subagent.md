@@ -36,7 +36,7 @@ OpenCode routing.
 |---|---|---|
 | `api-review` | `github-copilot/claude-opus-5.5` | medium |
 | `docs` | `github-copilot/gpt-6-luna` | medium |
-| `execute` | `github-copilot/gpt-6-luna` | max |
+| `execute` | `tux/gpt-6-sol` | high |
 | `explore` | `github-copilot/gpt-6-luna` | medium |
 | `foundry-sql` | `github-copilot/gpt-6.1-sol` | medium |
 | `infra-review` | `github-copilot/claude-opus-5.5` | medium |
