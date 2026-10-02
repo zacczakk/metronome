@@ -98,6 +98,18 @@ Row order is not a data contract for ordinary batch outputs. Disabling insertion
 
 Leave headroom in the DuckDB memory limit for Python, Arrow or dataframe buffers, the platform sidecar, and file I/O. Do not raise the limit to container RAM without a measured resource plan.
 
+### 3a. Budget for platform output checks in the same container
+
+Managed platforms may run declarative output checks (expectations, data-health checks) after user code exits, inside the same lightweight container and outside DuckDB's memory limit. On a distributed engine these checks run across executors; on one node they share the container's RAM.
+
+- Measure memory after "user code exited" separately from DuckDB peaks. A job that finishes its DuckDB work and then runs out of memory has a check-sizing problem, not a SQL problem.
+- Primary-key and grouped-uniqueness checks dominate. Observed: about 420 MB per million rows for a composite key, versus about 20 MB per million rows for all other column checks combined. A 190M-row output needed a 128 GB container solely for its native key check, while the DuckDB work fit in 60 GB with a 40 GB engine cap.
+- Prefer enforcing key uniqueness and non-null keys inside DuckDB before publishing: per shard and on the assembled output, spill-capable, with nothing committed on failure. Then remove only the redundant platform key check. Keep every other platform check for health history and alerting. Get owner approval, because the data-health UI loses the key-check result.
+- Before removing a platform key check, audit by introspecting the registered outputs' check objects, not by grepping source; a regex silently skipped a module name containing a digit. Every removed key must equal a key the engine enforces. Move any extra uniqueness rule (for example "one row per system") into the engine stage, with a test.
+- Filter at the DuckDB call sites, so shared check catalogs and Spark reference builds keep the full list.
+- After removal, re-measure and resize down. The old container size reflects the check, not the workload.
+- Container memory telemetry can include page cache: a job with a 40 GB engine cap showed a flat 128 GB in a 128 GB container. Size from process RSS or cgroup anonymous memory logged by the job, not from the container memory chart alone.
+
 ### 4. Recreate pre-join views lazily
 
 If the distributed pipeline enriches a dimension before the main fact joins, create a DuckDB view that preserves the same semantics. Views defer work until a pass reads them:
@@ -254,6 +266,9 @@ Before changing a transform:
 - **Treating a snapshot comparison as same-input proof:** changed reference data creates legitimate differences.
 - **Leaving sample mode enabled:** a zero-row smoke predicate must never survive into benchmarking or production.
 - **Ignoring metadata or preview differences:** a path handoff and a dataframe-style metadata write may not compose in preview; test the target runtime.
+- **Sizing the container for platform checks:** post-user-code key checks can need more RAM than the whole DuckDB job. Enforce keys in DuckDB and drop the duplicate platform check instead of buying a larger container.
+- **Sizing from the container memory chart:** it may count page cache and sit at the cap. Log process RSS or cgroup anonymous memory per stage instead.
+- **Confusing engine limits with billing:** DuckDB `threads` and `memory_limit` only shape behavior inside the container. The platform bills the requested container envelope for the whole runtime.
 
 ## Definition of done
 
