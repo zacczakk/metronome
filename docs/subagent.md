@@ -36,7 +36,7 @@ OpenCode routing.
 |---|---|---|
 | `api-review` | `github-copilot/claude-opus-5.5` | medium |
 | `docs` | `github-copilot/gpt-6-luna` | medium |
-| `execute` | `tux/gpt-6-sol` | high |
+| `execute` | `tux/gpt-6.1-sol` | high |
 | `explore` | `github-copilot/gpt-6-luna` | medium |
 | `foundry-sql` | `github-copilot/gpt-6.1-sol` | medium |
 | `infra-review` | `github-copilot/claude-opus-5.5` | medium |
@@ -47,6 +47,8 @@ OpenCode routing.
 | `verify` | `github-copilot/gpt-6-luna` | max |
 
 The built-in `general` agent inherits the session model. `foundry-sql` is OpenCode only.
+
+Every explicitly routed Sol subagent uses GPT-6.1 Sol.
 
 ## Portable tool derivation
 - Non-OpenCode targets do not consume OpenCode `permission` blocks directly.

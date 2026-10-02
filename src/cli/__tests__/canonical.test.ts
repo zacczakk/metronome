@@ -17,7 +17,7 @@ describe('canonical agent routing', () => {
     expect(routing).toEqual({
       'api-review': ['github-copilot/claude-opus-5.5', 'medium'],
       docs: ['github-copilot/gpt-6-luna', 'medium'],
-      execute: ['tux/gpt-6-sol', 'high'],
+      execute: ['tux/gpt-6.1-sol', 'high'],
       'foundry-sql': ['github-copilot/gpt-6.1-sol', 'medium'],
       'infra-review': ['github-copilot/claude-opus-5.5', 'medium'],
       release: ['github-copilot/gpt-6.1-sol', 'high'],
@@ -26,6 +26,18 @@ describe('canonical agent routing', () => {
       'vault-ops': ['github-copilot/gpt-6-luna', 'medium'],
       verify: ['github-copilot/gpt-6-luna', 'max'],
     });
+  });
+
+  test('routes every Sol subagent to GPT-6.1 Sol', async () => {
+    const agents = await readCanonicalAgents(process.cwd(), () => false);
+    const solAgents = agents.filter(({ metadata }) =>
+      typeof metadata.model === 'string' && metadata.model.includes('-sol'),
+    );
+
+    expect(solAgents.map(({ name }) => name).sort()).toEqual(['execute', 'foundry-sql', 'release', 'research']);
+    for (const { metadata } of solAgents) {
+      expect(metadata.model).toMatch(/^[^/]+\/gpt-6\.1-sol$/);
+    }
   });
 
   test('limits Foundry SQL agent to OpenCode targets', async () => {
