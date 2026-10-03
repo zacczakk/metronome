@@ -17,5 +17,6 @@ read_when:
 - `--no-index` supports diagnostics and tests, and produces `indexed: false`.
 - QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
 - Health lists only sources actually scanned. Missing or unreadable source paths return failure and never authorize cleanup.
+- Date-filtered or source-filtered exports record `fullCoverage: false` and cannot refresh full archive health. Malformed JSON/JSONL records are reported as failures and are never checkpointed as exported.
 
 Verification: `bun test scripts/__tests__/sessions-opencode.test.ts scripts/__tests__/sessions-codex.test.ts`.

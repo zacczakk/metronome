@@ -52,9 +52,11 @@ def list_sessions(
 def _decode(value: str) -> dict:
     try:
         decoded = json.loads(value)
-    except (TypeError, json.JSONDecodeError):
-        return {}
-    return decoded if isinstance(decoded, dict) else {}
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ValueError("malformed OpenCode message JSON") from error
+    if not isinstance(decoded, dict):
+        raise ValueError("malformed OpenCode message: expected object")
+    return decoded
 
 
 def _input_summary(value: object) -> str:

@@ -199,5 +199,26 @@ p.mkdir()
     expect(absentHealth.completedAt).toBeNull();
     expect(absentHealth.sources).toEqual([]);
     expect(absentHealth.failures).toContain("opencode source unavailable");
+
+    const filtered = Bun.spawnSync(["python3", cli, "export", "--since", "2026-01-01", "--no-index"], { env });
+    expect(filtered.exitCode).toBe(0);
+    const filteredHealth = JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8"));
+    expect(filteredHealth.fullCoverage).toBe(false);
+    expect(filteredHealth.completedAt).toBeNull();
+
+    const corrupt = Bun.spawnSync(["python3", "-c", `
+import sqlite3
+conn=sqlite3.connect(${JSON.stringify(database)})
+conn.execute("INSERT INTO session_v2 VALUES (?, ?, ?, ?, ?, ?, ?)", ("ses-corrupt", "Corrupt", "/work/metronome", 1000, 8000, None, None))
+conn.execute("INSERT INTO session_message VALUES (?, ?, ?, ?, ?)", ("ses-corrupt", "assistant", 1, 1800, '{invalid JSON'))
+conn.commit()
+conn.close()
+`]);
+    expect(corrupt.exitCode).toBe(0);
+    const corruptExport = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
+    expect(corruptExport.exitCode).toBe(1);
+    expect(corruptExport.stderr.toString()).toContain("malformed");
+    expect(JSON.parse(readFileSync(join(local, ".export-state.json"), "utf8")).opencode_exported["ses-corrupt"]).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8")).completedAt).toBeNull();
   }, 15_000);
 });

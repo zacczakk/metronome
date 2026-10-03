@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from session_archive import archive_path, atomic_write, export_lock
+from session_archive import archive_path, atomic_write, export_lock, validate_jsonl
 
 from sessions_codex import list_sessions as codex_list_sessions
 from sessions_codex import read_metadata as codex_read_metadata
@@ -565,6 +565,7 @@ def cmd_export(args):
     force = args.force
     total = 0
     failures: list[str] = []
+    full_coverage = args.source is None and args.since is None
     scanned: list[str] = []
     requested = [args.source] if args.source else list(SESSION_SOURCES)
     source_paths = {"opencode": OPENCODE_DB, "claude": CLAUDE_DIR, "codex": CODEX_DIR}
@@ -604,11 +605,17 @@ def cmd_export(args):
             params = (int(since.timestamp() * 1000),)
         query += " ORDER BY time_created"
         rows = conn.execute(query, params).fetchall()
+        malformed = {row[0] for row in conn.execute("SELECT DISTINCT session_id FROM session_message WHERE NOT json_valid(data) OR CASE WHEN json_valid(data) THEN json_type(data) != 'object' ELSE 0 END")}
+        for session_id in malformed:
+            failures.append(f"malformed OpenCode session {session_id}")
+            print(f"malformed OpenCode session: {session_id}", file=sys.stderr)
         conn.close()
         scanned.append("opencode")
 
         opencode_count = 0
         for row in rows:
+            if row["id"] in malformed:
+                continue
             if not force and exported.get(row["id"]) == row["time_updated"]:
                 continue
             markdown = opencode_session_to_markdown(OPENCODE_DB, row["id"])
@@ -649,13 +656,17 @@ def cmd_export(args):
         if CLAUDE_DIR.exists():
             for jsonl in CLAUDE_DIR.rglob("*.jsonl"):
                 path_str = str(jsonl)
+                try:
+                    validate_jsonl(jsonl)
+                except (OSError, ValueError) as error:
+                    failures.append(f"malformed Claude source {jsonl}")
+                    print(str(error), file=sys.stderr)
+                    continue
                 if path_str in exported:
                     continue
 
                 md = claude_session_to_markdown(path_str)
                 if not md:
-                    if not dry_run:
-                        exported.add(path_str)
                     continue
 
                 # extract date from first event
@@ -708,15 +719,24 @@ def cmd_export(args):
         since = parse_date(args.since)
         if force:
             exported = {}
+        malformed_codex: set[str] = set()
+        if CODEX_DIR.exists():
+            for jsonl in CODEX_DIR.rglob("*.jsonl"):
+                try:
+                    validate_jsonl(jsonl)
+                except (OSError, ValueError) as error:
+                    malformed_codex.add(str(jsonl))
+                    failures.append(f"malformed Codex source {jsonl}")
+                    print(str(error), file=sys.stderr)
         for session in codex_list_sessions(CODEX_DIR, since=since, limit=sys.maxsize):
             path_str = session["source_file"]
+            if path_str in malformed_codex:
+                continue
             modified = Path(path_str).stat().st_mtime_ns
             if exported.get(path_str) == modified:
                 continue
             md = codex_session_to_markdown(path_str)
             if not md:
-                if not dry_run:
-                    exported[path_str] = modified
                 continue
             dt = ts_to_dt(session["time_created"])
             path = archive_path(CODEX_VAULT, dt.strftime('%Y-%m-%d'), session['id'][:30], session['id'])
@@ -762,9 +782,10 @@ def cmd_export(args):
         failures.append("qmd index")
 
     atomic_write(health_path, json.dumps({
-        "completedAt": dt_to_str(datetime.now(timezone.utc)) if not failures else None,
+        "completedAt": dt_to_str(datetime.now(timezone.utc)) if not failures and full_coverage else None,
         "sources": scanned,
         "indexed": not args.no_index,
+        "fullCoverage": full_coverage,
         "failures": failures,
     }) + "\n")
     if failures:
