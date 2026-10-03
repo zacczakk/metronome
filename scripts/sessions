@@ -565,6 +565,20 @@ def cmd_export(args):
     force = args.force
     total = 0
     failures: list[str] = []
+    scanned: list[str] = []
+    requested = [args.source] if args.source else list(SESSION_SOURCES)
+    source_paths = {"opencode": OPENCODE_DB, "claude": CLAUDE_DIR, "codex": CODEX_DIR}
+    for source in requested:
+        path = source_paths[source]
+        if not path.exists():
+            failures.append(f"{source} source unavailable")
+            print(f"source unavailable: {source}: {path}", file=sys.stderr)
+        elif path.is_dir():
+            try:
+                list(path.iterdir())
+            except OSError as error:
+                failures.append(f"{source} source unreadable")
+                print(f"source unreadable: {source}: {error}", file=sys.stderr)
     health_path = LOCAL_DATA / "archive-health.json"
     if not dry_run:
         atomic_write(health_path, json.dumps({"completedAt": None, "failures": ["export in progress"]}))
@@ -591,6 +605,7 @@ def cmd_export(args):
         query += " ORDER BY time_created"
         rows = conn.execute(query, params).fetchall()
         conn.close()
+        scanned.append("opencode")
 
         opencode_count = 0
         for row in rows:
@@ -678,6 +693,8 @@ def cmd_export(args):
                 if not dry_run and claude_count % 25 == 0:
                     state["claude_exported"] = list(exported)
                     save_export_state(state)
+            if "claude source unreadable" not in failures:
+                scanned.append("claude")
 
         if not dry_run:
             state["claude_exported"] = list(exported)
@@ -714,6 +731,8 @@ def cmd_export(args):
                     continue
                 exported[path_str] = modified
             codex_count += 1
+        if CODEX_DIR.exists() and "codex source unreadable" not in failures:
+            scanned.append("codex")
         if not dry_run:
             state["codex_exported"] = exported
             print(f"exported {codex_count} codex sessions")
@@ -744,7 +763,7 @@ def cmd_export(args):
 
     atomic_write(health_path, json.dumps({
         "completedAt": dt_to_str(datetime.now(timezone.utc)) if not failures else None,
-        "sources": [args.source] if args.source else list(SESSION_SOURCES),
+        "sources": scanned,
         "indexed": not args.no_index,
         "failures": failures,
     }) + "\n")

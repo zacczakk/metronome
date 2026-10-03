@@ -25,6 +25,8 @@ from sessions_opencode import list_sessions, read_session, session_to_markdown, 
 
 db = Path(${JSON.stringify(database)})
 db.parent.mkdir(parents=True, exist_ok=True)
+Path(${JSON.stringify(join(home, ".claude", "projects"))}).mkdir(parents=True)
+Path(${JSON.stringify(join(home, ".codex", "sessions"))}).mkdir(parents=True)
 conn = sqlite3.connect(db)
 conn.executescript("""
 CREATE TABLE session_v2 (
@@ -189,5 +191,13 @@ p.mkdir()
     expect(state.opencode_exported["ses-blocked"]).toBeUndefined();
     expect(JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8")).completedAt).toBeNull();
     expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-blocked-ses-blocked.md", "original"), "utf8")).toBe("keep me");
+
+    const absentHome = join(root, "missing-home");
+    const absent = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env: { ...process.env, HOME: absentHome } });
+    expect(absent.exitCode).toBe(1);
+    const absentHealth = JSON.parse(readFileSync(join(absentHome, ".local", "share", "sessions", "archive-health.json"), "utf8"));
+    expect(absentHealth.completedAt).toBeNull();
+    expect(absentHealth.sources).toEqual([]);
+    expect(absentHealth.failures).toContain("opencode source unavailable");
   }, 15_000);
 });
