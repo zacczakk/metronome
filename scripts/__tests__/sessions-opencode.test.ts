@@ -144,7 +144,50 @@ conn.close()
     const updateExportResult = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
     expect(updateExportResult.exitCode).toBe(0);
     expect(updateExportResult.stdout.toString()).toContain("exported 1 opencode sessions");
-    expect(existsSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture.md"))).toBe(true);
-    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture.md"), "utf8")).toContain("Follow-up");
-  });
+    expect(existsSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture-ses-main.md"))).toBe(true);
+    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture-ses-main.md"), "utf8")).toContain("Follow-up");
+
+    const duplicate = Bun.spawnSync(["python3", "-c", `
+import sqlite3
+conn = sqlite3.connect(${JSON.stringify(database)})
+conn.execute("INSERT INTO session_v2 VALUES (?, ?, ?, ?, ?, ?, ?)", ("ses-duplicate", "V2 fixture", "/work/metronome", 1000, 6000, None, None))
+conn.execute("INSERT INTO session_message VALUES (?, ?, ?, ?, ?)", ("ses-duplicate", "assistant", 1, 1500, '{"content":[{"type":"text","text":"Distinct session"}]}'))
+conn.commit()
+conn.close()
+`]);
+    expect(duplicate.exitCode).toBe(0);
+    const duplicateExport = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
+    expect(duplicateExport.exitCode).toBe(0);
+    const files = Bun.spawnSync(["python3", "-c", `
+import json
+from pathlib import Path
+print(json.dumps([p.read_text() for p in Path(${JSON.stringify(join(home, "Vaults", "Sessions", "opencode"))}).glob("*.md")]))
+`]);
+    expect(JSON.parse(files.stdout.toString()).filter((text: string) => text.includes("Follow-up"))).toHaveLength(1);
+    expect(JSON.parse(files.stdout.toString()).filter((text: string) => text.includes("Distinct session"))).toHaveLength(1);
+
+    const partial = Bun.spawnSync(["python3", "-c", `
+import sqlite3
+from pathlib import Path
+conn = sqlite3.connect(${JSON.stringify(database)})
+for sid, title in [("ses-blocked", "Blocked"), ("ses-later", "Later")]:
+ conn.execute("INSERT INTO session_v2 VALUES (?, ?, ?, ?, ?, ?, ?)", (sid, title, "/work/metronome", 1000, 7000, None, None))
+ conn.execute("INSERT INTO session_message VALUES (?, ?, ?, ?, ?)", (sid, "assistant", 1, 1600, '{"content":[{"type":"text","text":"Preserve progress"}]}'))
+conn.commit()
+conn.close()
+p = Path(${JSON.stringify(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-blocked-ses-blocked.md"))})
+p.mkdir()
+(p / "original").write_text("keep me")
+`]);
+    expect(partial.exitCode).toBe(0);
+    const partialExport = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
+    expect(partialExport.exitCode).toBe(1);
+    expect(partialExport.stderr.toString()).toContain("successful items checkpointed");
+    const local = join(home, ".local", "share", "sessions");
+    const state = JSON.parse(readFileSync(join(local, ".export-state.json"), "utf8"));
+    expect(state.opencode_exported["ses-later"]).toBe(7000);
+    expect(state.opencode_exported["ses-blocked"]).toBeUndefined();
+    expect(JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8")).completedAt).toBeNull();
+    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-blocked-ses-blocked.md", "original"), "utf8")).toBe("keep me");
+  }, 15_000);
 });

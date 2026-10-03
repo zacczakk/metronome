@@ -235,3 +235,4 @@ Run `bin/docs-list` (or `bun scripts/docs-list.ts`) from a repo to list that rep
 | `configs/instructions/TOOLS.md` | Understanding available tools |
 | `docs/tavily-reference.md` | Configuring Tavily MCP |
 | `docs/runbooks/mcp-incident.md` | MCP server outage |
+| `docs/operations/archive-export.md` | Archive export failures and safe session retention |
