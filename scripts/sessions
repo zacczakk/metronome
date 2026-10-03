@@ -903,7 +903,12 @@ def qmd_index(embed: bool = True):
         return False
 
     print("updating qmd index...")
-    r = subprocess.run(["qmd", "update"], capture_output=True, text=True)
+    try:
+        r = subprocess.run(["qmd", "update"], capture_output=True, text=True, timeout=240)
+    except subprocess.TimeoutExpired as error:
+        output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or ""
+        print(f"qmd update timed out after 240s; archive cleanup stays blocked\n{output[-2000:]}", file=sys.stderr)
+        return False
     if r.returncode != 0:
         print(f"qmd update failed: {r.stderr.strip()}", file=sys.stderr)
         return False
@@ -914,7 +919,11 @@ def qmd_index(embed: bool = True):
 
     if embed:
         print("generating embeddings...")
-        r = subprocess.run(["qmd", "embed"], capture_output=True, text=True)
+        try:
+            r = subprocess.run(["qmd", "embed"], capture_output=True, text=True, timeout=240)
+        except subprocess.TimeoutExpired:
+            print("qmd embed timed out after 240s; archive cleanup stays blocked", file=sys.stderr)
+            return False
         if r.returncode != 0:
             print(f"qmd embed failed: {r.stderr.strip()}", file=sys.stderr)
             return False

@@ -15,5 +15,6 @@ read_when:
 - Export and indexing failures return nonzero. `sessions index` also returns nonzero when QMD fails.
 - `~/.local/share/sessions/archive-health.json` records `completedAt`, `sources`, `indexed`, and `failures`. Only a complete all-source export with indexes refreshed can authorize automated Memory session cleanup.
 - `--no-index` supports diagnostics and tests, and produces `indexed: false`.
+- QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
 
 Verification: `bun test scripts/__tests__/sessions-opencode.test.ts scripts/__tests__/sessions-codex.test.ts`.
