@@ -146,8 +146,8 @@ conn.close()
     const updateExportResult = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
     expect(updateExportResult.exitCode).toBe(0);
     expect(updateExportResult.stdout.toString()).toContain("exported 1 opencode sessions");
-    expect(existsSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture-ses-main.md"))).toBe(true);
-    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-v2-fixture-ses-main.md"), "utf8")).toContain("Follow-up");
+    expect(existsSync(join(home, ".local", "share", "sessions", "archive", "opencode", "1970-01-01-v2-fixture-ses-main.md"))).toBe(true);
+    expect(readFileSync(join(home, ".local", "share", "sessions", "archive", "opencode", "1970-01-01-v2-fixture-ses-main.md"), "utf8")).toContain("Follow-up");
 
     const duplicate = Bun.spawnSync(["python3", "-c", `
 import sqlite3
@@ -163,7 +163,7 @@ conn.close()
     const files = Bun.spawnSync(["python3", "-c", `
 import json
 from pathlib import Path
-print(json.dumps([p.read_text() for p in Path(${JSON.stringify(join(home, "Vaults", "Sessions", "opencode"))}).glob("*.md")]))
+print(json.dumps([p.read_text() for p in Path(${JSON.stringify(join(home, ".local", "share", "sessions", "archive", "opencode"))}).glob("*.md")]))
 `]);
     expect(JSON.parse(files.stdout.toString()).filter((text: string) => text.includes("Follow-up"))).toHaveLength(1);
     expect(JSON.parse(files.stdout.toString()).filter((text: string) => text.includes("Distinct session"))).toHaveLength(1);
@@ -177,7 +177,7 @@ for sid, title in [("ses-blocked", "Blocked"), ("ses-later", "Later")]:
  conn.execute("INSERT INTO session_message VALUES (?, ?, ?, ?, ?)", (sid, "assistant", 1, 1600, '{"content":[{"type":"text","text":"Preserve progress"}]}'))
 conn.commit()
 conn.close()
-p = Path(${JSON.stringify(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-blocked-ses-blocked.md"))})
+p = Path(${JSON.stringify(join(home, ".local", "share", "sessions", "archive", "opencode", "1970-01-01-blocked-ses-blocked.md"))})
 p.mkdir()
 (p / "original").write_text("keep me")
 `]);
@@ -190,7 +190,7 @@ p.mkdir()
     expect(state.opencode_exported["ses-later"]).toBe(7000);
     expect(state.opencode_exported["ses-blocked"]).toBeUndefined();
     expect(JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8")).completedAt).toBeNull();
-    expect(readFileSync(join(home, "Vaults", "Sessions", "opencode", "1970-01-01-blocked-ses-blocked.md", "original"), "utf8")).toBe("keep me");
+    expect(readFileSync(join(home, ".local", "share", "sessions", "archive", "opencode", "1970-01-01-blocked-ses-blocked.md", "original"), "utf8")).toBe("keep me");
 
     const absentHome = join(root, "missing-home");
     const absent = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env: { ...process.env, HOME: absentHome } });
@@ -220,5 +220,30 @@ conn.close()
     expect(corruptExport.stderr.toString()).toContain("malformed");
     expect(JSON.parse(readFileSync(join(local, ".export-state.json"), "utf8")).opencode_exported["ses-corrupt"]).toBeUndefined();
     expect(JSON.parse(readFileSync(join(local, "archive-health.json"), "utf8")).completedAt).toBeNull();
+
+    const mirrorHome = join(root, "mirror-home");
+    const mirrorSetup = Bun.spawnSync(["python3", "-c", `
+import shutil
+from pathlib import Path
+h=Path(${JSON.stringify(mirrorHome)})
+(h/".local/share/opencode").mkdir(parents=True)
+shutil.copy(${JSON.stringify(database)},h/".local/share/opencode/opencode.db")
+import sqlite3
+c=sqlite3.connect(h/".local/share/opencode/opencode.db")
+c.execute("DELETE FROM session_message WHERE session_id = 'ses-corrupt'")
+c.execute("DELETE FROM session_v2 WHERE id = 'ses-corrupt'")
+c.commit();c.close()
+(h/".claude/projects").mkdir(parents=True)
+(h/".codex/sessions").mkdir(parents=True)
+(h/"Vaults").mkdir()
+(h/"Vaults/Sessions").write_text("keep cloud placeholder")
+`]);
+    expect(mirrorSetup.exitCode).toBe(0);
+    const mirrorExport = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env: { ...process.env, HOME: mirrorHome } });
+    expect(mirrorExport.exitCode).toBe(0);
+    const mirrorHealth = JSON.parse(readFileSync(join(mirrorHome, ".local/share/sessions/archive-health.json"), "utf8"));
+    expect(mirrorHealth.mirrorPending).toBeGreaterThan(0);
+    expect(mirrorHealth.failures).toEqual([]);
+    expect(readFileSync(join(mirrorHome, "Vaults/Sessions"), "utf8")).toBe("keep cloud placeholder");
   }, 15_000);
 });

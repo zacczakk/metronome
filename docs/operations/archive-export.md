@@ -6,7 +6,7 @@ read_when:
 
 # Session archive export
 
-`sessions export` reads OpenCode V2, Claude, and Codex source history. Existing source data and older archive files are preserved.
+`sessions export` reads OpenCode V2, Claude, and Codex source history into `~/.local/share/sessions/archive/`. QMD's `sessions` collection indexes that local directory. Existing source data and older iCloud archive files are preserved.
 
 - New filenames include the complete session ID; identical titles remain separate.
 - Writes use a same-folder temporary file, flush, and atomic replacement. Existing iCloud placeholders are never opened for truncation.
@@ -18,5 +18,7 @@ read_when:
 - QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
 - Health lists only sources actually scanned. Missing or unreadable source paths return failure and never authorize cleanup.
 - Date-filtered or source-filtered exports record `fullCoverage: false` and cannot refresh full archive health. Malformed JSON/JSONL records are reported as failures and are never checkpointed as exported.
+- Changed sessions are mirrored to `~/Vaults/Sessions/` via bounded atomic writes. iCloud failures are reported in `mirrorPending` and a retry queue, separate from local archive correctness. Each run retries up to ten deferred mirrors.
+- Existing export checkpoints are retained during migration; a missing local archive file is regenerated even when its source watermark is unchanged.
 
 Verification: `bun test scripts/__tests__/sessions-opencode.test.ts scripts/__tests__/sessions-codex.test.ts`.

@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from session_archive import archive_path, atomic_write, export_lock, validate_jsonl
+from session_archive import archive_path, atomic_write, export_lock, validate_jsonl, mirror_write
 
 from sessions_codex import list_sessions as codex_list_sessions
 from sessions_codex import read_metadata as codex_read_metadata
@@ -41,10 +41,11 @@ from sessions_opencode import text_blocks_since as opencode_text_blocks_since
 CLAUDE_DIR = Path.home() / ".claude" / "projects"
 CODEX_DIR = Path.home() / ".codex" / "sessions"
 VAULT_DIR = Path.home() / "Vaults" / "Sessions"
-OPENCODE_VAULT = VAULT_DIR / "opencode"
-CLAUDE_VAULT = VAULT_DIR / "claude"
-CODEX_VAULT = VAULT_DIR / "codex"
 LOCAL_DATA = Path.home() / ".local" / "share" / "sessions"
+ARCHIVE_DIR = LOCAL_DATA / "archive"
+OPENCODE_VAULT = ARCHIVE_DIR / "opencode"
+CLAUDE_VAULT = ARCHIVE_DIR / "claude"
+CODEX_VAULT = ARCHIVE_DIR / "codex"
 FTS_DB = LOCAL_DATA / ".sessions-fts.db"
 EXPORT_STATE = LOCAL_DATA / ".export-state.json"
 SESSION_SOURCES = ("opencode", "claude", "codex")
@@ -565,6 +566,18 @@ def cmd_export(args):
     force = args.force
     total = 0
     failures: list[str] = []
+    mirrors = set(state.get("mirror_pending", []))
+    state["archiveDirectory"] = str(ARCHIVE_DIR)
+
+    def write_archive(path: Path, text: str, sync: bool) -> None:
+        atomic_write(path, text)
+        relative = str(path.relative_to(ARCHIVE_DIR))
+        if sync:
+            if mirror_write(VAULT_DIR / relative, text):
+                mirrors.discard(relative)
+            else:
+                mirrors.add(relative)
+        state["mirror_pending"] = sorted(mirrors)
     full_coverage = args.source is None and args.since is None
     scanned: list[str] = []
     requested = [args.source] if args.source else list(SESSION_SOURCES)
@@ -616,19 +629,20 @@ def cmd_export(args):
         for row in rows:
             if row["id"] in malformed:
                 continue
-            if not force and exported.get(row["id"]) == row["time_updated"]:
+            dt = ts_to_dt(row["time_created"])
+            title = row["title"] or "opencode-session"
+            path = archive_path(OPENCODE_VAULT, dt.strftime('%Y-%m-%d'), title, row["id"])
+            unchanged = exported.get(row["id"]) == row["time_updated"]
+            if not force and unchanged and path.is_file():
                 continue
             markdown = opencode_session_to_markdown(OPENCODE_DB, row["id"])
             if not markdown:
                 continue
-            dt = ts_to_dt(row["time_created"])
-            title = row["title"] or "opencode-session"
-            path = archive_path(OPENCODE_VAULT, dt.strftime('%Y-%m-%d'), title, row["id"])
             if dry_run:
                 print(f"would write: {path}")
             else:
                 try:
-                    atomic_write(path, markdown)
+                    write_archive(path, markdown, not unchanged)
                 except OSError as error:
                     failures.append(str(path))
                     print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -662,7 +676,9 @@ def cmd_export(args):
                     failures.append(f"malformed Claude source {jsonl}")
                     print(str(error), file=sys.stderr)
                     continue
-                if path_str in exported:
+                local_exists = any(CLAUDE_VAULT.glob(f"*-{jsonl.stem}.md"))
+                unchanged = path_str in exported
+                if unchanged and local_exists:
                     continue
 
                 md = claude_session_to_markdown(path_str)
@@ -694,7 +710,7 @@ def cmd_export(args):
                     print(f"would write: {path}")
                 else:
                     try:
-                        atomic_write(path, md)
+                        write_archive(path, md, not unchanged)
                     except OSError as error:
                         failures.append(str(path))
                         print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -733,18 +749,19 @@ def cmd_export(args):
             if path_str in malformed_codex:
                 continue
             modified = Path(path_str).stat().st_mtime_ns
-            if exported.get(path_str) == modified:
+            dt = ts_to_dt(session["time_created"])
+            path = archive_path(CODEX_VAULT, dt.strftime('%Y-%m-%d'), session['id'][:30], session['id'])
+            unchanged = exported.get(path_str) == modified
+            if unchanged and path.is_file():
                 continue
             md = codex_session_to_markdown(path_str)
             if not md:
                 continue
-            dt = ts_to_dt(session["time_created"])
-            path = archive_path(CODEX_VAULT, dt.strftime('%Y-%m-%d'), session['id'][:30], session['id'])
             if dry_run:
                 print(f"would write: {path}")
             else:
                 try:
-                    atomic_write(path, md)
+                    write_archive(path, md, not unchanged)
                 except OSError as error:
                     failures.append(str(path))
                     print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -759,6 +776,12 @@ def cmd_export(args):
 
     if dry_run:
         return
+
+    for relative in list(mirrors)[:10]:
+        path = ARCHIVE_DIR / relative
+        if path.is_file() and mirror_write(VAULT_DIR / relative, path.read_text()):
+            mirrors.discard(relative)
+    state["mirror_pending"] = sorted(mirrors)
 
     save_export_state(state)
 
@@ -786,6 +809,8 @@ def cmd_export(args):
         "sources": scanned,
         "indexed": not args.no_index,
         "fullCoverage": full_coverage,
+        "archiveDirectory": str(ARCHIVE_DIR),
+        "mirrorPending": len(mirrors),
         "failures": failures,
     }) + "\n")
     if failures:
@@ -928,12 +953,17 @@ def qmd_ensure_collection():
     if "sessions" not in result.stdout:
         print("creating qmd sessions collection...")
         r = subprocess.run(
-            ["qmd", "collection", "add", str(VAULT_DIR), "--name", "sessions", "--mask", "**/*.md"],
+            ["qmd", "collection", "add", str(ARCHIVE_DIR), "--name", "sessions", "--mask", "**/*.md"],
             capture_output=True, text=True
         )
         if r.returncode != 0:
             print(f"qmd collection add failed: {r.stderr.strip()}", file=sys.stderr)
             return False
+    details = subprocess.run(["qmd", "collection", "show", "sessions"], capture_output=True, text=True)
+    path = next((line.split("Path:", 1)[1].strip() for line in details.stdout.splitlines() if "Path:" in line), "")
+    if details.returncode != 0 or Path(path) != ARCHIVE_DIR:
+        print(f"qmd sessions collection must point to {ARCHIVE_DIR}; update the collection before indexing", file=sys.stderr)
+        return False
     return True
 
 

@@ -7,6 +7,8 @@ import json
 import os
 import re
 import tempfile
+import subprocess
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -48,6 +50,22 @@ def atomic_write(path: Path, text: str) -> None:
     finally:
         if temporary is not None:
             Path(temporary).unlink(missing_ok=True)
+
+
+def mirror_write(path: Path, text: str) -> bool:
+    """Bound cloud writes so local archive/search remains available."""
+    command = "from pathlib import Path; from session_archive import atomic_write; import sys; atomic_write(Path(sys.argv[1]), sys.stdin.read())"
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", command, str(path)], input=text, text=True,
+            cwd=Path(__file__).parent, capture_output=True, timeout=10,
+        )
+        if result.returncode == 0:
+            return True
+        print(f"iCloud mirror deferred: {path}: {result.stderr[-300:]}", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        print(f"iCloud mirror deferred after 10s: {path}", file=sys.stderr)
+    return False
 
 
 @contextmanager
