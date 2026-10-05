@@ -6,10 +6,10 @@ read_when:
 
 # Session archive export
 
-`sessions export` reads OpenCode V2, Claude, and Codex source history into `~/.local/share/sessions/archive/`. QMD's `sessions` collection indexes that local directory. Existing source data and older iCloud archive files are preserved.
+`sessions export` reads OpenCode V2, Claude, and Codex source history into `~/.local/share/sessions/archive/`. QMD's `sessions` collection indexes that local directory. Archives are local-only; exports never access iCloud. Original source chats remain untouched.
 
 - New filenames include the complete session ID; identical titles remain separate.
-- Writes use a same-folder temporary file, flush, and atomic replacement. Existing iCloud placeholders are never opened for truncation.
+- Writes use a same-folder temporary file, flush, and atomic replacement.
 - An exclusive local file lock prevents concurrent exporters.
 - Unwritable items are reported and retried next time. Later items still export; successful progress is checkpointed every 25 OpenCode/Claude items and after each source.
 - Export and indexing failures return nonzero. `sessions index` also returns nonzero when QMD fails.
@@ -18,7 +18,9 @@ read_when:
 - QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
 - Health lists only sources actually scanned. Missing or unreadable source paths return failure and never authorize cleanup.
 - Date-filtered or source-filtered exports record `fullCoverage: false` and cannot refresh full archive health. Malformed JSON/JSONL records are reported as failures and are never checkpointed as exported.
-- Changed sessions are mirrored to `~/Vaults/Sessions/` via bounded atomic writes. iCloud failures are reported in `mirrorPending` and a retry queue, separate from local archive correctness. Each run retries up to ten deferred mirrors.
+- Former cloud files are preserved under `~/.local/share/sessions/legacy-icloud/`, outside the search corpus to avoid duplicate snapshots. Cloud-only session identities are also included in the local indexed archive. Cloud removal requires a complete checksum receipt.
+- Existing mirror queues are discarded on export; no further cloud writes or retries occur.
 - Existing export checkpoints are retained during migration; a missing local archive file is regenerated even when its source watermark is unchanged.
+- `sessions list`, `latest`, and `read` still query source chats directly. `search` uses local FTS and `find` uses local QMD. `stats --json` retains its `vault` key for compatibility but counts local archive files.
 
 Verification: `bun test scripts/__tests__/sessions-opencode.test.ts scripts/__tests__/sessions-codex.test.ts`.

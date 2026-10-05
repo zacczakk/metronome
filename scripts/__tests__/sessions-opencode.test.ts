@@ -126,6 +126,10 @@ print(json.dumps({
     const exportResult = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env });
     expect(exportResult.exitCode).toBe(0);
     expect(exportResult.stdout.toString()).toContain("exported 1 opencode sessions");
+    expect(existsSync(join(home, "Vaults"))).toBe(false);
+    const statsResult = Bun.spawnSync(["python3", cli, "stats", "--json"], { env });
+    expect(statsResult.exitCode).toBe(0);
+    expect(JSON.parse(statsResult.stdout.toString()).vault.opencode_exported).toBe(1);
 
     const searchResult = Bun.spawnSync(["python3", cli, "search", "fixture", "--source", "opencode", "--json"], { env });
     expect(searchResult.exitCode).toBe(0);
@@ -235,15 +239,16 @@ c.execute("DELETE FROM session_v2 WHERE id = 'ses-corrupt'")
 c.commit();c.close()
 (h/".claude/projects").mkdir(parents=True)
 (h/".codex/sessions").mkdir(parents=True)
-(h/"Vaults").mkdir()
-(h/"Vaults/Sessions").write_text("keep cloud placeholder")
+(h/".local/share/sessions").mkdir(parents=True)
+(h/".local/share/sessions/.export-state.json").write_text('{"mirror_pending":["opencode/legacy.md"]}')
 `]);
     expect(mirrorSetup.exitCode).toBe(0);
     const mirrorExport = Bun.spawnSync(["python3", cli, "export", "--no-index"], { env: { ...process.env, HOME: mirrorHome } });
     expect(mirrorExport.exitCode).toBe(0);
     const mirrorHealth = JSON.parse(readFileSync(join(mirrorHome, ".local/share/sessions/archive-health.json"), "utf8"));
-    expect(mirrorHealth.mirrorPending).toBeGreaterThan(0);
+    expect(mirrorHealth.mirrorPending).toBeUndefined();
     expect(mirrorHealth.failures).toEqual([]);
-    expect(readFileSync(join(mirrorHome, "Vaults/Sessions"), "utf8")).toBe("keep cloud placeholder");
+    expect(existsSync(join(mirrorHome, "Vaults"))).toBe(false);
+    expect(JSON.parse(readFileSync(join(mirrorHome, ".local/share/sessions/.export-state.json"), "utf8")).mirror_pending).toBeUndefined();
   }, 15_000);
 });

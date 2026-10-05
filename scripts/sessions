@@ -22,7 +22,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from session_archive import archive_path, atomic_write, export_lock, validate_jsonl, mirror_write
+from session_archive import archive_path, atomic_write, export_lock, validate_jsonl
 
 from sessions_codex import list_sessions as codex_list_sessions
 from sessions_codex import read_metadata as codex_read_metadata
@@ -40,7 +40,6 @@ from sessions_opencode import text_blocks_since as opencode_text_blocks_since
 
 CLAUDE_DIR = Path.home() / ".claude" / "projects"
 CODEX_DIR = Path.home() / ".codex" / "sessions"
-VAULT_DIR = Path.home() / "Vaults" / "Sessions"
 LOCAL_DATA = Path.home() / ".local" / "share" / "sessions"
 ARCHIVE_DIR = LOCAL_DATA / "archive"
 OPENCODE_VAULT = ARCHIVE_DIR / "opencode"
@@ -566,18 +565,8 @@ def cmd_export(args):
     force = args.force
     total = 0
     failures: list[str] = []
-    mirrors = set(state.get("mirror_pending", []))
+    state.pop("mirror_pending", None)
     state["archiveDirectory"] = str(ARCHIVE_DIR)
-
-    def write_archive(path: Path, text: str, sync: bool) -> None:
-        atomic_write(path, text)
-        relative = str(path.relative_to(ARCHIVE_DIR))
-        if sync:
-            if mirror_write(VAULT_DIR / relative, text):
-                mirrors.discard(relative)
-            else:
-                mirrors.add(relative)
-        state["mirror_pending"] = sorted(mirrors)
     full_coverage = args.source is None and args.since is None
     scanned: list[str] = []
     requested = [args.source] if args.source else list(SESSION_SOURCES)
@@ -598,7 +587,7 @@ def cmd_export(args):
         atomic_write(health_path, json.dumps({"completedAt": None, "failures": ["export in progress"]}))
 
     if not dry_run:
-        # Ensure vault dirs exist
+        # Ensure archive dirs exist
         OPENCODE_VAULT.mkdir(parents=True, exist_ok=True)
         CLAUDE_VAULT.mkdir(parents=True, exist_ok=True)
         CODEX_VAULT.mkdir(parents=True, exist_ok=True)
@@ -642,7 +631,7 @@ def cmd_export(args):
                 print(f"would write: {path}")
             else:
                 try:
-                    write_archive(path, markdown, not unchanged)
+                    atomic_write(path, markdown)
                 except OSError as error:
                     failures.append(str(path))
                     print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -710,7 +699,7 @@ def cmd_export(args):
                     print(f"would write: {path}")
                 else:
                     try:
-                        write_archive(path, md, not unchanged)
+                        atomic_write(path, md)
                     except OSError as error:
                         failures.append(str(path))
                         print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -761,7 +750,7 @@ def cmd_export(args):
                 print(f"would write: {path}")
             else:
                 try:
-                    write_archive(path, md, not unchanged)
+                    atomic_write(path, md)
                 except OSError as error:
                     failures.append(str(path))
                     print(f"archive write failed: {path}: {error}", file=sys.stderr)
@@ -776,12 +765,6 @@ def cmd_export(args):
 
     if dry_run:
         return
-
-    for relative in list(mirrors)[:10]:
-        path = ARCHIVE_DIR / relative
-        if path.is_file() and mirror_write(VAULT_DIR / relative, path.read_text()):
-            mirrors.discard(relative)
-    state["mirror_pending"] = sorted(mirrors)
 
     save_export_state(state)
 
@@ -810,7 +793,6 @@ def cmd_export(args):
         "indexed": not args.no_index,
         "fullCoverage": full_coverage,
         "archiveDirectory": str(ARCHIVE_DIR),
-        "mirrorPending": len(mirrors),
         "failures": failures,
     }) + "\n")
     if failures:
@@ -1095,8 +1077,8 @@ def cmd_stats(args):
         if not args.json:
             print(f"fts index: {count} text blocks")
 
-    # Vault stats
-    if VAULT_DIR.exists():
+    # Archive stats; retain the existing JSON key for callers.
+    if ARCHIVE_DIR.exists():
         oc_files = list(OPENCODE_VAULT.glob("*.md")) if OPENCODE_VAULT.exists() else []
         cl_files = list(CLAUDE_VAULT.glob("*.md")) if CLAUDE_VAULT.exists() else []
         cx_files = list(CODEX_VAULT.glob("*.md")) if CODEX_VAULT.exists() else []
@@ -1107,7 +1089,7 @@ def cmd_stats(args):
         }
         if not args.json:
             print(
-                f"vault: {len(oc_files)} opencode + "
+                f"archive: {len(oc_files)} opencode + "
                 f"{len(cl_files)} claude + {len(cx_files)} codex exported files"
             )
 
@@ -1134,8 +1116,9 @@ def main():
             "Source: OpenCode (~/.local/share/opencode/opencode.db), "
             "Claude Code (~/.claude/projects/)\n"
             "Codex (~/.codex/sessions/)\n"
-            "Vault: ~/Vaults/Sessions/ (exported markdown with frontmatter)\n"
-            "Indexes: FTS5 + qmd at ~/.local/share/sessions/"
+            "Archive: ~/.local/share/sessions/archive/ (local-only markdown)\n"
+            "Indexes: FTS5 at ~/.local/share/sessions/.sessions-fts.db; "
+            "QMD at ~/.cache/qmd/index.sqlite"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -1186,7 +1169,7 @@ def main():
     # export
     p_export = sub.add_parser(
         "export",
-        help="Export sessions to vault and refresh search indexes",
+        help="Export sessions locally and refresh search indexes",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
