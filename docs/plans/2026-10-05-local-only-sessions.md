@@ -42,8 +42,8 @@ read_when:
 
 **Interface:** Existing cloud symlink, full indexed `wf run sessions-export`, `sessions search`, `sessions find`, QMD status.
 
-- [ ] Pause only the interval exporter if idle. Copy the complete former cloud tree to local legacy storage with bounded reads; write SHA-256 receipt covering every source file. Any failure blocks removal.
-- [ ] Preserve cloud-only session identities in the indexed local archive; keep redundant snapshots outside QMD. Verify copied bytes and unchanged source inventory.
+- [x] Pause only the interval exporter if idle. Copy the complete former cloud tree to local legacy storage with bounded reads; write SHA-256 receipt covering every source file. Any failure blocks removal.
+- [x] Preserve cloud-only session identities in the indexed local archive; keep redundant snapshots outside QMD. Verify copied bytes and unchanged source inventory.
 - [x] Integrate committed exporter changes locally. Update workflows README to local-only storage.
 - [ ] Use `trash` on the exact verified cloud directory and old symlink. Leave local canonical archive and source databases intact.
 - [ ] Run full indexed `wf run sessions-export`; check complete health and keyword/meaning search. Reload interval exporter regardless of validation result.
@@ -69,3 +69,4 @@ read_when:
 - Initial active monitor reached 1,768 verified / 3,584 download requests. Hydration updates placeholder timestamps; monitor corrected to compare the hydrated file before/after its read rather than pre-download placeholder metadata. Owned monitor restarted as `sh_10b561025001bkAW2Z0WFadEmj`, same progress path/log and automatic completion chain.
 - Active file requests preserved 20,423/20,776 files (231,107,938 bytes), then stopped after five minutes without progress on last 353 OpenCode files. macOS repeatedly re-evicts already downloaded data under disk pressure (22 GiB free); cloud flags are not remaining-to-preserve counts. All old cloud originals remain intact.
 - Targeted 353 requests succeeded; sampled remaining files became Current. Monitor now persists per-file checksum/time proof in `cloud-migration-checksums.json`, resumes verified files without rehydrating them, retries outstanding requests after 60s, and prioritizes missing copies. Restart `sh_10b758032001hGS9RxUN3GHUmz`, log `session-migration-monitor-resume.log`; final verifier accepts cached source proof only with unchanged size/mtime and matching local hash.
+- Preservation completed 2026-10-05T10:13:56Z: all 20,776 source files / 234,270,388 bytes verified. Receipt `~/.local/share/sessions/cloud-migration-verified.json`; independent local checksum pass matches every file. Imported 194 cloud-only transcripts: 126 OpenCode2, 32 Claude, 22 OpenCode, 12 Codex, 2 older session snapshots; independent import hashes match. Interval exporter paused for final indexed acceptance, then removal and restoration.
