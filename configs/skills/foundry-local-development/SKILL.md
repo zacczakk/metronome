@@ -149,15 +149,17 @@ git clone "https://${USER_ENC}:${FOUNDRY_TOKEN}@palantir.mcloud.merckgroup.com/s
 
 **Auth split:** PAT for git ops, OAuth (`tux token`) for API/MCP/artifacts calls. They serve different backends.
 
+**Corporate TLS:** point `REQUESTS_CA_BUNDLE` (and `SSL_CERT_FILE` for non-`requests` clients) at `~/.ssh/cacert.pem`. A TLS failure usually means a missing CA bundle or proxy setting; never work around it with `verify=False`.
+
 ## Running transforms tests locally
 
-From `transforms-python/`, set `SPARK_HOME` to the Spark installation in `.maestro` and set `TZ=UTC`, then run:
+Maestro creates the Python/Spark environment in the repo-root `.maestro/`. From `transforms-python/`:
 
 ```bash
-.maestro/bin/python -m pytest
+TZ=UTC SPARK_HOME=../.maestro/spark-home ../.maestro/bin/python -m pytest
 ```
 
-Do not add import shims around `transforms.api`; fix the environment instead. Jemma CI does not run `pytest`. See [Foundry Transforms Operations](../foundry-transforms-ops/SKILL.md) for the full delivery workflow.
+Do not add import shims around `transforms.api`; fix the environment instead. Jemma CI does not run these tests. See [Foundry Transforms Operations](../foundry-transforms-ops/SKILL.md) for the full delivery workflow.
 
 ## Common Mistakes
 

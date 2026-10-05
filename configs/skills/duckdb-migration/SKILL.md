@@ -54,17 +54,17 @@ For each candidate run:
 - For benchmark series, record earliest build start through latest build finish and classify gaps, retries, dependency waits, and configuration refreshes.
 - Report failed attempts separately from the valid candidate topology, while retaining them as real platform usage where applicable.
 
-For distributed jobs, calculate driver and worker contributions separately. With dynamic allocation, use worker-active time from telemetry rather than multiplying the maximum worker count by the entire job duration. Count replacement worker series as additional allocated time, but do not confuse CPU utilization with billed resources.
+For distributed jobs, calculate driver and executor contributions separately, each as `max(vCPU, memory GiB / 7.5)` over its lifetime. Foundry Spark bills at or above this documented formula, including spin-up, so worker-active time from telemetry is only a lower bound. Count replacement worker series as additional allocated time, and do not confuse CPU utilization with billed resources.
 
-For lightweight jobs, record the requested resource envelope and the observed peak and average CPU, memory, pressure, temporary spill, and OOM status. Use the requested envelope for cost comparison and observed peaks for sizing the next run.
+For lightweight jobs, billed compute-seconds ≈ `max(vCPU, memory GiB / 7.5) × execution seconds` (`RUNNING` to finish; queue time is not billed). Verified billing came in at 0.90–0.98× this estimate. Record the requested resource envelope and the observed peak and average CPU, memory, pressure, temporary spill, and OOM status. Use the requested envelope for cost comparison and observed peaks for sizing the next run.
 
-For monetary cost, attach the organization's resource usage export and contract rate. Resource-hours are enough to compare topologies, but include storage, durable intermediates, and transaction charges when estimating total cost.
+For monetary cost, Foundry compute costs $0.00019825 per compute-second for all compute types. Confirm actual usage through the Resource Management usage aggregator (see `foundry-transforms-ops`). Resource-hours are enough to compare topologies, but include storage, durable intermediates, and transaction charges when estimating total cost. Nightly transform compute was only about 15–25% of this project's bill; development and branch builds, ontology indexing and queries, and Contour made up the rest, so count iteration builds when judging savings.
 
 - Compare execution minutes, never submit-to-finish time. Observed: queue time inflated two claimed savings; one candidate actually cost 3% more, and a smaller container cost more.
 - Expect diminishing returns from more cores. Observed: a CPU-bound job went from 12 to 24 cores and 37.3 to 26.7 minutes (1.4× faster), while billed CPU-min rose 43%. Per-thread efficiency fell, and about 3 minutes of startup and platform checks did not scale.
 - Use median CPU utilization as the signal: about 95% of allocated cores busy means work reduction is the main lever; about 45% means serial sections, so shrink the container or fix those sections.
 - Choose size from a measured curve with at least two sizes, weighing nightly cost against development wall time. Observed: faster development rebuilds justified about 10% more CPU-min.
-- Prefer code fixes over size changes. Observed: one round of work reduction was both faster and cheaper at 22.4 minutes / 358 CPU-min, versus 37.3 / 448 and 26.7 / 641 for the size options.
+- Prefer code fixes over size changes: bucket wide-by-wide joins and resolve lookups on distinct coordinates (section 7) before buying a bigger container. Observed: one round of work reduction was both faster and cheaper at 22.4 minutes / 358 CPU-min, versus 37.3 / 448 and 26.7 / 641 for the size options.
 
 ### 2. Map distributed semantics before translating SQL
 
@@ -102,7 +102,7 @@ conn.sql(f"SET threads = {CPU_CORES}")
 
 Row order is not a data contract for ordinary batch outputs. Disabling insertion-order preservation can prevent large buffering. Pin threads to the allocated vCPUs; do not let the container expose more logical host CPUs than the resource quota.
 
-Leave headroom in the DuckDB memory limit for Python, Arrow or dataframe buffers, the platform sidecar, and file I/O. Do not raise the limit to container RAM without a measured resource plan.
+Leave headroom in the DuckDB memory limit for Python, Arrow or dataframe buffers, the platform sidecar, native output checks, and file I/O. Keep at least 40% memory headroom: measured peak should stay at or below about 60% of the container. Do not raise the limit to container RAM without a measured resource plan.
 
 ### 3a. Budget for platform output checks in the same container
 
@@ -236,7 +236,7 @@ If the process grows far beyond `memory_limit` within seconds, suspect aggregate
 
 - Aggregate on integer or hash keys; preserve exact semantics with lossless integer encodings and test hash collisions.
 - Materialize first, then process in buckets.
-- Lower threads for that stage only, then restore them.
+- Lower threads for that stage only, then restore them. Never cap the output or final-write stages below the container's vCPUs; that leaves paid cores idle during the longest I/O and compression phase.
 
 Observed: 194M edges over 86M groups; local peak memory fell from 14.8 to 5.5 GB. Log memory at each stage start and every 15 seconds so the next failure points to its stage.
 
@@ -297,12 +297,19 @@ Run gates in increasing strength:
 4. **Same-snapshot head-to-head:** run old and new logic in the same time window on identical inputs. Compare every output row and column.
 5. **Operational gate:** verify schedule, trigger inputs, output transaction, descriptions, downstream reads, file layout, and rollback.
 
+A behavior change is proven only by a branch build compared against current output with 0 differing rows in both directions (for example `EXCEPT ALL` each way, so row multiplicity counts) plus exact schema equality.
+
+For refactors that should not change behavior, also run two cheap gates that caught real bugs:
+
+- **Manifest diff:** dump every registered transform's inputs, outputs, checks, resources and descriptions on the base and the branch; they must be byte-identical except for intended removals.
+- **Import sweep:** import every module with `pkgutil.walk_packages`. A manifest check alone missed a broken import.
+
 A comparison against an output built on a different snapshot can show legitimate differences from changed reference data. Do not label that a logic failure without controlling input snapshots, and do not claim full equivalence from an uncontrolled comparison. Same-input comparison is stronger.
 
 ### Comparison harness details that matter
 
 - Reuse one fixed input set. Materialize snapshot inputs once on the development branch and build the Spark reference once; after code changes, rebuild only the DuckDB candidate and comparison.
-- Compare two outputs: the experimental copy and the production-path copy. Identical diffs in both indicate a logic difference, not run-to-run randomness.
+- Build every proof output at an experimental path. Never build production-path outputs on a branch as proof. Comparing two experimental candidates (for example a fixed-input copy and a canonical-code copy) separates logic differences from run-to-run randomness: identical diffs in both indicate a logic difference.
 - Check input transaction IDs and evaluation date, not branch names. A reference that read through a master fallback may still have read the same transactions.
 - Report differences per scope (ERP or system), not only in total.
 - Allow floating-point tolerance only per column, only for `DOUBLE` sums over many rows: relative tolerance 1e-12 to 1e-10. NULL versus a value always differs; report the largest absolute and relative differences. Never apply tolerance globally.
@@ -338,6 +345,7 @@ Background watchers and promotion scripts can fail quietly: one-off CLI errors u
 - **Keeping distributed salting on one node:** unnecessary explode or union plans create dead rows and extra I/O; remove only after validating join semantics.
 - **One giant query:** often OOMs when all hash tables coexist.
 - **Over-threading:** per-thread buffers can create memory pressure and spill; match threads to the resource quota.
+- **Under-threading the output stage:** capping threads below the container's vCPUs for final writes wastes billed cores.
 - **Raising DuckDB's memory limit to container RAM:** leaves no room for the runtime and can cause an OOM kill.
 - **Global `DISTINCT` as a safety blanket:** it may be expensive and may hide duplicate-key problems; prove whether it changes rows.
 - **Skipping a wide-row `DISTINCT` without proof:** check narrow identity columns first and keep the full-row fallback.
@@ -360,7 +368,7 @@ Background watchers and promotion scripts can fail quietly: one-off CLI errors u
 - **Ignoring metadata or preview differences:** a path handoff and a dataframe-style metadata write may not compose in preview; test the target runtime.
 - **Sizing the container for platform checks:** post-user-code key checks can need more RAM than the whole DuckDB job. Enforce keys in DuckDB and drop the duplicate platform check instead of buying a larger container.
 - **Sizing from the container memory chart:** it may count page cache and sit at the cap. Log process RSS or cgroup anonymous memory per stage instead.
-- **Confusing engine limits with billing:** DuckDB `threads` and `memory_limit` only shape behavior inside the container. The platform bills the requested container envelope for the whole runtime.
+- **Confusing engine limits with billing:** DuckDB `threads` and `memory_limit` only shape behavior inside the container. The platform bills the requested container envelope from `RUNNING` to finish.
 - **Trusting promotion automation without checking it:** retries, branch movement, bot commits, conflicts, and cached CI can change the outcome.
 
 ### Pre-1582 dates and Parquet calendar metadata
