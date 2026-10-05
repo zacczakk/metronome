@@ -45,8 +45,8 @@ read_when:
 - [x] Pause only the interval exporter if idle. Copy the complete former cloud tree to local legacy storage with bounded reads; write SHA-256 receipt covering every source file. Any failure blocks removal.
 - [x] Preserve cloud-only session identities in the indexed local archive; keep redundant snapshots outside QMD. Verify copied bytes and unchanged source inventory.
 - [x] Integrate committed exporter changes locally. Update workflows README to local-only storage.
-- [ ] Use `trash` on the exact verified cloud directory and old symlink. Leave local canonical archive and source databases intact.
-- [ ] Run full indexed `wf run sessions-export`; check complete health and keyword/meaning search. Reload interval exporter regardless of validation result.
+- [x] Use `trash` on the exact verified cloud directory and old symlink. Leave local canonical archive and source databases intact.
+- [x] Run full indexed `wf run sessions-export`; check complete health and keyword/meaning search. Reload interval exporter regardless of validation result.
 - [x] Record results and remaining blockers here and in Memory; commit documentation locally. Complete receipt remains blocked on cloud reads.
 
 ## Evidence
@@ -76,5 +76,14 @@ read_when:
 
 - [x] Real CLI test configures local Sessions plus Memory sentinel; `sessions index --no-embed` must index the session while leaving Memory unindexed. Observe red against global update.
 - [x] Small `scripts/sessions-qmd.mjs` uses installed public QMD SDK, existing DB/config, and update collections `["sessions"]`; Python discovers QMD package through installed executable and runs its matching Node runtime. Retain `qmd embed` on stored content and existing errors/timeouts.
-- [ ] Run real QMD CLI test plus all script tests/Ruff. Commit and integrate locally; retry full indexed exporter, verify cloud receipt, trash exact verified old tree/symlink, restore interval exporter.
+- [x] Run real QMD CLI test plus all script tests/Ruff. Commit and integrate locally; retry full indexed exporter, verify cloud receipt, trash exact verified old tree/symlink, restore interval exporter.
 - Scope regression passed after observed red: 14 script tests / 93 assertions, no mocks; Ruff and diff checks pass. Existing Memory collection survives untouched while Sessions is refreshed; indexed content embedding uses SQLite.
+- c047f0a integrated locally; all 691 metronome tests pass. Public-repo current-file scan clean after portable plan path correction; existing git history scan remains red, no push/history rewrite. Final retry `sh_10b9707d7001qzygMlW2POQ0Ux` uses scoped Sessions update; active QMD database contains all 194 imported legacy transcripts, embedding currently runs from stored content.
+
+## Complete — 2026-10-05
+
+- Final indexed export passed in 3m03s; archive health at 10:26:34 UTC has all three sources, fullCoverage/indexed true and zero failures.
+- Exact verified cloud directory and old `~/Vaults/Sessions` symlink removed via trash at 10:26:45 UTC. Post-removal checksum verification still matches every one of 20,776 preserved files / 234,270,388 bytes.
+- QMD: 11,490 session files, 142,003 vectors across collections, zero pending; all 194 cloud-only imports indexed. Live keyword/meaning search and recovered OpenCode2 transcript retrieval pass.
+- Half-hour exporter reloaded; status scheduled and latest export successful. Original source chats untouched. Active archive `~/.local/share/sessions/archive/`; full prior-cloud snapshots `~/.local/share/sessions/legacy-icloud/`; receipts/progress machine-local.
+- All owned code/docs integrated locally; unrelated skill edits preserved. Worktrees retained until publication/merge cleanup; no remote push.
