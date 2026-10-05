@@ -423,10 +423,10 @@ qmd update && qmd embed
 Search, browse, and export coding session history from OpenCode, Claude Code, and Codex. Three-layer search: Memory vault (curated notes) → FTS5 (keyword precision) → qmd (semantic recall).
 
 - **Source:** `~/Repos/zacczakk/metronome/scripts/sessions`
-- **Vault:** `~/Vaults/Sessions/` (iCloud-backed symlink, Obsidian-visible)
+- **Archive:** `~/.local/share/sessions/archive/` (local-only markdown; no cloud writes)
 - **Sources:** OpenCode (`~/.local/share/opencode/opencode.db`), Claude Code (`~/.claude/projects/`), Codex (`~/.codex/sessions/`)
 - **Indexes:** FTS5 DB + export state at `~/.local/share/sessions/` (machine-local)
-- **qmd collection:** `sessions` (machine-local semantic + BM25 index)
+- **qmd collection:** `sessions` indexes the local archive; database at `~/.cache/qmd/index.sqlite`
 
 ### Subcommands
 
@@ -436,10 +436,10 @@ Search, browse, and export coding session history from OpenCode, Claude Code, an
 | `sessions latest` | Show the newest matching session | No — queries source DBs live |
 | `sessions read <session_id>` | Read full session transcript | No — queries source DBs live |
 | `sessions stats` | Session counts, message/part totals, index size | No |
-| `sessions export` | Incremental export to vault (markdown + frontmatter) | — |
+| `sessions export` | Incremental local export (markdown + frontmatter), refreshes indexes | — |
 | `sessions search "query"` | FTS5 keyword search with Porter stemming | Yes |
 | `sessions find "query"` | Semantic search via qmd (query expansion + reranking) | Yes |
-| `sessions index` | Rebuild qmd collection (re-register + embed) | Yes |
+| `sessions index` | Refresh existing local qmd collection and embeddings | Yes |
 
 ### Flags
 

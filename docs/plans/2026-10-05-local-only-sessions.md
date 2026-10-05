@@ -19,7 +19,7 @@ read_when:
 - Preserve original chats and all former cloud files; checksum proof before cloud removal.
 - Keep CLI commands and JSON stats keys compatible.
 - Existing real export/search CLI seam is user-approved; no mocks or dependencies.
-- Own `scripts/sessions`, `scripts/session_archive.py`, `scripts/__tests__/sessions-opencode.test.ts`, `docs/operations/archive-export.md`, this plan, and workflows README documentation only.
+- Own `scripts/sessions`, `scripts/session_archive.py`, `scripts/__tests__/sessions-opencode.test.ts`, `docs/operations/archive-export.md`, canonical `configs/instructions/TOOLS.md` sessions documentation, this plan, and workflows README documentation only.
 - Reuse clean repair worktrees; preserve unrelated main-checkout skill edits. Commit locally; no push.
 
 ---
@@ -34,7 +34,7 @@ read_when:
 - [x] Run `bun test scripts/__tests__/sessions-opencode.test.ts`; cloud-folder assertion must fail before implementation.
 - [x] Replace mirror writes with `atomic_write(path, text)`; remove mirror helper/imports, retry loop and `mirrorPending`; discard old `mirror_pending` state via `state.pop("mirror_pending", None)`.
 - [x] Make stats use `ARCHIVE_DIR.exists()` while retaining JSON `vault` key. Help names local archive and actual FTS/QMD paths. Update archive-export docs for local-only behavior.
-- [ ] Run `bun test scripts/__tests__`, `ruff check scripts/sessions scripts/session_archive.py scripts/sessions_opencode.py`, and `git diff --check`; commit owned files with `committer`.
+- [x] Run `bun test scripts/__tests__`, `ruff check scripts/sessions scripts/session_archive.py scripts/sessions_opencode.py`, and `git diff --check`; commit owned files with `committer`.
 
 ### Task 2: Preserve and switch live storage
 
@@ -44,13 +44,19 @@ read_when:
 
 - [ ] Pause only the interval exporter if idle. Copy the complete former cloud tree to local legacy storage with bounded reads; write SHA-256 receipt covering every source file. Any failure blocks removal.
 - [ ] Preserve cloud-only session identities in the indexed local archive; keep redundant snapshots outside QMD. Verify copied bytes and unchanged source inventory.
-- [ ] Integrate committed exporter changes locally. Update workflows README to local-only storage.
+- [x] Integrate committed exporter changes locally. Update workflows README to local-only storage.
 - [ ] Use `trash` on the exact verified cloud directory and old symlink. Leave local canonical archive and source databases intact.
 - [ ] Run full indexed `wf run sessions-export`; check complete health and keyword/meaning search. Reload interval exporter regardless of validation result.
-- [ ] Record receipt, results, and remaining blockers here and in Memory; commit documentation locally.
+- [x] Record results and remaining blockers here and in Memory; commit documentation locally. Complete receipt remains blocked on cloud reads.
 
 ## Evidence
 
 - Red: CLI cloud-directory assertion failed against mirror implementation.
 - Green: 13 scripts tests pass, 88 assertions; Ruff and diff checks pass.
 - Interval exporter paused while idle. Existing cloud tree: 20,776 files, 234,270,388 logical bytes; copy into local `legacy-icloud` uses bounded 240-second ditto and preserves originals on failure.
+- Local exporter commit `dbb42f4` integrated into main; workflow README commit `7afa9c6` integrated locally. Unrelated skill edits preserved.
+- Live full indexed local-only export passed in 2m32s at 2026-10-05T08:54:46Z, all three sources, indexed/fullCoverage true, zero failures. Search/find returned results. Half-hour exporter restored.
+- Initial whole-tree copy stalled after 157 files and timed out safely. Apple's documented `FileManager.startDownloadingUbiquitousItem(at:)` requested Sessions download. Bounded workers now copy/read each file independently with checksum verification; cloud originals remain intact.
+- Per-file attempt also failed: 487 verified reads; 8 workers stopped after 180 seconds with many cloud read timeouts. Full preservation, cloud-only import, checksum receipt and cloud removal remain blocked. No originals removed. Stop recovery here; user Finder **Download Now** on the original Sessions folder is the next step before resuming verification.
+- Canonical TOOLS sessions paths corrected. Live export/search passed and interval scheduling is restored; cloud migration remains explicitly incomplete.
+- Partial local preservation currently contains 489 files. CLI/cloud-write switch is complete and verified; run final indexed export again after importing the remaining former cloud history.

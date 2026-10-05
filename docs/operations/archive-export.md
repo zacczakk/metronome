@@ -18,7 +18,7 @@ read_when:
 - QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
 - Health lists only sources actually scanned. Missing or unreadable source paths return failure and never authorize cleanup.
 - Date-filtered or source-filtered exports record `fullCoverage: false` and cannot refresh full archive health. Malformed JSON/JSONL records are reported as failures and are never checkpointed as exported.
-- Former cloud files are preserved under `~/.local/share/sessions/legacy-icloud/`, outside the search corpus to avoid duplicate snapshots. Cloud-only session identities are also included in the local indexed archive. Cloud removal requires a complete checksum receipt.
+- Migration target for former cloud files: `~/.local/share/sessions/legacy-icloud/`, outside the search corpus to avoid duplicate snapshots. Import cloud-only session identities into the indexed local archive after preservation. Cloud removal requires a complete checksum receipt; interrupted downloads retain the cloud originals.
 - Existing mirror queues are discarded on export; no further cloud writes or retries occur.
 - Existing export checkpoints are retained during migration; a missing local archive file is regenerated even when its source watermark is unchanged.
 - `sessions list`, `latest`, and `read` still query source chats directly. `search` uses local FTS and `find` uses local QMD. `stats --json` retains its `vault` key for compatibility but counts local archive files.
