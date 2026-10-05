@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -954,9 +955,15 @@ def qmd_index(embed: bool = True):
     if not qmd_ensure_collection():
         return False
 
-    print("updating qmd index...")
+    executable = shutil.which("qmd")
+    if not executable:
+        print("qmd not found on PATH", file=sys.stderr)
+        return False
+    package = Path(executable).resolve().parent.parent
+    runtime = "bun" if not (package / "package-lock.json").exists() and any((package / lock).exists() for lock in ("bun.lock", "bun.lockb")) else "node"
+    print("updating local sessions qmd index...")
     try:
-        r = subprocess.run(["qmd", "update"], capture_output=True, text=True, timeout=240)
+        r = subprocess.run([runtime, str(Path(__file__).with_name("sessions-qmd.mjs")), str(package)], capture_output=True, text=True, timeout=240)
     except subprocess.TimeoutExpired as error:
         output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or ""
         print(f"qmd update timed out after 240s; archive cleanup stays blocked\n{output[-2000:]}", file=sys.stderr)

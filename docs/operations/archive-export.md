@@ -15,7 +15,7 @@ read_when:
 - Export and indexing failures return nonzero. `sessions index` also returns nonzero when QMD fails.
 - `~/.local/share/sessions/archive-health.json` records `completedAt`, `sources`, `indexed`, and `failures`. Only a complete all-source export with indexes refreshed can authorize automated Memory session cleanup.
 - `--no-index` supports diagnostics and tests, and produces `indexed: false`.
-- QMD update/embed each have a four-minute timeout; stalled iCloud reads fail visibly and leave cleanup blocked.
+- QMD refresh/embed each have a four-minute timeout and return failures honestly. The installed QMD SDK refreshes only the local `sessions` collection; unrelated Memory/iCloud files cannot block archive export. Embedding uses already-indexed database content.
 - Health lists only sources actually scanned. Missing or unreadable source paths return failure and never authorize cleanup.
 - Date-filtered or source-filtered exports record `fullCoverage: false` and cannot refresh full archive health. Malformed JSON/JSONL records are reported as failures and are never checkpointed as exported.
 - Migration target for former cloud files: `~/.local/share/sessions/legacy-icloud/`, outside the search corpus to avoid duplicate snapshots. Import cloud-only session identities into the indexed local archive after preservation. Cloud removal requires a complete checksum receipt; interrupted downloads retain the cloud originals.

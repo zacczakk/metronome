@@ -19,7 +19,7 @@ read_when:
 - Preserve original chats and all former cloud files; checksum proof before cloud removal.
 - Keep CLI commands and JSON stats keys compatible.
 - Existing real export/search CLI seam is user-approved; no mocks or dependencies.
-- Own `scripts/sessions`, `scripts/session_archive.py`, `scripts/__tests__/sessions-opencode.test.ts`, `docs/operations/archive-export.md`, canonical `configs/instructions/TOOLS.md` sessions documentation, this plan, and workflows README documentation only.
+- Own `scripts/sessions`, `scripts/session_archive.py`, `scripts/sessions-qmd.mjs`, `scripts/__tests__/sessions-opencode.test.ts`, `scripts/__tests__/sessions-qmd.test.ts`, `docs/operations/archive-export.md`, canonical `configs/instructions/TOOLS.md` sessions documentation, this plan, and workflows README documentation only.
 - Reuse clean repair worktrees; preserve unrelated main-checkout skill edits. Commit locally; no push.
 
 ---
@@ -70,3 +70,11 @@ read_when:
 - Active file requests preserved 20,423/20,776 files (231,107,938 bytes), then stopped after five minutes without progress on last 353 OpenCode files. macOS repeatedly re-evicts already downloaded data under disk pressure (22 GiB free); cloud flags are not remaining-to-preserve counts. All old cloud originals remain intact.
 - Targeted 353 requests succeeded; sampled remaining files became Current. Monitor now persists per-file checksum/time proof in `cloud-migration-checksums.json`, resumes verified files without rehydrating them, retries outstanding requests after 60s, and prioritizes missing copies. Restart `sh_10b758032001hGS9RxUN3GHUmz`, log `session-migration-monitor-resume.log`; final verifier accepts cached source proof only with unchanged size/mtime and matching local hash.
 - Preservation completed 2026-10-05T10:13:56Z: all 20,776 source files / 234,270,388 bytes verified. Receipt `~/.local/share/sessions/cloud-migration-verified.json`; independent local checksum pass matches every file. Imported 194 cloud-only transcripts: 126 OpenCode2, 32 Claude, 22 OpenCode, 12 Codex, 2 older session snapshots; independent import hashes match. Interval exporter paused for final indexed acceptance, then removal and restoration.
+- Final export exceeded outer 300s limit; cloud removal safely skipped and interval exporter restored. Owned orphan QMD update stopped. Root coupling: sessions invokes global `qmd update`, which reads unrelated Memory/iCloud collections. Installed QMD 2.1 public SDK supports `store.update({collections: ["sessions"]})`; embed reads stored content, not vault files.
+
+### Final acceptance blocker: scoped search refresh
+
+- [x] Real CLI test configures local Sessions plus Memory sentinel; `sessions index --no-embed` must index the session while leaving Memory unindexed. Observe red against global update.
+- [x] Small `scripts/sessions-qmd.mjs` uses installed public QMD SDK, existing DB/config, and update collections `["sessions"]`; Python discovers QMD package through installed executable and runs its matching Node runtime. Retain `qmd embed` on stored content and existing errors/timeouts.
+- [ ] Run real QMD CLI test plus all script tests/Ruff. Commit and integrate locally; retry full indexed exporter, verify cloud receipt, trash exact verified old tree/symlink, restore interval exporter.
+- Scope regression passed after observed red: 14 script tests / 93 assertions, no mocks; Ruff and diff checks pass. Existing Memory collection survives untouched while Sessions is refreshed; indexed content embedding uses SQLite.
