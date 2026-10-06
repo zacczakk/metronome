@@ -40,12 +40,13 @@ describe('canonical agent routing', () => {
     }
   });
 
-  test('limits Foundry SQL agent to OpenCode targets', async () => {
+  test('limits Foundry SQL agent to OpenCode and Pi targets', async () => {
     const agents = await readCanonicalAgents(process.cwd(), () => false);
     const agent = agents.find(({ name }) => name === 'foundry-sql');
 
-    expect(agent?.metadata.targets).toEqual(['opencode']);
+    expect(agent?.metadata.targets).toEqual(['opencode', 'pi']);
     expect(agent && isCanonicalAgentForTarget(agent, 'opencode')).toBe(true);
+    expect(agent && isCanonicalAgentForTarget(agent, 'pi')).toBe(true);
     expect(agent && isCanonicalAgentForTarget(agent, 'claude-code')).toBe(false);
     expect(agent && isCanonicalAgentForTarget(agent, 'codex')).toBe(false);
   });
