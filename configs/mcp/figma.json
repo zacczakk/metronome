@@ -3,5 +3,12 @@
   "transport": "http",
   "url": "https://mcp.figma.com/mcp",
   "oauth": {},
-  "enabled": false
+  "enabled": false,
+  "target_options": {
+    "pi": {
+      "oauth": {
+        "clientName": "Claude Code"
+      }
+    }
+  }
 }
