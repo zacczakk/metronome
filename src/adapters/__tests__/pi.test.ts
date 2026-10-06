@@ -36,3 +36,23 @@ test('agent and MCP rendering', () => {
   expect(Object.keys(mcp.mcpServers)).toEqual(['x']);
   expect(mcp.autoEnableCodemode).toBe(true);
 });
+
+test('permissions.json carries global rules and per-agent v2 rules', () => {
+  const files = adapter.renderAdditionalSettings({ target: 'pi', keys: {
+    _opencodePermissions: [{ action: 'shell', resource: 'git push *', effect: 'ask' }],
+    _agentPermissions: { release: { '*': 'deny', bash: { '*': 'allow', 'git push *': 'allow' } } },
+  } });
+  const permissions = files.find((f) => f.relativePath.endsWith('/permissions.json'))!;
+  expect(JSON.parse(permissions.content)).toEqual({
+    rules: [{ action: 'shell', resource: 'git push *', effect: 'ask' }],
+    agents: { release: [
+      { action: '*', resource: '*', effect: 'deny' },
+      { action: 'shell', resource: '*', effect: 'allow' },
+      { action: 'shell', resource: 'git push *', effect: 'allow' },
+    ] },
+  });
+});
+
+test('agent bodies end with the agent marker', () => {
+  expect(adapter.renderAgent({ name: 'release', content: 'Body\n', metadata: {} }).content).toEndWith('Body\n\n<!-- metronome-agent: release -->\n');
+});

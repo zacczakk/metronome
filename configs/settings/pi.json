@@ -23,7 +23,8 @@
   "defaultProjectTrust": "always",
   "enableSkillCommands": false,
   "extensions": [
-    "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts"
+    "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts",
+    "~/Repos/zacczakk/metronome/configs/pi/extensions/permissions.ts"
   ],
   "subagents": {
     "agentOverrides": {

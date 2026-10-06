@@ -228,6 +228,9 @@ export async function readCanonicalSettings(
     if (target === 'pi') {
       const opencode = JSON.parse(await readFile(join(projectDir, SETTINGS_DIR, 'opencode.json'), 'utf-8')) as Record<string, unknown>;
       keys._opencodeProviders = opencode.providers ?? {};
+      keys._opencodePermissions = opencode.permissions ?? [];
+      const agents = (await readCanonicalAgents(projectDir, () => false)).filter((agent) => isCanonicalAgentForTarget(agent, 'pi'));
+      keys._agentPermissions = Object.fromEntries(agents.flatMap((agent) => agent.metadata.permission ? [[agent.name, agent.metadata.permission]] : []));
     }
     return { target, keys };
   } catch {

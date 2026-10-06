@@ -38,3 +38,12 @@ test('Pi loads the same instruction files as OpenCode, in order', async () => {
   expect(existsSync(join(PROJECT_ROOT, 'configs/pi/extensions/instructions-loader.ts'))).toBe(true);
   expect(new PiAdapter('/h').renderInstructions('x')).toBe('x');
 });
+
+test('Pi enforces exactly the OpenCode global and per-agent permission rules', async () => {
+  const pi = await readCanonicalSettings(PROJECT_ROOT, 'pi');
+  const files = new PiAdapter('/h').renderAdditionalSettings(pi!);
+  const permissions = JSON.parse(files.find((f) => f.relativePath.endsWith('/permissions.json'))!.content);
+  expect(permissions.rules).toEqual(opencode.permissions);
+  expect(Object.keys(permissions.agents).sort()).toContain('release');
+  expect(pi!.keys.extensions).toContain('~/Repos/zacczakk/metronome/configs/pi/extensions/permissions.ts');
+});

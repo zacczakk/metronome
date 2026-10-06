@@ -46,7 +46,8 @@ function renamedPermission(name: string): string {
   return name;
 }
 
-function renderPermissions(permission: unknown): unknown[] {
+/** Convert OpenCode v1 `permission` objects into ordered v2 `{ action, resource, effect }` rules. */
+export function renderPermissions(permission: unknown): unknown[] {
   if (!isRecord(permission)) return [];
 
   const rules: unknown[] = [];

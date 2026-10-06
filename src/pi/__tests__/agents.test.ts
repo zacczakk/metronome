@@ -9,7 +9,7 @@ test('maps model, effort and permissions to pi-subagents frontmatter', () => {
     name: 'execute', description: 'Impl', model: 'tux/gpt-6.1-sol', thinking: 'high',
     tools: 'read, grep, find, ls, edit, write, bash', advertise: true, systemPromptMode: 'append',
     inheritProjectContext: true, inheritGlobalContext: true, inheritSkills: true,
-    subagentOnlyExtensions: '~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts',
+    subagentOnlyExtensions: '~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts, ~/Repos/zacczakk/metronome/configs/pi/extensions/permissions.ts',
   });
 });
 
