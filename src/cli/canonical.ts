@@ -7,6 +7,7 @@ import { ClaudeCodeAdapter } from '../adapters/claude-code';
 import { OpenCodeAdapter } from '../adapters/opencode';
 import { AntigravityAdapter } from '../adapters/antigravity';
 import { CodexAdapter } from '../adapters/codex';
+import { PiAdapter } from '../adapters/pi';
 import type { ToolAdapter } from '../adapters/base';
 import type { TargetName, ItemType, CanonicalItem, CanonicalSettings, CanonicalHookConfig, MCPServer } from '../types';
 import type { SkillProjectionOperation } from '../core/skill-projection';
@@ -40,7 +41,7 @@ export interface SyncOptions {
   projectionExecutor?: (operation: SkillProjectionOperation, write: () => Promise<void>) => Promise<void>;
 }
 
-export const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex'];
+export const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex', 'pi'];
 
 export function createAdapter(target: TargetName, homeDir?: string): ToolAdapter {
   switch (target) {
@@ -48,6 +49,7 @@ export function createAdapter(target: TargetName, homeDir?: string): ToolAdapter
     case 'opencode':    return new OpenCodeAdapter(homeDir);
     case 'antigravity': return new AntigravityAdapter(homeDir);
     case 'codex':       return new CodexAdapter(homeDir);
+    case 'pi':          return new PiAdapter(homeDir);
   }
 }
 
@@ -223,6 +225,10 @@ export async function readCanonicalSettings(
   try {
     const raw = await readFile(filePath, 'utf-8');
     const keys = JSON.parse(raw) as Record<string, unknown>;
+    if (target === 'pi') {
+      const opencode = JSON.parse(await readFile(join(projectDir, SETTINGS_DIR, 'opencode.json'), 'utf-8')) as Record<string, unknown>;
+      keys._opencodeProviders = opencode.providers ?? {};
+    }
     return { target, keys };
   } catch {
     return null;

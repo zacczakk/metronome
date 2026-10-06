@@ -16,6 +16,9 @@ import { confirm, validatePullSource } from './cli-helpers';
 import type { TargetName } from '../types';
 import type { BackupInfo } from '../core/rollback';
 
+/** Pi files are lossy projections of canonical config; `pull -s all` skips them. */
+const PULL_ALL_SOURCES = ALL_TARGETS.filter((target) => target !== 'pi');
+
 export interface PullOptions {
   source: TargetName;
   force?: boolean;
@@ -385,7 +388,7 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
 /**
  * Pull from all targets, showing every item under every target that has it.
  *
- * Discovery: dry-run all 4 targets to collect available items.
+ * Discovery: dry-run all targets to collect available items.
  * Display: every item appears under every target that has it — no hiding.
  * Write: each unique item is written once (first-source-wins for the actual
  *   file write, since all adapters produce identical canonical output).
@@ -395,7 +398,7 @@ export async function runPullAll(options: PullAllOptions = {}): Promise<Orchestr
 
   // Phase 1: discover items in all targets
   const discoveries = new Map<TargetName, PullItem[]>();
-  for (const target of ALL_TARGETS) {
+  for (const target of PULL_ALL_SOURCES) {
     const result = await runPull({
       source: target,
       force: options.force,
@@ -408,7 +411,7 @@ export async function runPullAll(options: PullAllOptions = {}): Promise<Orchestr
 
   // Build per-item source map: which targets have each type/name
   const sourcesPerItem = new Map<string, TargetName[]>();
-  for (const target of ALL_TARGETS) {
+  for (const target of PULL_ALL_SOURCES) {
     for (const item of discoveries.get(target) ?? []) {
       const key = `${item.type}/${item.name}`;
       if (!sourcesPerItem.has(key)) sourcesPerItem.set(key, []);
@@ -418,7 +421,7 @@ export async function runPullAll(options: PullAllOptions = {}): Promise<Orchestr
 
   // Flatten: every item appears under every target that has it
   const allItems: PullItem[] = [];
-  for (const target of ALL_TARGETS) {
+  for (const target of PULL_ALL_SOURCES) {
     for (const item of discoveries.get(target) ?? []) {
       const key = `${item.type}/${item.name}`;
       const others = (sourcesPerItem.get(key) ?? []).filter((t) => t !== target);
@@ -429,7 +432,7 @@ export async function runPullAll(options: PullAllOptions = {}): Promise<Orchestr
   // Pick first-source-wins for actual writes (canonical output is identical regardless of source)
   const winnersPerTarget = new Map<TargetName, Set<string>>();
   const claimed = new Set<string>();
-  for (const target of ALL_TARGETS) {
+  for (const target of PULL_ALL_SOURCES) {
     for (const item of discoveries.get(target) ?? []) {
       if (item.action !== 'create') continue;
       const key = `${item.type}/${item.name}`;
@@ -451,7 +454,7 @@ export async function runPullAll(options: PullAllOptions = {}): Promise<Orchestr
   }
 
   // Phase 2: write — each unique item pulled once
-  for (const target of ALL_TARGETS) {
+  for (const target of PULL_ALL_SOURCES) {
     const keys = winnersPerTarget.get(target);
     if (!keys || keys.size === 0) continue;
     await runPull({
@@ -578,7 +581,7 @@ Reverse of push: reads installed target configs, reverse-parses them through the
 adapter, and writes canonical markdown with frontmatter to configs/.
 Skips items that already exist in canonical unless --force is used.
 
-Use --source all to deduplicate across all 4 targets (first-source-wins).
+Use --source all to deduplicate across all targets (first-source-wins).
 
 Examples:
   metronome pull -s claude                 Pull from Claude Code

@@ -1,0 +1,42 @@
+{
+  "defaultProvider": "tux",
+  "defaultModel": "gpt-6-luna",
+  "defaultThinkingLevel": "max",
+  "enabledModels": [
+    "tux/*",
+    "github-copilot/claude-opus-5.5",
+    "github-copilot/claude-sonnet-5.5",
+    "github-copilot/gpt-6-luna",
+    "github-copilot/gpt-6.1-sol",
+    "openai-codex/gpt-6-luna",
+    "openai-codex/gpt-6.1-sol"
+  ],
+  "packages": [
+    "git:https://github.com/hasit/pi-community-themes",
+    "npm:pi-subagents@0.76.1"
+  ],
+  "theme": "nord-dark",
+  "hideThinkingBlock": false,
+  "editorPaddingX": 1,
+  "outputPad": 1,
+  "enableInstallTelemetry": false,
+  "defaultProjectTrust": "always",
+  "enableSkillCommands": false,
+  "extensions": [
+    "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts"
+  ],
+  "subagents": {
+    "defaultSubagentOnlyExtensions": [
+      "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts"
+    ],
+    "agentOverrides": {
+      "scout": { "model": "github-copilot/gpt-6-luna", "thinking": "medium" },
+      "researcher": { "disabled": true },
+      "evidence-auditor": { "disabled": true },
+      "worker": { "disabled": true },
+      "reviewer": { "disabled": true },
+      "oracle": { "disabled": true },
+      "advisor": { "disabled": true }
+    }
+  }
+}

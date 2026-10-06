@@ -24,7 +24,7 @@ import type { TargetName, CanonicalItem } from '../types';
 const VALID_SINGULAR_TYPES = ['command', 'agent', 'mcp', 'instruction', 'skill', 'settings', 'hook'] as const;
 type SingularType = (typeof VALID_SINGULAR_TYPES)[number];
 
-const VALID_TARGETS = ['claude', 'antigravity', 'codex', 'opencode'] as const;
+const VALID_TARGETS = ['claude', 'antigravity', 'codex', 'opencode', 'pi'] as const;
 
 function mapTarget(t: string): TargetName {
   if (t === 'claude') return 'claude-code';
@@ -36,7 +36,7 @@ export const renderCommand = new Command('render')
     `Render a single canonical item to target format and print to stdout.
 
 Debug/inspection tool: see exactly what a canonical item looks like after adapter
-transformation for a given target. If no --target is specified, renders for all 4
+transformation for a given target. If no --target is specified, renders for all
 targets with separator headers.
 
 Examples:

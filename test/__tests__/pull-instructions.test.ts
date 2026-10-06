@@ -11,7 +11,7 @@ const FIXTURE_ROOT = join(import.meta.dir, '../fixtures');
 const CANONICAL_ROOT = join(FIXTURE_ROOT, 'canonical');
 const E2E_TIMEOUT = 60_000;
 
-const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex'];
+const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex', 'pi'];
 
 /** Build a temp project dir pointing at canonical fixtures */
 function setupProjectDir(suffix: string): string {
@@ -30,11 +30,11 @@ function emptyProjectDir(suffix: string): string {
 describe('pull instructions E2E', () => {
   test('round-trip: push then pull instructions matches canonical', async () => {
     const fakeHome = createTestHome('pull-instr-rt');
-    // Push canonical instructions to all 4 targets
+    // Push canonical instructions to all 5 targets
     const pushDir = setupProjectDir('push');
     const pushResult = await runPush({ projectDir: pushDir, force: true, types: ['instruction'], homeDir: fakeHome });
     expect(pushResult.failed).toBe(0);
-    expect(pushResult.written).toBe(4);
+    expect(pushResult.written).toBe(5);
 
     const canonicalContent = readFileSync(join(CANONICAL_ROOT, 'instructions/AGENTS.md'), 'utf-8');
 

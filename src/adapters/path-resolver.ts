@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { TargetName } from '../types';
 
 /**
- * Centralized path construction for all 4 target CLIs.
+ * Centralized path construction for all target CLIs.
  * All paths are fully expanded (no ~ in output) and write-ready.
  *
  * Pass `homeDir` to redirect all paths to an isolated directory (for tests).
@@ -80,6 +80,7 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode';
       case 'antigravity':   return '~/.gemini/antigravity-cli';
       case 'codex':         return '~/.codex';
+      case 'pi':            return '~/.pi/agent';
     }
   }
 
@@ -89,6 +90,7 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode/commands/';
       case 'antigravity':   return '~/.gemini/commands/';
       case 'codex':         return '~/.codex/prompts/';
+      case 'pi':            return '~/.pi/agent/prompts/';
     }
   }
 
@@ -98,6 +100,7 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode/agents/';
       case 'antigravity':   return '~/.gemini/antigravity-cli/skills/';
       case 'codex':         return '~/.codex/agents/';
+      case 'pi':            return '~/.pi/agent/agents/';
     }
   }
 
@@ -107,6 +110,7 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode/opencode.json';
       case 'antigravity':   return '~/.gemini/antigravity-cli/settings.json';
       case 'codex':         return '~/.codex/config.toml';
+      case 'pi':            return '~/.pi/agent/mcp.json';
     }
   }
 
@@ -116,6 +120,7 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode/opencode.json';
       case 'antigravity':   return '~/.gemini/antigravity-cli/settings.json';
       case 'codex':         return '~/.codex/config.toml';
+      case 'pi':            return '~/.pi/agent/settings.json';
     }
   }
 
@@ -125,13 +130,15 @@ export class AdapterPathResolver {
       case 'opencode':      return '~/.config/opencode/AGENTS.md';
       case 'antigravity':   return '~/.gemini/antigravity-cli/AGENTS.md';
       case 'codex':         return '~/.codex/AGENTS.md';
+      case 'pi':            return '~/.pi/agent/AGENTS.md';
     }
   }
 
   private rawSkillsDir(): string {
     switch (this.target) {
       case 'opencode':
-      case 'codex':       return '~/.agents/skills/';
+      case 'codex':
+      case 'pi':          return '~/.agents/skills/';
       // Other targets don't use skills
       default:            return path.join(this.rawBaseDir(), 'skills/');
     }

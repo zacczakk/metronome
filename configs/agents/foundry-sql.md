@@ -2,7 +2,7 @@
 description: >-
   Read-only Foundry data analyst. Discovers datasets and ontology object types,
   runs bounded SQL or ontology queries, and returns compact evidence summaries
-  to the parent session. OpenCode only.
+  to the parent session. OpenCode and Pi only.
 mode: subagent
 model: github-copilot/gpt-6.1-sol
 reasoningEffort: medium

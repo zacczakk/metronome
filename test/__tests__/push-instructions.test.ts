@@ -14,12 +14,13 @@ const GOLDEN_PATHS: Record<TargetName, string> = {
   opencode: join(FIXTURE_ROOT, 'opencode/instructions/AGENTS.md'),
   antigravity: join(FIXTURE_ROOT, 'antigravity/instructions/AGENTS.md'),
   codex: join(FIXTURE_ROOT, 'codex/instructions/AGENTS.md'),
+  pi: join(FIXTURE_ROOT, 'pi/instructions/AGENTS.md'),
 };
 
-const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex'];
+const ALL_TARGETS: TargetName[] = ['claude-code', 'opencode', 'antigravity', 'codex', 'pi'];
 
 describe('push instructions E2E', () => {
-  test('pushes instructions to all 4 targets, matches goldens, identity passthrough, idempotent', async () => {
+  test('pushes instructions to all 5 targets, matches goldens, identity passthrough, idempotent', async () => {
     const fakeHome = createTestHome('push-instr');
     const projectDir = createTestProject('push-instr', FIXTURE_ROOT);
 
@@ -27,9 +28,9 @@ describe('push instructions E2E', () => {
     const result = await runPush({ projectDir, force: true, types: ['instruction'], homeDir: fakeHome });
     expect(result.failed).toBe(0);
     expect(result.rolledBack).toBe(false);
-    expect(result.written).toBe(4);
+    expect(result.written).toBe(5);
 
-    // --- Golden comparison for all 4 targets ---
+    // --- Golden comparison for all 5 targets ---
     for (const target of ALL_TARGETS) {
       const adapter = createAdapter(target, fakeHome);
       const instructionsPath = adapter.getPaths().getInstructionsPath();
@@ -38,7 +39,7 @@ describe('push instructions E2E', () => {
       expect(actual).toBe(golden);
     }
 
-    // --- All 4 targets get identical content (identity passthrough) ---
+    // --- All 5 targets get identical content (identity passthrough) ---
     const contents = ALL_TARGETS.map((target) => {
       const adapter = createAdapter(target, fakeHome);
       return readFileSync(adapter.getPaths().getInstructionsPath(), 'utf-8');

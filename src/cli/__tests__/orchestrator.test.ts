@@ -81,14 +81,15 @@ describe('runCheck', () => {
     }
   });
 
-  test('returns diffs for all 4 targets', async () => {
+  test('returns diffs for all 5 targets', async () => {
     const result = await runCheck({ projectDir: tmpDir, homeDir: fakeHome });
-    expect(result.diffs).toHaveLength(4);
+    expect(result.diffs).toHaveLength(5);
     const targets = result.diffs.map((d) => d.target);
     expect(targets).toContain('claude-code');
     expect(targets).toContain('opencode');
     expect(targets).toContain('antigravity');
     expect(targets).toContain('codex');
+    expect(targets).toContain('pi');
   });
 
   test('hasDrift is true when canonical items have unique content not yet synced', async () => {
