@@ -5,7 +5,7 @@
 <h1 align="center">metronome</h1>
 
 <p align="center">Single source of truth for AI coding assistant configurations.</p>
-Code-driven sync across Claude Code, OpenCode, Gemini CLI, and Codex.
+Code-driven sync across Claude Code, OpenCode, Gemini CLI, Codex, and Pi.
 
 ## First-Time Setup
 
@@ -40,6 +40,7 @@ metronome diff                      # interactive diff picker (TTY) or all (pipe
 metronome diff --all                # unified diff of all drift
 metronome push --force --delete     # push all + delete stale files
 metronome pull -s claude            # pull from Claude to canonical
+metronome push -t pi --force       # render Pi models, MCP, agents, instructions, settings
 metronome codex-provider tux        # switch Codex Desktop to Tux
 metronome codex-provider enterprise # switch back; OpenAI chats become visible
 ```
@@ -54,8 +55,9 @@ configs/
   agents/                    Agent definitions (2)
   skills/                    Skill directories (28 active, with upstream sync)
   opencode/v2/plugins/       OpenCode V2 profile-owned plugins
+  pi/extensions/             Pi extensions referenced in place (vault instructions loader)
   mcp/*.json                 MCP server definitions
-  settings/*.json            Settings definitions (claude, opencode, token-tracker)
+  settings/*.json            Settings definitions (claude, opencode, codex, pi)
   hooks/*.js                 Hook scripts (absolute-path refs, not deployed)
   instructions/AGENTS.md     Unified agent operating system (ground truth)
   instructions/TOOLS.md      Tool-use reference
@@ -69,7 +71,8 @@ evals/
 
 src/                         TypeScript sync engine
   cli/                       check, push, pull, diff, render, helpers commands
-  adapters/                  Per-CLI renderers (claude, opencode, antigravity, codex)
+  adapters/                  Per-CLI renderers (claude, opencode, antigravity, codex, pi)
+  pi/                        Pi renderers: Tux models.json, MCP, pi-subagents agents
   core/                      Diff engine, formatter, manifest tracking
   formats/                   Parsers (markdown, JSON, JSONC, TOML)
   secrets/                   .env injection/redaction

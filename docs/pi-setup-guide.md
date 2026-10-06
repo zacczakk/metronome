@@ -22,58 +22,52 @@ flagged `[UNVERIFIED]`.
 > sub-1k-token system prompt, **no native MCP** (skills + CLIs over MCP), no built-in
 > subagents/plan-mode/permission-popups — all added via extensions when you need them.
 
-Companion scaffolding under `configs/pi/` is a planned follow-up (not yet on disk —
-see §0 prerequisite). This doc is the "why and how" and stands on its own as reference;
-the scaffolding will be the ready-to-`cp` "what".
+> **Current state (2026-10-06, Pi 1.0.4):** metronome manages Pi as the `pi`
+> target, at parity with OpenCode. §0 is the source of truth. Where §1–§12
+> disagree (notably "no native MCP" and `pi-mcp-adapter`), §0 wins: Pi ≥ 1.0.4
+> has built-in MCP, and installing `pi-mcp-adapter` would replace it.
 
 ---
 
-## 0. TL;DR — the 10-minute setup
-
-> ⚠️ **PREREQUISITE — scaffolding not yet created.** The `configs/pi/` files this
-> TL;DR copies (`settings.json`, `AGENTS.md`, `APPEND_SYSTEM.md`, `mcp.json`,
-> `themes/north.json`) **do not exist yet** — they are a planned deliverable, not
-> on disk. Steps 2 and 4 will fail until the scaffolding is built (tracked as a
-> follow-up). Until then, treat §0 as the target shape and author each
-> `~/.pi/agent/` file by hand using the verified schemas in §3–§8. The rest of the
-> guide (§1–§12) is reference material that stands on its own.
+## 0. Setup via metronome
 
 ```bash
-# 1. Install (Node >= 22.19.0; pi runs on Node even when installed via bun)
+# 1. Install (Node >= 22.19.0)
 bun add -g --ignore-scripts @earendil-works/pi-coding-agent
-pi --version
 
-# 2. Seed config from metronome scaffolding  [requires configs/pi/ — see prerequisite]
-mkdir -p ~/.pi/agent
-cp ~/Repos/zacczakk/metronome/configs/pi/settings.json      ~/.pi/agent/settings.json
-cp ~/Repos/zacczakk/metronome/configs/pi/AGENTS.md          ~/.pi/agent/AGENTS.md
-cp ~/Repos/zacczakk/metronome/configs/pi/APPEND_SYSTEM.md   ~/.pi/agent/APPEND_SYSTEM.md
-cp ~/Repos/zacczakk/metronome/configs/pi/mcp.json           ~/.pi/agent/mcp.json
-mkdir -p ~/.pi/agent/themes && cp ~/Repos/zacczakk/metronome/configs/pi/themes/north.json ~/.pi/agent/themes/north.json
+# 2. Render Pi config from canonical sources
+metronome push -t pi --force
 
-# 3. Auth (pick your provider; stores to ~/.pi/agent/auth.json 0600)
-pi   # then /login  → choose Anthropic / Copilot / etc.
-#   or: export ANTHROPIC_API_KEY=sk-ant-...
+# 3. Install pinned packages declared in settings.json (pi-subagents, themes)
+pi install npm:pi-subagents@0.76.1   # `pi update --extensions` does not install new entries
 
-# 4. Portable skills (agentskills.io spec — same as OpenCode/Claude Code)
-#    Loop preserves each skill's <name>/ directory (do NOT use `cp configs/skills/*/`,
-#    which flattens the skill-name layer and errors on no-match in zsh). See §7.
-mkdir -p ~/.pi/agent/skills
-for d in ~/Repos/zacczakk/metronome/configs/skills/*/; do cp -R "$d" ~/.pi/agent/skills/; done
-
-# 5. Core extensions (leanest power-user set)
-pi install npm:pi-mcp-adapter          # MCP bridge, lazy proxy
-pi install npm:pi-web-access           # multi-backend web search (Parallel default; Tavily/Brave/Exa/OpenAI) + fetch
-pi install npm:pi-subagents            # subagent delegation
-pi install npm:@narumitw/pi-chrome-devtools
-pi install npm:@narumitw/pi-statusline
-pi install npm:@narumitw/pi-lsp        # fills the one real gap vs OpenCode
-
-# 6. Go
-pi
+# 4. Verify
+pi --list-models | rg '^tux'          # 19 Tux models
+pi mcp list                           # same servers enabled as OpenCode
+metronome check -t pi                 # zero drift
 ```
 
-Everything below is the detail behind these steps.
+| `~/.pi/agent/` file | Canonical source | Renderer |
+|---|---|---|
+| `models.json` | `configs/settings/opencode.json#providers.tux` | `src/pi/models.ts` |
+| `mcp.json` (built-in MCP) | `configs/mcp/*.json` (+ `target_options.opencode`, `target_options.pi`) | `src/pi/mcp.ts` |
+| `agents/*.md` (pi-subagents) | `configs/agents/*.md` | `src/pi/agents.ts` |
+| `AGENTS.md` | `configs/instructions/AGENTS.md` | identity |
+| `settings.json` (merged; runtime keys kept) | `configs/settings/pi.json` | `src/adapters/pi.ts` |
+
+Memory vault files (SOUL, IDENTITY, USER, MEMORY) are read live by
+`configs/pi/extensions/instructions-loader.ts`, referenced from the repo in
+`settings.json#extensions` (main session) and in each agent's
+`subagentOnlyExtensions` (subagents). The main session gets them as context
+files. pi-subagents children run with a forced system prompt, so there they are
+appended as `<instruction-source>` blocks.
+
+Skills need no sync: Pi already loads `~/.agents/skills/`.
+
+Not yet at parity: OpenCode permission rules, commands, and the other OpenCode
+plugins.
+
+The sections below are the original research reference.
 
 ---
 

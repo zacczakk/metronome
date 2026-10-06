@@ -118,7 +118,7 @@ OpenCode built-ins: `explore` → pi-subagents builtin `scout` (override model `
 **Interfaces:**
 - Produces: `export function renderPiModels(providers: Record<string, unknown>, ids?: string[]): { providers: Record<string, PiProvider> }` — renders each OpenCode native provider in `ids` (default `['tux']`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // src/pi/__tests__/models.test.ts
@@ -161,9 +161,9 @@ test('Claude models use adaptive Anthropic thinking without tool streaming', () 
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/pi/__tests__/models.test.ts` — Expected: FAIL `Cannot find module '../models'`.
+- [x] **Step 2: Run** `bun test src/pi/__tests__/models.test.ts` — Expected: FAIL `Cannot find module '../models'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // src/pi/models.ts
@@ -255,9 +255,9 @@ export function renderPiModels(providers: Rec, ids: string[] = ['tux']): { provi
 }
 ```
 
-- [ ] **Step 4: Run** `bun test src/pi/__tests__/models.test.ts` — Expected: PASS. If the `gpt-6.1-sol` tier cache values differ, the canonical file wins: fix the test literal to match `configs/settings/opencode.json`, not the renderer.
+- [x] **Step 4: Run** `bun test src/pi/__tests__/models.test.ts` — Expected: PASS. If the `gpt-6.1-sol` tier cache values differ, the canonical file wins: fix the test literal to match `configs/settings/opencode.json`, not the renderer.
 
-- [ ] **Step 5: Commit** `committer "feat(pi): render Tux catalog as Pi models.json" src/pi/models.ts src/pi/__tests__/models.test.ts`
+- [x] **Step 5: Commit** `committer "feat(pi): render Tux catalog as Pi models.json" src/pi/models.ts src/pi/__tests__/models.test.ts`
 
 ---
 
@@ -272,7 +272,7 @@ export function renderPiModels(providers: Rec, ids: string[] = ['tux']): { provi
 - Consumes: `MCPServer` from `src/types.ts` (with `TargetName` including `'pi'` — add the union member here if Task 4 has not run: `export type TargetName = 'claude-code' | 'opencode' | 'antigravity' | 'codex' | 'pi';`).
 - Produces: `export function renderPiMcp(servers: MCPServer[]): { mcpServers: Record<string, Record<string, unknown>> }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // src/pi/__tests__/mcp.test.ts
@@ -307,9 +307,9 @@ test('pi target options win and disabled_for skips', () => {
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/pi/__tests__/mcp.test.ts` — Expected: FAIL module not found.
+- [x] **Step 2: Run** `bun test src/pi/__tests__/mcp.test.ts` — Expected: FAIL module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // src/pi/mcp.ts
@@ -336,7 +336,7 @@ export function renderPiMcp(servers: MCPServer[]): { mcpServers: Record<string, 
 }
 ```
 
-- [ ] **Step 4: Add Figma Pi OAuth option** — edit `configs/mcp/figma.json`, add:
+- [x] **Step 4: Add Figma Pi OAuth option** — edit `configs/mcp/figma.json`, add:
 
 ```json
   "target_options": {
@@ -346,9 +346,9 @@ export function renderPiMcp(servers: MCPServer[]): { mcpServers: Record<string, 
 
 (Pi docs: Figma only accepts known client names.)
 
-- [ ] **Step 5: Run** `bun test src/pi/__tests__/mcp.test.ts && bun test` — Expected: PASS; existing MCP tests unaffected by the new `pi` target option.
+- [x] **Step 5: Run** `bun test src/pi/__tests__/mcp.test.ts && bun test` — Expected: PASS; existing MCP tests unaffected by the new `pi` target option.
 
-- [ ] **Step 6: Commit** `committer "feat(pi): render canonical MCP servers for Pi built-in MCP" src/pi/mcp.ts src/pi/__tests__/mcp.test.ts configs/mcp/figma.json src/types.ts`
+- [x] **Step 6: Commit** `committer "feat(pi): render canonical MCP servers for Pi built-in MCP" src/pi/mcp.ts src/pi/__tests__/mcp.test.ts configs/mcp/figma.json src/types.ts`
 
 ---
 
@@ -363,7 +363,7 @@ export function renderPiMcp(servers: MCPServer[]): { mcpServers: Record<string, 
 - Consumes: `CanonicalItem`.
 - Produces: `export function renderPiAgentMetadata(item: CanonicalItem): Record<string, unknown>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // src/pi/__tests__/agents.test.ts
@@ -398,9 +398,9 @@ test('nested bash rules still grant bash', () => {
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/pi/__tests__/agents.test.ts` — Expected: FAIL module not found.
+- [x] **Step 2: Run** `bun test src/pi/__tests__/agents.test.ts` — Expected: FAIL module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // src/pi/agents.ts
@@ -450,7 +450,7 @@ export function renderPiAgentMetadata(item: CanonicalItem): Record<string, unkno
 
 Note: `webfetch` and `external_directory` have no Pi built-in equivalent and are intentionally dropped; web access comes from `bash` (`curl`/`tvly`) like today's TOOLS.md guidance.
 
-- [ ] **Step 4: Route foundry-sql to Pi** — in `configs/agents/foundry-sql.md` change
+- [x] **Step 4: Route foundry-sql to Pi** — in `configs/agents/foundry-sql.md` change
 
 ```yaml
 targets:
@@ -463,9 +463,9 @@ targets:
   - pi
 ```
 
-- [ ] **Step 5: Run** `bun test src/pi/__tests__/agents.test.ts` — Expected: PASS.
+- [x] **Step 5: Run** `bun test src/pi/__tests__/agents.test.ts` — Expected: PASS.
 
-- [ ] **Step 6: Commit** `committer "feat(pi): render canonical agents for pi-subagents" src/pi/agents.ts src/pi/__tests__/agents.test.ts configs/agents/foundry-sql.md`
+- [x] **Step 6: Commit** `committer "feat(pi): render canonical agents for pi-subagents" src/pi/agents.ts src/pi/__tests__/agents.test.ts configs/agents/foundry-sql.md`
 
 ---
 
@@ -480,7 +480,7 @@ targets:
 - Consumes: `renderPiModels`, `renderPiMcp`, `renderPiAgentMetadata`.
 - Produces: `class PiAdapter extends BaseAdapter` with `target = 'pi'`; `readCanonicalSettings(projectDir, 'pi')` returns `keys` plus private key `_opencodeProviders` (the `providers` object of `opencode.json`), consumed only by `PiAdapter.renderAdditionalSettings` and stripped from `settings.json`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // src/adapters/__tests__/pi.test.ts
@@ -524,9 +524,9 @@ test('agent and MCP rendering', () => {
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/adapters/__tests__/pi.test.ts` — Expected: FAIL module not found.
+- [x] **Step 2: Run** `bun test src/adapters/__tests__/pi.test.ts` — Expected: FAIL module not found.
 
-- [ ] **Step 3: Register the target**
+- [x] **Step 3: Register the target**
 
 `src/types.ts`:
 ```ts
@@ -573,7 +573,7 @@ and in `readCanonicalSettings`, before `return { target, keys };`:
     }
 ```
 
-- [ ] **Step 4: Implement the adapter**
+- [x] **Step 4: Implement the adapter**
 
 ```ts
 // src/adapters/pi.ts
@@ -639,7 +639,7 @@ export class PiAdapter extends BaseAdapter {
 
 Check `src/cli/check.ts:396` — profile name derivation becomes `profile:models.json`; push matches by `targetPath`, so no change needed. Confirm by running `metronome check -t pi --verbose` in Step 7.
 
-- [ ] **Step 5: Create canonical Pi settings** — `configs/settings/pi.json`:
+- [x] **Step 5: Create canonical Pi settings** — `configs/settings/pi.json`:
 
 ```json
 {
@@ -686,9 +686,9 @@ Check `src/cli/check.ts:396` — profile name derivation becomes `profile:models
 }
 ```
 
-- [ ] **Step 6: Run** `bun test` — Expected: PASS. Fix any test that enumerates targets (`test/__tests__/fixtures-smoke.test.ts`, `src/cli/__tests__/render.test.ts`, `test/__tests__/pull-*.test.ts`) by adding `pi` expectations or scoping them to their original targets; do not weaken assertions.
+- [x] **Step 6: Run** `bun test` — Expected: PASS. Fix any test that enumerates targets (`test/__tests__/fixtures-smoke.test.ts`, `src/cli/__tests__/render.test.ts`, `test/__tests__/pull-*.test.ts`) by adding `pi` expectations or scoping them to their original targets; do not weaken assertions.
 
-- [ ] **Step 7: Dry-run against the real home**
+- [x] **Step 7: Dry-run against the real home**
 
 ```bash
 metronome check -t pi --verbose
@@ -696,7 +696,7 @@ metronome diff -t pi --all | head -200
 ```
 Expected: creates for `mcp.json`, `models.json`, `AGENTS.md`, 11 agents, settings update. No writes yet. (The `extensions` path points at a file Task 5 creates; Pi only loads it after Task 7's push.)
 
-- [ ] **Step 8: Commit** `committer "feat(pi): add Pi sync target for models, MCP, agents and settings" src/adapters/pi.ts src/adapters/__tests__/pi.test.ts src/types.ts src/adapters/path-resolver.ts src/cli/canonical.ts src/cli/cli-helpers.ts configs/settings/pi.json` (plus any adjusted test files).
+- [x] **Step 8: Commit** `committer "feat(pi): add Pi sync target for models, MCP, agents and settings" src/adapters/pi.ts src/adapters/__tests__/pi.test.ts src/types.ts src/adapters/path-resolver.ts src/cli/canonical.ts src/cli/cli-helpers.ts configs/settings/pi.json` (plus any adjusted test files).
 
 ---
 
@@ -715,7 +715,7 @@ Expected: creates for `mcp.json`, `models.json`, `AGENTS.md`, 11 agents, setting
 
 Behavior: on the first `before_agent_start` of a process, read each path once (missing files skipped, like the OpenCode plugin); on every `before_agent_start`, append `{ path, content }` for each file to `event.systemPromptOptions.contextFiles` **unless that path is already present** (idempotent if the extension is loaded twice, e.g. ambient + `defaultSubagentOnlyExtensions` in background children). Order after Pi's own context files matches OpenCode: AGENTS.md, then SOUL, IDENTITY, USER, MEMORY.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // src/pi/__tests__/instructions-loader.test.ts
@@ -762,9 +762,9 @@ test('reapplies on every run (fresh prompt options per turn)', async () => {
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/pi/__tests__/instructions-loader.test.ts` — Expected: FAIL module not found.
+- [x] **Step 2: Run** `bun test src/pi/__tests__/instructions-loader.test.ts` — Expected: FAIL module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 // configs/pi/extensions/instructions-loader.ts
@@ -810,9 +810,9 @@ export function createInstructionsLoader(paths: readonly string[] = INSTRUCTION_
 export default createInstructionsLoader();
 ```
 
-- [ ] **Step 4: Run** `bun test src/pi/__tests__/instructions-loader.test.ts` — Expected: PASS.
+- [x] **Step 4: Run** `bun test src/pi/__tests__/instructions-loader.test.ts` — Expected: PASS.
 
-- [ ] **Step 5: Smoke-load in real Pi (no push yet)**
+- [x] **Step 5: Smoke-load in real Pi (no push yet)**
 
 ```bash
 cd /tmp && pi -p --no-session --no-tools \
@@ -821,7 +821,7 @@ cd /tmp && pi -p --no-session --no-tools \
 ```
 Expected: `agent-soul`. If Pi reports the mutation is ignored (answer unknown), switch the handler to `return { systemPrompt: event.systemPrompt + rendered }` where `rendered` wraps each file as `<instruction-source path="…">…</instruction-source>` (the OpenCode plugin's format), keep the dedupe by checking `event.systemPrompt.includes(`path="${file.path}"`)`, and update the test harness to assert on the returned `systemPrompt`.
 
-- [ ] **Step 6: Commit** `committer "feat(pi): load Memory vault instructions in Pi sessions and subagents" configs/pi/extensions/instructions-loader.ts src/pi/__tests__/instructions-loader.test.ts`
+- [x] **Step 6: Commit** `committer "feat(pi): load Memory vault instructions in Pi sessions and subagents" configs/pi/extensions/instructions-loader.ts src/pi/__tests__/instructions-loader.test.ts`
 
 ---
 
@@ -833,7 +833,7 @@ Expected: `agent-soul`. If Pi reports the mutation is ignored (answer unknown), 
 **Interfaces:**
 - Consumes: `readCanonicalSettings`, `readCanonicalMCPServers`, `PROJECT_ROOT` (`src/cli/canonical.ts`), `renderOpenCodeMcp` (`src/opencode/version-renderer.ts`), `PiAdapter`.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 ```ts
 // src/cli/__tests__/pi-parity.test.ts
@@ -879,9 +879,9 @@ test('Pi loads the same instruction files as OpenCode, in order', async () => {
 });
 ```
 
-- [ ] **Step 2: Run** `bun test src/cli/__tests__/pi-parity.test.ts` — Expected: PASS (if it fails, fix the renderer or canonical data, not the assertion).
+- [x] **Step 2: Run** `bun test src/cli/__tests__/pi-parity.test.ts` — Expected: PASS (if it fails, fix the renderer or canonical data, not the assertion).
 
-- [ ] **Step 3: Commit** `committer "test(pi): guard Pi/OpenCode parity for models, MCP, instructions and default model" src/cli/__tests__/pi-parity.test.ts`
+- [x] **Step 3: Commit** `committer "test(pi): guard Pi/OpenCode parity for models, MCP, instructions and default model" src/cli/__tests__/pi-parity.test.ts`
 
 ---
 
@@ -890,7 +890,7 @@ test('Pi loads the same instruction files as OpenCode, in order', async () => {
 **Files:**
 - Modify: `docs/subagent.md`, `docs/pi-setup-guide.md`, `README.md`, `docs/CHANGELOG.md`
 
-- [ ] **Step 1: Back up and push**
+- [x] **Step 1: Back up and push**
 
 ```bash
 cp ~/.pi/agent/settings.json /tmp/pi-settings.backup.json
@@ -899,7 +899,7 @@ pi update --extensions          # installs npm:pi-subagents@0.76.1
 ```
 Expected: `~/.pi/agent/{models.json,mcp.json,AGENTS.md,agents/*.md}` exist; `settings.json` keeps `lastChangelogVersion`; `diff ~/.pi/agent/AGENTS.md ~/.config/opencode/AGENTS.md` is empty.
 
-- [ ] **Step 2: Tux** — `pi --list-models | rg '^tux'` shows 19 models; then
+- [x] **Step 2: Tux** — `pi --list-models | rg '^tux'` shows 19 models; then
 
 ```bash
 cd /tmp && pi -p --no-session --model tux/gpt-6.1-sol --thinking high "Reply: ok"
@@ -908,28 +908,28 @@ cd /tmp && pi -p --no-session --model tux/deepseek-v4-pro --thinking off "Reply:
 ```
 Expected: `ok` ×3; `tux costs` shows the requests.
 
-- [ ] **Step 3: MCP** — `pi mcp list`. Expected: `github` + `palantir-mcp` connected, others listed disabled; exit 0. If `github` fails, `GITHUB_PERSONAL_ACCESS_TOKEN` is not exported in Pi's env (same requirement as OpenCode) — document, don't hardcode.
+- [x] **Step 3: MCP** — `pi mcp list`. Expected: `github` + `palantir-mcp` connected, others listed disabled; exit 0. If `github` fails, `GITHUB_PERSONAL_ACCESS_TOKEN` is not exported in Pi's env (same requirement as OpenCode) — document, don't hardcode.
 
-- [ ] **Step 4: Subagents** — in `pi` interactive: ask "use the docs agent to list the files in docs/plans". Expected: `subagent` tool call with `agent: docs`, child model `github-copilot/gpt-6-luna`. Ask "use foundry-sql to list one dataset" — Expected: child calls `mcp__palantir_mcp__*`.
+- [x] **Step 4: Subagents** — in `pi` interactive: ask "use the docs agent to list the files in docs/plans". Expected: `subagent` tool call with `agent: docs`, child model `github-copilot/gpt-6-luna`. Ask "use foundry-sql to list one dataset" — Expected: child calls `mcp__palantir_mcp__*`.
 
-- [ ] **Step 5: Instructions + vault** —
+- [x] **Step 5: Instructions + vault** —
 
 ```bash
 cd /tmp && pi -p --no-session --no-tools "Without tools, answer in one line each: (1) Contact handle in your instructions? (2) 'type' frontmatter of IDENTITY.md context? (3) 'type' frontmatter of SOUL.md context?"
 ```
 Expected: `@zacczakk`, `agent-identity`, `agent-soul`. Then in `pi` interactive: "use the docs agent; without tools, it must reply with the 'type' frontmatter of its IDENTITY.md and SOUL.md context files". Expected: `agent-identity`, `agent-soul` (proves `defaultSubagentOnlyExtensions` + `inheritGlobalContext`). Also run with an async/background child ("run it in the background") to confirm no duplicate-load error. If a foreground child lacks the vault files, add `extensions: ~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts` to `renderPiAgentMetadata` output (Task 3) with a test, then re-push.
 
-- [ ] **Step 6: Drift** — `metronome check -t pi`. Expected: zero drift.
+- [x] **Step 6: Drift** — `metronome check -t pi`. Expected: zero drift.
 
-- [ ] **Step 7: Docs**
+- [x] **Step 7: Docs**
   - `docs/subagent.md`: add "Pi: `~/.pi/agent/agents/{name}.md` via pi-subagents; frontmatter per mapping table; `scout`=explore, `delegate`=general, other builtins disabled; children get AGENTS.md (`inheritGlobalContext`) and vault files (`defaultSubagentOnlyExtensions`)."
   - `docs/pi-setup-guide.md`: replace the `pi-mcp-adapter` guidance with "Pi ≥1.0.4 has native MCP; metronome renders `~/.pi/agent/mcp.json`"; replace §0 scaffolding prerequisite with `metronome push -t pi && pi update --extensions`; replace the APPEND_SYSTEM/SOUL guidance with the instructions-loader extension.
   - `README.md`: add Pi to the target list, `metronome push -t pi` to Quick Start, and `configs/pi/extensions/` to Directory Layout.
   - `docs/CHANGELOG.md`: entry for the Pi target.
 
-- [ ] **Step 8: Full gate** — `bun test && git diff --check`. Expected: pass, clean.
+- [x] **Step 8: Full gate** — `bun test && git diff --check`. Expected: pass, clean.
 
-- [ ] **Step 9: Commit** `committer "docs(pi): document Pi target, native MCP and instruction loading" docs/subagent.md docs/pi-setup-guide.md README.md docs/CHANGELOG.md`
+- [x] **Step 9: Commit** `committer "docs(pi): document Pi target, native MCP and instruction loading" docs/subagent.md docs/pi-setup-guide.md README.md docs/CHANGELOG.md`
 
 ---
 
@@ -940,3 +940,21 @@ Expected: `@zacczakk`, `agent-identity`, `agent-soul`. Then in `pi` interactive:
 3. **`systemPromptMode: append`** — agent prompts go on top of Pi's base prompt.
 4. **Per-model default effort** — OpenCode's per-model `gpt-5.6-luna` `reasoningEffort: max` is dropped; Pi uses the global `defaultThinkingLevel`.
 5. **Instructions in scope** — canonical `AGENTS.md` synced to `~/.pi/agent/AGENTS.md`; vault files loaded live by the repo-referenced `instructions-loader` extension in main sessions and subagents.
+
+## Execution notes (2026-10-06)
+
+Deviations from the plan:
+- `pi-subagents@0.76.1` documents `subagents.defaultSubagentOnlyExtensions` but does not implement it. Each rendered agent now carries `subagentOnlyExtensions: <loader>` (`PI_INSTRUCTIONS_LOADER` in `src/pi/agents.ts`). The settings key was removed.
+- pi-subagents children run in process with `forceSystemPrompt` set, which ignores `contextFiles`. When a prompt is forced, the loader appends `<instruction-source path="…">` blocks via `return { systemPrompt }`. It deduplicates by path, so a double load is safe.
+- `pi update --extensions` does not install a newly declared package. Run `pi install npm:pi-subagents@0.76.1` once.
+- `pull -s all` skips Pi; Pi files are lossy projections. There are 10 agents, not 11.
+- `foundry-sql` description now reads "OpenCode and Pi only."
+
+Live verification:
+- 19 `tux/*` models listed. `gpt-6.1-sol`, `claude-opus-5-5`, `deepseek-v4-pro`, `claude-haiku-4-5-20251001` and the default `gpt-6-luna` all answered.
+- `pi mcp list`: github connected (codemode, 49 tools), palantir-mcp connected (direct). Every other server disabled, same as OpenCode.
+- Main session, foreground `docs` child and background `vault-ops` child all answered `Fred Overflow` from IDENTITY.md and `@zacczakk` from AGENTS.md. No duplicate loads.
+- The `foundry-sql` child called `mcp__palantir_mcp__search_tools`.
+- `~/.pi/agent/AGENTS.md` is byte-identical to `~/.config/opencode/AGENTS.md`.
+- `metronome check -t pi`: 21 up to date. `bun test`: 711 pass.
+- `bun run test`: the public-repo gate failures that predate this work remain (skills, history); this work adds none.

@@ -16,6 +16,14 @@ read_when:
 
 ## Unreleased
 
+- **Pi target at OpenCode parity.** `metronome push -t pi` renders `~/.pi/agent/` files:
+  - `models.json`: the full Tux catalog, derived from the OpenCode provider.
+  - `mcp.json`: Pi's built-in MCP, with the same servers enabled as OpenCode.
+  - `agents/*.md`: pi-subagents agents.
+  - `AGENTS.md` and `settings.json`.
+
+  `configs/pi/extensions/instructions-loader.ts` loads the Memory vault files in main sessions and subagents. `pull -s all` skips Pi.
+
 - **One OpenCode target** — removed the duplicate `opencode2` Metronome target; canonical MCP and agent routing now use `opencode` only. Historical manifest ownership remains readable.
 
 - **OpenCode 2 stable cutover** — switched the Bun runtime to stable

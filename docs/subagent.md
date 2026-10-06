@@ -24,11 +24,11 @@ read_when:
 - OpenCode V2 agent sync also updates the shared settings catalog so every generated `agent-*` variant referenced by an agent file is registered under its base model.
 - With `--delete`, removing a managed OpenCode agent also removes its generated V2 model variant; unrelated `agent-*` variants are preserved.
 - Codex: standalone TOML as `~/.codex/agents/{name}.toml` with `name`, `description`, and `developer_instructions`. `sandbox_mode` is preserved when explicit and derived as `read-only` when canonical metadata denies edits. An `openai/*-fast` model alias renders as the base model with `model_provider = "openai"` and `service_tier = "fast"`.
+- Pi: pi-subagents markdown at `~/.pi/agent/agents/{name}.md` (`src/pi/agents.ts`). `model` passes through, `reasoningEffort` becomes `thinking` (`none` → `off`), `permission` becomes `tools` (`read`, `grep`, `glob` → `find, ls`, `edit` → `edit, write`, `bash`, `<server>_*` → `mcp:<server>`). Every agent gets `advertise: true`, `systemPromptMode: append`, inherited project/global context and skills, and `subagentOnlyExtensions` pointing at the vault instructions loader. In `configs/settings/pi.json`, the pi-subagents builtin `scout` stands in for OpenCode `explore` (same model and effort) and `delegate` stands in for `general`; the other builtins are disabled.
 
 Target-scoped agents are filtered before rendering and stale-item detection. The
 `targets` metadata is routing metadata, not agent frontmatter. Use it for
-OpenCode-only specialists such as `foundry-sql`; list `opencode` for stable
-OpenCode routing.
+OpenCode/Pi-only specialists such as `foundry-sql` (`targets: [opencode, pi]`).
 
 ## Current OpenCode routing
 
@@ -46,7 +46,7 @@ OpenCode routing.
 | `vault-ops` | `github-copilot/gpt-6-luna` | medium |
 | `verify` | `github-copilot/gpt-6-luna` | max |
 
-The built-in `general` agent inherits the session model. `foundry-sql` is OpenCode only.
+The built-in `general` agent inherits the session model. `foundry-sql` is OpenCode and Pi only. Pi uses the same routing.
 
 Every explicitly routed Sol subagent uses GPT-6.1 Sol.
 
