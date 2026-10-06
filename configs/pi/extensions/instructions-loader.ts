@@ -29,11 +29,16 @@ export function createInstructionsLoader(paths: readonly string[] = INSTRUCTION_
     })).then((files) => files.filter((f): f is ContextFile => f !== undefined)));
 
     pi.on('before_agent_start', async (event) => {
-      const contextFiles = event.systemPromptOptions.contextFiles;
-      const present = new Set(contextFiles.map((f) => f.path));
-      for (const file of await load()) {
-        if (!present.has(file.path)) contextFiles.push(file);
+      const options = event.systemPromptOptions;
+      const present = new Set(options.contextFiles.map((f) => f.path));
+      const missing = (await load()).filter((f) => !present.has(f.path) && !event.systemPrompt?.includes(`path="${f.path}"`));
+      if (missing.length === 0) return;
+      // pi-subagents children run with a forced system prompt, which ignores contextFiles.
+      if (options.forceSystemPrompt !== undefined) {
+        const blocks = missing.map((f) => `<instruction-source path="${f.path}">\n${f.content}\n</instruction-source>`);
+        return { systemPrompt: [event.systemPrompt, ...blocks].join('\n\n') };
       }
+      options.contextFiles.push(...missing);
     });
   };
 }

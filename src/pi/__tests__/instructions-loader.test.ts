@@ -41,3 +41,18 @@ test('reapplies on every run (fresh prompt options per turn)', async () => {
   await run();
   expect(await run()).toHaveLength(3);
 });
+
+test('forced system prompts (pi-subagents children) get files appended to the prompt once', async () => {
+  const handlers: Array<(event: unknown) => unknown> = [];
+  const pi = { on: (name: string, fn: (event: unknown) => unknown) => { if (name === 'before_agent_start') handlers.push(fn); } };
+  createInstructionsLoader(INSTRUCTION_PATHS, home)(pi as never);
+  createInstructionsLoader(INSTRUCTION_PATHS, home)(pi as never);
+  let systemPrompt = 'BASE';
+  for (const h of handlers) {
+    const event = { systemPrompt, systemPromptOptions: { forceSystemPrompt: systemPrompt, contextFiles: [] } };
+    const result = (await h(event)) as { systemPrompt?: string } | undefined;
+    if (result?.systemPrompt) systemPrompt = result.systemPrompt;
+  }
+  const soul = join(home, 'Vaults/Memory/SOUL.md');
+  expect(systemPrompt).toBe(`BASE\n\n<instruction-source path="${soul}">\nsoul\n</instruction-source>\n\n<instruction-source path="${join(home, 'Vaults/Memory/USER.md')}">\nuser\n</instruction-source>`);
+});
