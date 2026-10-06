@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { createTestHome, createTestProject } from '../../../test/helpers/backup';
-import { historicallyOwnedSharedSkillNames, planSkillProjection, projectionNeedsUpdate, replaceSkillTree, selectedSkillProjectionRoots, skillFiles, PUBLIC_SKILL_MARKER } from '../skill-projection';
+import { assertProjectionWritable, historicallyOwnedSharedSkillNames, planSkillProjection, projectionNeedsUpdate, replaceSkillTree, selectedSkillProjectionRoots, skillFiles, PRIVATE_SKILL_MARKER, PUBLIC_SKILL_MARKER } from '../skill-projection';
 import type { Manifest } from '../../types';
 
 function historicalManifest(skillName: string, primaryContent: string): Manifest {
@@ -238,5 +238,21 @@ describe('historical public skill adoption', () => {
       { 'references/support.md': 'unproven support', 'scripts/run.ts': 'historical script' },
       'unproven primary',
     )).toBe(false);
+  });
+});
+
+describe('assertProjectionWritable', () => {
+  test('a private projection replaces a metronome public projection (skill moved public → private)', async () => {
+    const homeDir = createTestHome('projection-public-to-private');
+    writeSkill(join(homeDir, 'src'), 'moved', { 'SKILL.md': 'private copy' });
+    writeSkill(join(homeDir, 'dest'), 'moved', { 'SKILL.md': 'old public render', [PUBLIC_SKILL_MARKER]: `${PUBLIC_SKILL_MARKER}\n` });
+    await expect(assertProjectionWritable(join(homeDir, 'src', 'moved'), join(homeDir, 'dest', 'moved'), PRIVATE_SKILL_MARKER)).resolves.toBeUndefined();
+  });
+
+  test('a private projection still refuses unmarked local edits', async () => {
+    const homeDir = createTestHome('projection-private-unowned');
+    writeSkill(join(homeDir, 'src'), 'local', { 'SKILL.md': 'private copy' });
+    writeSkill(join(homeDir, 'dest'), 'local', { 'SKILL.md': 'hand-made' });
+    await expect(assertProjectionWritable(join(homeDir, 'src', 'local'), join(homeDir, 'dest', 'local'), PRIVATE_SKILL_MARKER)).rejects.toThrow('Unowned');
   });
 });

@@ -286,9 +286,8 @@ export async function assertProjectionWritable(source: string, destination: stri
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
     if (error instanceof Error && error.message.includes('symlink')) throw error;
   }
-  const owned = marker === PRIVATE_SKILL_MARKER
-    ? await hasPrivateSkillMarker(destination)
-    : await hasSkillMarker(destination);
+  // Any metronome marker proves ownership; a private source may replace a former public projection.
+  const owned = await hasSkillMarker(destination);
   if (allowHistoricalAdoption || owned || await sameSkillTree(source, destination)) return;
   throw new Error('Unowned skill projection conflicts with managed skill');
 }
