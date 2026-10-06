@@ -16,6 +16,9 @@ read_when:
 
 ## Unreleased
 
+- **Pi permission parity** — `configs/pi/extensions/permissions.ts` enforces OpenCode's global and per-agent permission rules in Pi sessions and subagents. Metronome renders the rules into `~/.pi/agent/permissions.json`.
+- **Foundry skills are private** — `foundry-local-development`, `foundry-react-app-dev`, and `foundry-transforms-ops` moved from `configs/skills` to `~/.agents/skills`. Private skill projection can now replace a former public projection.
+
 - **Pi target at OpenCode parity.** `metronome push -t pi` renders `~/.pi/agent/` files:
   - `models.json`: the full Tux catalog, derived from the OpenCode provider.
   - `mcp.json`: Pi's built-in MCP, with the same servers enabled as OpenCode.

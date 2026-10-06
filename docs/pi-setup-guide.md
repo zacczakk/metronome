@@ -64,8 +64,21 @@ appended as `<instruction-source>` blocks.
 
 Skills need no sync: Pi already loads `~/.agents/skills/`.
 
-Not yet at parity: OpenCode permission rules, commands, and the other OpenCode
-plugins.
+Permission rules: `configs/pi/extensions/permissions.ts` enforces
+`configs/settings/opencode.json#permissions` plus each agent's `permission`
+frontmatter, which metronome renders into `~/.pi/agent/permissions.json`. It
+follows OpenCode's semantics:
+- The last matching rule wins.
+- Agent rules come after the global rules, so they take precedence.
+- Paths inside the working directory match as relative paths; paths outside it
+  also need `external_directory`, which defaults to `ask`.
+- `ask` prompts in the TUI and blocks when there is no UI (`pi -p`, subagents).
+
+Subagents find their rules through a `<!-- metronome-agent: <name> -->` marker
+at the end of their prompt.
+
+Not yet at parity: commands, OpenCode's `doom_loop` guard, "always allow"
+approvals, and the other OpenCode plugins.
 
 The sections below are the original research reference.
 
