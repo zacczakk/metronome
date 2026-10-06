@@ -1,5 +1,8 @@
 import type { CanonicalItem } from '../types';
 
+/** Loads Memory vault files into every child session (see configs/pi/extensions/instructions-loader.ts). */
+export const PI_INSTRUCTIONS_LOADER = '~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts';
+
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -38,6 +41,7 @@ export function renderPiAgentMetadata(item: CanonicalItem): Record<string, unkno
   Object.assign(meta, {
     advertise: true, systemPromptMode: 'append',
     inheritProjectContext: true, inheritGlobalContext: true, inheritSkills: true,
+    subagentOnlyExtensions: PI_INSTRUCTIONS_LOADER,
   });
   return meta;
 }

@@ -1,13 +1,13 @@
 import { expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderOpenCodeMcp } from '../../opencode/version-renderer';
 import { readCanonicalMCPServers, readCanonicalSettings, PROJECT_ROOT } from '../canonical';
 import { PiAdapter } from '../../adapters/pi';
 import { INSTRUCTION_PATHS } from '../../../configs/pi/extensions/instructions-loader';
+import { PI_INSTRUCTIONS_LOADER } from '../../pi/agents';
 
 const opencode = JSON.parse(readFileSync(join(PROJECT_ROOT, 'configs/settings/opencode.json'), 'utf8'));
-const LOADER = '~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts';
 
 test('Pi default model equals OpenCode default model', async () => {
   const pi = await readCanonicalSettings(PROJECT_ROOT, 'pi');
@@ -34,7 +34,7 @@ test('Pi loads the same instruction files as OpenCode, in order', async () => {
   expect(agents).toBe('~/.config/opencode/AGENTS.md');
   expect([...INSTRUCTION_PATHS]).toEqual(vault);
   const pi = await readCanonicalSettings(PROJECT_ROOT, 'pi');
-  expect(pi!.keys.extensions).toContain(LOADER);
-  expect((pi!.keys.subagents as { defaultSubagentOnlyExtensions: string[] }).defaultSubagentOnlyExtensions).toContain(LOADER);
+  expect(pi!.keys.extensions).toContain(PI_INSTRUCTIONS_LOADER);
+  expect(existsSync(join(PROJECT_ROOT, 'configs/pi/extensions/instructions-loader.ts'))).toBe(true);
   expect(new PiAdapter('/h').renderInstructions('x')).toBe('x');
 });

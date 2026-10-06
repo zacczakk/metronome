@@ -26,9 +26,6 @@
     "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts"
   ],
   "subagents": {
-    "defaultSubagentOnlyExtensions": [
-      "~/Repos/zacczakk/metronome/configs/pi/extensions/instructions-loader.ts"
-    ],
     "agentOverrides": {
       "scout": { "model": "github-copilot/gpt-6-luna", "thinking": "medium" },
       "researcher": { "disabled": true },
