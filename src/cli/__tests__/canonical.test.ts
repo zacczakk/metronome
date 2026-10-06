@@ -120,15 +120,16 @@ describe('canonical agent routing', () => {
     }
   });
 
-  test('sets Codex base to Tux Luna at xhigh reasoning', () => {
+  test('sets Codex base to Tux GPT-6.1 Sol without reasoning', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'codex.json'), 'utf8'),
     ) as Record<string, unknown>;
 
     expect(settings).toMatchObject({
-      model: 'gpt-5.6-terra',
-      model_provider: 'openai',
-      model_reasoning_effort: 'xhigh',
+      model: 'gpt-6.1-sol',
+      model_provider: 'tux',
+      model_reasoning_effort: 'none',
+      profile_files: { tux: { model: 'gpt-6.1-sol', model_provider: 'tux' } },
       approval_policy: 'never',
       sandbox_mode: 'workspace-write',
     });

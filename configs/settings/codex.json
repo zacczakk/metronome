@@ -1,7 +1,7 @@
 {
-  "model": "gpt-5.6-terra",
-  "model_provider": "openai",
-  "model_reasoning_effort": "xhigh",
+  "model": "gpt-6.1-sol",
+  "model_provider": "tux",
+  "model_reasoning_effort": "none",
   "approval_policy": "never",
   "sandbox_mode": "workspace-write",
   "model_providers": {
@@ -17,7 +17,7 @@
       "model_provider": "openai"
     },
     "tux": {
-      "model": "gpt-5.6-luna",
+      "model": "gpt-6.1-sol",
       "model_provider": "tux"
     }
   },
