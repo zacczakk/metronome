@@ -407,6 +407,7 @@ The canonical MCP definition schema (`configs/mcp/*.json`):
   "env": {"KEY": "${VAR}"},     // runtime env vars — stdio only
   "enabled": true|false,        // optional, default true
   "disabled_for": ["cli"],      // optional, per-CLI exclusion
+  "external_for": ["cli"],      // optional, another tool owns this server for these CLIs
   "target_options": {           // optional, target-specific render extras
     "claude-code": {"disabled": true},
     "opencode": {"oauth": false, "codemode": true}
@@ -416,6 +417,14 @@ The canonical MCP definition schema (`configs/mcp/*.json`):
 
 **Filtering**: Before rendering for a CLI, exclude any server where the CLI
 name appears in `disabled_for`. Exception: skill-MCP force-enable (see 2.3).
+
+`external_for` marks a server another tool owns on those CLIs (today, servers that
+`tux integrate` writes into Claude Code and OpenCode). For those targets metronome
+does not render the server, keeps the target's existing entry verbatim, does not
+remove it or report drift for it, and never pulls it. A server can be a stub with
+no `url`/`command` when its real definition must stay out of the public repo
+(`uptimize-docs-ihub`). Supported for JSON MCP targets (Claude Code, OpenCode,
+Antigravity, Pi).
 
 **Target options**: `target_options` is the escape hatch for target-specific
 fields that the shared canonical schema does not model directly. Use it

@@ -146,3 +146,19 @@ describe('pull MCP E2E', () => {
     expect(JSON.parse(tavilyContent).transport).toBe('stdio');
   }, E2E_TIMEOUT);
 });
+
+describe('pull MCP: externally managed servers', () => {
+  test('never pulls a server owned by another tool for the source target, even with --force', async () => {
+    const fakeHome = createTestHome('pull-mcp-external');
+    const claude = createAdapter('claude-code', fakeHome);
+    mkdirSync(join(claude.getPaths().getMCPConfigPath(), '..'), { recursive: true });
+    writeFileSync(claude.getPaths().getMCPConfigPath(), JSON.stringify({ mcpServers: { 'docs-hub': { type: 'http', url: 'https://internal.example/mcp' } } }));
+    const projectDir = emptyProjectDir('external');
+    mkdirSync(join(projectDir, 'configs/mcp'), { recursive: true });
+    const stub = JSON.stringify({ description: 'owned by tux', transport: 'http', external_for: ['claude-code'] });
+    writeFileSync(join(projectDir, 'configs/mcp/docs-hub.json'), stub);
+
+    await runPull({ source: 'claude-code', force: true, projectDir, homeDir: fakeHome });
+    expect(readFileSync(join(projectDir, 'configs/mcp/docs-hub.json'), 'utf8')).toBe(stub);
+  }, E2E_TIMEOUT);
+});

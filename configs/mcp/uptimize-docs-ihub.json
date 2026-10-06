@@ -1,0 +1,6 @@
+{
+  "description": "UPTIMIZE docs MCP, installed and owned by `tux integrate --uptimize-docs-mcp`; URL lives only in client configs",
+  "transport": "http",
+  "external_for": ["claude-code", "opencode"],
+  "disabled_for": ["antigravity", "codex", "pi"]
+}

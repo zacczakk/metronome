@@ -7,14 +7,12 @@
     "start"
   ],
   "enabled": false,
+  "external_for": ["claude-code", "opencode"],
   "target_options": {
-    "claude-code": {
-      "type": "stdio"
-    },
-    "opencode": {
+    "pi": {
       "enabled": true,
-      "timeout": 20000,
-      "codemode": false
+      "exposure": "direct",
+      "timeout": 20
     }
   }
 }

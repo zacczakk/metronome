@@ -16,6 +16,10 @@ read_when:
 
 ## Unreleased
 
+- **Tux-owned MCP servers** — the new canonical `external_for` field marks servers another tool owns. `palantir-mcp` and `uptimize-docs-ihub` are owned by `tux integrate` for Claude Code and OpenCode, so metronome keeps those entries as-is.
+- **Codex default** — Tux GPT-6.1 Sol, reasoning `none`; the `tux` profile uses the same model.
+- **Public-repo check** — already-public history up to `d48a12a` is accepted (no rewrite). Newer commits are still scanned.
+
 - **Pi permission parity** — `configs/pi/extensions/permissions.ts` enforces OpenCode's global and per-agent permission rules in Pi sessions and subagents. Metronome renders the rules into `~/.pi/agent/permissions.json`.
 - **Foundry skills are private** — `foundry-local-development`, `foundry-react-app-dev`, and `foundry-transforms-ops` moved from `configs/skills` to `~/.agents/skills`. Private skill projection can now replace a former public projection.
 

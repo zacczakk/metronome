@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { externalMCPNames, managedMCPServers, renderTargetMCP } from '../core/external-mcp';
 import { lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Command } from 'commander';
@@ -230,7 +231,8 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
     if (!options.types || options.types.includes('mcp')) {
       if (caps.mcp && mcpServers.length > 0) {
         const mcpPath = adapter.getPaths().getMCPConfigPath();
-        const renderedNames = new Set(adapter.getRenderedServerNames(mcpServers));
+        const renderedNames = new Set(adapter.getRenderedServerNames(managedMCPServers(mcpServers, target)));
+        const externalNames = new Set(externalMCPNames(mcpServers, target));
         let existingContent: string | undefined;
         try {
           const file = Bun.file(mcpPath);
@@ -243,7 +245,7 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
 
         if (existingContent) {
           const existingNames = adapter.parseExistingMCPServerNames(existingContent);
-          const nonCanonical = existingNames.filter((n) => !renderedNames.has(n));
+          const nonCanonical = existingNames.filter((n) => !renderedNames.has(n) && !externalNames.has(n));
           if (nonCanonical.length > 0) {
             mcpWarning = {
               serverNames: nonCanonical,
@@ -252,7 +254,7 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
           }
         }
 
-        const rendered = adapter.renderMCPServers(mcpServers, existingContent);
+        const rendered = renderTargetMCP(adapter, mcpServers, existingContent);
         const renderedServers = new Map(adapter.parseMCPServers(rendered).map((server) => [server.name, server]));
         const existingServers = new Map<string, MCPServer>();
         if (existingContent) {

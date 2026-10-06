@@ -11,7 +11,8 @@ import { atomicWrite } from '../infra/atomic-write';
 import { createExclusionFilter } from '../infra/exclusion';
 import { stringifyFrontmatter } from '../formats/markdown';
 import { hasSkillMarker } from '../core/skill-projection';
-import { ALL_TARGETS, COMMANDS_DIR, AGENTS_DIR, SKILLS_DIR, SETTINGS_DIR, MCP_DIR, INSTRUCTIONS_DIR, HOOKS_DIR, PROJECT_ROOT, createTargetAdapter, readCanonicalSettings } from './canonical';
+import { ALL_TARGETS, COMMANDS_DIR, AGENTS_DIR, SKILLS_DIR, SETTINGS_DIR, MCP_DIR, INSTRUCTIONS_DIR, HOOKS_DIR, PROJECT_ROOT, createTargetAdapter, readCanonicalMCPServers, readCanonicalSettings } from './canonical';
+import { externalMCPNames } from '../core/external-mcp';
 import { confirm, validatePullSource } from './cli-helpers';
 import type { TargetName } from '../types';
 import type { BackupInfo } from '../core/rollback';
@@ -259,8 +260,10 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
       if (await mcpFile.exists()) {
         const mcpContent = await mcpFile.text();
         const servers = adapter.parseMCPServers(mcpContent);
+        const external = new Set(externalMCPNames(await readCanonicalMCPServers(projectDir), options.source));
         for (const server of servers) {
           if (options.onlyKeys && !options.onlyKeys.has(`mcp/${server.name}`)) continue;
+          if (external.has(server.name)) continue;
 
           const targetPath = join(projectDir, MCP_DIR, `${server.name}.json`);
 

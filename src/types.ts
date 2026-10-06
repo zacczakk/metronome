@@ -99,6 +99,8 @@ export interface MCPServer {
   envVars?: string[];
   enabled?: boolean;       // false = render but mark disabled in target config
   disabledFor?: TargetName[];
+  /** Targets where another tool (e.g. `tux integrate`) owns this server; metronome keeps their entry as-is. */
+  externalFor?: TargetName[];
   targetOptions?: Partial<Record<TargetName, Record<string, unknown>>>;
 }
 

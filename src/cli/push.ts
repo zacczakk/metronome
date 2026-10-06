@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { renderTargetMCP } from '../core/external-mcp';
 import { readFile, unlink, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Command } from 'commander';
@@ -195,7 +196,7 @@ export async function runPush(options: SyncOptions = {}): Promise<OrchestratorPu
           if (!item) continue;
           content = adapter.renderAgent(item).content;
         } else if (op.itemType === 'mcp') {
-          content = adapter.renderMCPServers(mcpServers, existingContent);
+          content = renderTargetMCP(adapter, mcpServers, existingContent);
         } else if (op.itemType === 'instruction') {
           const instructionContent = await readCanonicalInstructions(projectDir);
           if (!instructionContent) continue;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { findPublicRepoLeaks, repositoryPaths } from '../check-public-repo';
+import { ACCEPTED_HISTORY_BASELINE, findPublicRepoLeaks, historyRevisions, repositoryPaths } from '../check-public-repo';
 
 describe('findPublicRepoLeaks', () => {
   test('reports absolute home paths for every supported platform without printing matching content', () => {
@@ -72,5 +72,12 @@ describe('repositoryPaths', () => {
       'shared.md',
       'untracked.md',
     ]);
+  });
+});
+
+describe('historyRevisions', () => {
+  test('scans all refs except history accepted at the baseline', () => {
+    expect(historyRevisions()).toEqual(['--all', `^${ACCEPTED_HISTORY_BASELINE}`]);
+    expect(ACCEPTED_HISTORY_BASELINE).toMatch(/^[0-9a-f]{40}$/);
   });
 });

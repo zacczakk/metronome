@@ -30,6 +30,16 @@ const HISTORY_SCAN_PATTERNS = [
   'xox[baprs]-[A-Za-z0-9-]{20,}',
   'AKIA[0-9A-Z]{16}',
 ];
+/**
+ * Sensitive content before this commit is already public and accepted as-is (no history
+ * rewrite, decided 2026-10-06). History scanning covers only commits after it.
+ */
+export const ACCEPTED_HISTORY_BASELINE = 'd48a12a5311f49a2d096de82e90db1b24f3fd50b';
+
+export function historyRevisions(): string[] {
+  return ['--all', `^${ACCEPTED_HISTORY_BASELINE}`];
+}
+
 const SCANNER_FILES = new Set(['scripts/check-public-repo.ts', 'scripts/__tests__/check-public-repo.test.ts']);
 
 function hasPersonalEmail(content: string): boolean {
@@ -73,7 +83,7 @@ function ignoredFiles(): string[] {
 
 function historyLeaks(): PublicRepoLeak[] {
   try {
-    const messages = execFileSync('git', ['log', '--all', '--format=%s%n%b'], { encoding: 'utf8' });
+    const messages = execFileSync('git', ['log', ...historyRevisions(), '--format=%s%n%b'], { encoding: 'utf8' });
     if (hasSensitiveContent(messages)) {
       return [{ rule: 'history-sensitive-content', path: 'git history' }];
     }
@@ -83,7 +93,7 @@ function historyLeaks(): PublicRepoLeak[] {
 
   for (const pattern of HISTORY_SCAN_PATTERNS) {
     try {
-      const output = execFileSync('git', ['log', '--all', '--full-history', '-i', `-G${pattern}`, '--format=%H', '--', ':!scripts/check-public-repo.ts', ':!scripts/__tests__/check-public-repo.test.ts'], { encoding: 'utf8' });
+      const output = execFileSync('git', ['log', ...historyRevisions(), '--full-history', '-i', `-G${pattern}`, '--format=%H', '--', ':!scripts/check-public-repo.ts', ':!scripts/__tests__/check-public-repo.test.ts'], { encoding: 'utf8' });
       if (output.trim() !== '') return [{ rule: 'history-sensitive-content', path: 'git history' }];
     } catch {
       continue;

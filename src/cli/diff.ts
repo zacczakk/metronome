@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { renderTargetMCP } from '../core/external-mcp';
 import { readFile } from 'node:fs/promises';
 import checkbox from '@inquirer/checkbox';
 import { Command } from 'commander';
@@ -106,7 +107,7 @@ async function renderOpDiff(
     } catch {
       // No existing file
     }
-    rendered = adapter.renderMCPServers(cache.mcpServers, existingContent);
+    rendered = renderTargetMCP(adapter, cache.mcpServers, existingContent);
   } else if (op.itemType === 'instruction') {
     const instructionContent = await readCanonicalInstructions(cache.projectDir);
     if (!instructionContent) return null;

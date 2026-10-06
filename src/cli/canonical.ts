@@ -174,6 +174,9 @@ export async function readCanonicalMCPServers(projectDir: string): Promise<MCPSe
       if ('disabled_for' in server && !('disabledFor' in server)) {
         server.disabledFor = server.disabled_for;
       }
+      if ('external_for' in server && !('externalFor' in server)) {
+        server.externalFor = server.external_for;
+      }
       if ('target_options' in server && !('targetOptions' in server)) {
         server.targetOptions = server.target_options;
       }
@@ -181,6 +184,7 @@ export async function readCanonicalMCPServers(projectDir: string): Promise<MCPSe
       delete server.env_vars;
       delete server.disabled_for;
       delete server.target_options;
+      delete server.external_for;
 
       servers.push(server as MCPServer);
     } catch {

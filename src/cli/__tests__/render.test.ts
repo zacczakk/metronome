@@ -78,7 +78,7 @@ describe('render subcommand logic', () => {
     expect(rendered.length).toBeGreaterThan(0);
   });
 
-  test('canonical palantir-mcp mirrors Tux launcher shape', async () => {
+  test('canonical palantir-mcp mirrors Tux launcher shape and is Tux-owned for Claude/OpenCode', async () => {
     const servers = await readCanonicalMCPServers(projectDir);
     const palantir = servers.find((server) => server.name === 'palantir-mcp');
 
@@ -89,37 +89,18 @@ describe('render subcommand logic', () => {
       command: 'tux',
       args: ['palantir-mcp', 'start'],
       enabled: false,
-      targetOptions: {
-      'claude-code': { type: 'stdio' },
-      opencode: { enabled: true, timeout: 20000, codemode: false },
-      },
+      externalFor: ['claude-code', 'opencode'],
+      targetOptions: { pi: { enabled: true, exposure: 'direct', timeout: 20 } },
     });
   });
 
-  test('palantir-mcp renders to Claude/OpenCode with Tux launcher', async () => {
+  test('palantir-mcp renders to Codex and Pi with the Tux launcher', async () => {
     const servers = await readCanonicalMCPServers(projectDir);
     const palantir = servers.find((server) => server.name === 'palantir-mcp');
     expect(palantir).toBeDefined();
 
-    const claudeRendered = createAdapter('claude-code').renderMCPServers([palantir!]);
-    expect(claudeRendered).toContain('"command": "tux"');
-    expect(claudeRendered).toContain('"palantir-mcp"');
-    expect(claudeRendered).toContain('"start"');
-    expect(claudeRendered).toContain('"type": "stdio"');
-    expect(claudeRendered).toContain('"enabled": false');
-    expect(claudeRendered.indexOf('"type": "stdio"')).toBeLessThan(claudeRendered.indexOf('"command": "tux"'));
-    expect(claudeRendered).not.toContain('palantir-mcp@latest');
-    expect(claudeRendered).not.toContain('FOUNDRY_TOKEN');
-
-    const opencodeRendered = createAdapter('opencode').renderMCPServers([palantir!]);
-    expect(opencodeRendered).toContain('"tux"');
-    expect(opencodeRendered).toContain('"palantir-mcp"');
-    expect(opencodeRendered).toContain('"start"');
-    expect(opencodeRendered).toContain('"disabled": false');
-    expect(opencodeRendered).toContain('"catalog": 20000');
-    expect(opencodeRendered).toContain('"execution": 20000');
-    expect(opencodeRendered).not.toContain('palantir-mcp@latest');
-    expect(opencodeRendered).not.toContain('FOUNDRY_TOKEN');
+    const piRendered = JSON.parse(createAdapter('pi').renderMCPServers([palantir!]));
+    expect(piRendered.mcpServers['palantir-mcp']).toEqual({ command: 'tux', args: ['palantir-mcp', 'start'], enabled: true, exposure: 'direct', timeout: 20 });
 
     const codexRendered = createAdapter('codex').renderMCPServers([palantir!]);
     expect(codexRendered).toContain('[mcp_servers.palantir-mcp]');

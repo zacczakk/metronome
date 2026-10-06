@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { renderOpenCodeMcp } from '../../opencode/version-renderer';
 import { readCanonicalMCPServers, readCanonicalSettings, PROJECT_ROOT } from '../canonical';
 import { PiAdapter } from '../../adapters/pi';
+import { externalMCPNames, managedMCPServers } from '../../core/external-mcp';
 import { INSTRUCTION_PATHS } from '../../../configs/pi/extensions/instructions-loader';
 import { PI_INSTRUCTIONS_LOADER } from '../../pi/agents';
 
@@ -20,12 +21,13 @@ test('Pi models.json covers every OpenCode Tux model', async () => {
   expect(models.map((m: { id: string }) => m.id).sort()).toEqual(Object.keys(opencode.providers.tux.models).sort());
 });
 
-test('Pi enables exactly the MCP servers OpenCode enables', async () => {
+test('Pi enables exactly the metronome-managed MCP servers OpenCode enables', async () => {
   const servers = await readCanonicalMCPServers(PROJECT_ROOT);
-  const oc = renderOpenCodeMcp(servers).servers as Record<string, { disabled: boolean }>;
+  const external = new Set(externalMCPNames(servers, 'opencode'));
+  const oc = renderOpenCodeMcp(managedMCPServers(servers, 'opencode')).servers as Record<string, { disabled: boolean }>;
   const pi = JSON.parse(new PiAdapter('/h').renderMCPServers(servers)).mcpServers as Record<string, { enabled: boolean }>;
   const ocOn = Object.entries(oc).filter(([, s]) => !s.disabled).map(([n]) => n).sort();
-  const piOn = Object.entries(pi).filter(([, s]) => s.enabled).map(([n]) => n).sort();
+  const piOn = Object.entries(pi).filter(([n, s]) => s.enabled && !external.has(n)).map(([n]) => n).sort();
   expect(piOn).toEqual(ocOn);
 });
 
