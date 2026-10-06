@@ -47,16 +47,13 @@ Machine-readable companion: `registry.json` (consumed by `scripts/sync-upstream-
 |-------|--------------|------------|------------|------|
 | thermo-nuclear-code-quality-review | thermo-nuclear-code-quality-review | thermo-nuclear-code-quality-review | No | manual |
 
-## Custom (12)
+## Custom (9)
 
 | Skill | Description |
 |-------|-------------|
 | agent-brief | Durable implementation brief for autonomous agent handoff |
 | design-critique | UI hierarchy, cognitive load, and anti-slop review |
 | duckdb-migration | Measured migration from distributed transforms to DuckDB |
-| foundry-local-development | Foundry tooling, Stemma repos, and local transforms setup |
-| foundry-react-app-dev | React applications hosted on Foundry |
-| foundry-transforms-ops | Foundry transform build, verification, promotion, and operations |
 | grill-with-docs | Requirements and implementation stress-testing against project docs |
 | interface-design | Public interface and hard-to-change boundary design |
 | memory-retrieval | Retrieval routing across Knowledge, Memory, qmd, and sessions with sessions last |

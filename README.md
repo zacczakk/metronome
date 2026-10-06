@@ -53,7 +53,7 @@ metronome codex-provider enterprise # switch back; OpenAI chats become visible
 configs/
   commands/*.md              Slash commands (7)
   agents/                    Agent definitions (2)
-  skills/                    Skill directories (28 active, with upstream sync)
+  skills/                    Skill directories (29 active, with upstream sync)
   opencode/v2/plugins/       OpenCode V2 profile-owned plugins
   pi/extensions/             Pi extensions referenced in place (vault instructions loader)
   mcp/*.json                 MCP server definitions

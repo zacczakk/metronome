@@ -1,5 +1,5 @@
 ---
-summary: Skills catalog and portfolio guidance for 32 active globally synced skills.
+summary: Skills catalog and portfolio guidance for 29 active globally synced skills.
 read_when:
   - Adding or modifying skills
   - Reviewing what's available
@@ -8,7 +8,8 @@ read_when:
 
 # Skills Catalog
 
-32 active skills in `configs/skills/`, synced to all targets via `metronome push`.
+29 active skills in `configs/skills/`, synced to all targets via `metronome push`.
+Company-internal skills (e.g. Foundry) are private: they live only in `~/.agents/skills` (see [shared-private-skill-projection](shared-private-skill-projection.md)).
 Skills load on-demand when the agent's task matches the skill description.
 Run `bun scripts/sync-upstream-skills.ts` to pull configured upstreams; `auto`
 entries overwrite their local skill trees, while `manual` entries report diffs.
@@ -19,7 +20,7 @@ The current portfolio is intentionally under review. See [Skill Portfolio Review
 
 | Source | Repo | Count | Notes |
 |---|---|---|---|
-| Custom | this repo | 12 | Foundry, vault, design, and workflow skills |
+| Custom | this repo | 9 | Vault, design, migration, and workflow skills |
 | Anthropic | `anthropics/skills` | 5 | File-format and frontend-design skills |
 | Superpowers | `obra/superpowers` | 1 | `writing-plans`, locally adapted and manual-sync |
 | Matt Pocock | `mattpocock/skills` | 2 | `diagnosing-bugs` and `tdd`, auto-synced |
@@ -36,9 +37,6 @@ The tables below are a trigger-oriented overview, not an exhaustive registry. So
 | Skill | Trigger | Lines |
 |---|---|---|
 | `memory-retrieval` | Memory/Knowledge/qmd/session lookup before broad repo search or multi-file reads | — |
-| `foundry-local-development` | Setting up local Foundry tooling and Stemma repos | — |
-| `foundry-react-app-dev` | Developing React apps hosted on Foundry | — |
-| `foundry-transforms-ops` | Building, verifying, promoting, and monitoring Foundry transforms | 95 |
 | `obsidian-markdown` | Working with .md files in Obsidian, wikilinks, callouts | — |
 | `obsidian-json-canvas` | Working with .canvas files, mind maps, flowcharts | — |
 | `obsidian-cli` | Explicit Obsidian app, plugin, or theme automation | — |
