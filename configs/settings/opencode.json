@@ -233,6 +233,11 @@
       "action": "edit",
       "resource": "~/Repos/**",
       "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "~/Repos/**/.worktrees/**",
+      "effect": "allow"
     }
   ],
   "agents": {
