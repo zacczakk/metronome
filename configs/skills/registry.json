@@ -47,6 +47,14 @@
         "tdd": { "sync": "auto" }
       }
     },
+    "kitlangton-psychopomp": {
+      "repo": "https://github.com/kitlangton/psychopomp.git",
+      "basePath": ".agents/skills",
+      "skills": {
+        "psychopomp": { "sync": "manual", "note": "Imported from 3a50a2bf1897ddeaa4e5a71df85224107aaf734b; local checkout and paid-generation guards" },
+        "explainer-motion": { "sync": "manual", "note": "Required companion; imported from 3a50a2bf1897ddeaa4e5a71df85224107aaf734b" }
+      }
+    },
     "ponytail": {
       "repo": "https://github.com/DietrichGebert/ponytail.git",
       "basePath": "skills",

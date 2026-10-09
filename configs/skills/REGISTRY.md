@@ -47,6 +47,16 @@ Machine-readable companion: `registry.json` (consumed by `scripts/sync-upstream-
 |-------|--------------|------------|------------|------|
 | thermo-nuclear-code-quality-review | thermo-nuclear-code-quality-review | thermo-nuclear-code-quality-review | No | manual |
 
+## Remote: kitlangton/psychopomp (2)
+
+Imported from `3a50a2bf1897ddeaa4e5a71df85224107aaf734b` on 2026-10-09.
+Psychopomp runs from its own checkout; paid narration requires approval.
+
+| Skill | Upstream Name | Local Name | Customized | Sync |
+|-------|--------------|------------|------------|------|
+| psychopomp | psychopomp | psychopomp | Yes (checkout and paid-generation guards) | manual |
+| explainer-motion | explainer-motion | explainer-motion | No | manual |
+
 ## Custom (9)
 
 | Skill | Description |
