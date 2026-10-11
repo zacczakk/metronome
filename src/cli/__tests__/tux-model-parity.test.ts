@@ -50,3 +50,21 @@ test('preserves all six GPT long-context tiers at exactly 272K', () => {
     { tier: { type: 'context', size: 272_000 }, input: 4.8, output: 18, cache: { read: 0.24, write: 6 } },
   ]);
 });
+
+test('preserves Claude thinking summaries for default models and enabled variants', () => {
+  const rendered = renderOpenCodeSettings(canonical);
+  const models = rendered.providers?.tux.models;
+  for (const [id, value] of Object.entries(models)) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Expected model');
+    if (!id.startsWith('claude-') || id === 'claude-haiku-4-5-20251001') {
+      expect('body' in value, id).toBe(false);
+      continue;
+    }
+    expect('settings' in value && value.settings, id).toMatchObject({ thinking: { type: 'adaptive', display: 'summarized' } });
+    if (!('variants' in value) || !Array.isArray(value.variants)) throw new Error('Expected variants');
+    for (const variant of value.variants) {
+      expect(variant.settings.thinking, `${id}#${variant.id}`).toEqual(variant.id === 'none'
+        ? { type: 'disabled' } : { type: 'adaptive', display: 'summarized' });
+    }
+  }
+});

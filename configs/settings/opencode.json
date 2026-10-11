@@ -353,6 +353,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -360,7 +361,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -369,7 +370,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -378,7 +379,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -410,6 +411,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -417,7 +419,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -426,7 +428,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -435,7 +437,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -467,6 +469,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -474,7 +477,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -483,7 +486,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -492,7 +495,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -524,6 +527,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -531,7 +535,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -540,7 +544,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -549,7 +553,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -581,6 +585,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -588,7 +593,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -597,7 +602,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -606,7 +611,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -638,6 +643,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -645,7 +651,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -654,7 +660,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -663,7 +669,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -695,6 +701,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -702,7 +709,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -711,7 +718,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -720,7 +727,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -752,6 +759,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -759,7 +767,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -768,7 +776,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -777,7 +785,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }
@@ -809,6 +817,7 @@
             ]
           },
           "settings": {
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
           },
           "variants": [
@@ -816,7 +825,7 @@
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -825,7 +834,7 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -834,7 +843,7 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive"
+                  "type": "adaptive", "display": "summarized"
                 },
                 "effort": "high"
               }

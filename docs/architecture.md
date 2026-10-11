@@ -117,6 +117,14 @@ tokens for Agentic, not a claim about other Tux upstreams. Renderer, settings
 merge, profile activation, and agent-variant operations preserve native pricing
 and variant arrays unchanged; settings-only sync backs up installed config.
 
+Reasoning-capable Claude models request readable thinking summaries through
+native model and variant `settings.thinking` fields (`type: "adaptive"`,
+`display: "summarized"`). Default selections and enabled presets include this
+request; `none` presets keep `type: "disabled"` without a display field.
+GPT and DeepSeek metadata stays unchanged. Sync with
+`metronome push -t opencode --type settings --force`; terminal display is
+controlled separately by `session.thinking: "show"` in OpenCode's `cli.json`.
+
 Versioned V2 plugins live under `configs/opencode/v2/plugins/`. V2 ports the
 instruction loader, Memory advisor, read guard, commit validator, and Muxy
 notifications. The native Muxy V2 port is deployed globally as
