@@ -57,7 +57,7 @@ Psychopomp runs from its own checkout; paid narration requires approval.
 | psychopomp | psychopomp | psychopomp | Yes (checkout and paid-generation guards) | manual |
 | explainer-motion | explainer-motion | explainer-motion | No | manual |
 
-## Custom (9)
+## Custom (10)
 
 | Skill | Description |
 |-------|-------------|
@@ -69,4 +69,5 @@ Psychopomp runs from its own checkout; paid narration requires approval.
 | memory-retrieval | Retrieval routing across Knowledge, Memory, qmd, and sessions with sessions last |
 | obsidian-vault-conventions | Vault layout, lifecycle, naming conventions |
 | session-notes | Atomic session note capture templates |
+| tux-release-film | Silent Psychopomp release films for Tux in Liquid Carbon dark |
 | screenshot-workflow | Screenshot asset pipeline (macOS) |
