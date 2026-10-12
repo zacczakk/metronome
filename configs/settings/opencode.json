@@ -232,7 +232,7 @@
     {
       "action": "edit",
       "resource": "~/Repos/**",
-      "effect": "deny"
+      "effect": "ask"
     },
     {
       "action": "edit",
