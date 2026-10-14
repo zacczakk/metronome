@@ -51,13 +51,14 @@ describe('canonical agent routing', () => {
     expect(agent && isCanonicalAgentForTarget(agent, 'codex')).toBe(false);
   });
 
-  test('gives Foundry SQL agent access to the complete Palantir MCP namespace', async () => {
+  test('gives Foundry SQL agent the Palantir MCP namespace and palantir-only shell', async () => {
     const agents = await readCanonicalAgents(process.cwd(), () => false);
     const agent = agents.find(({ name }) => name === 'foundry-sql');
 
-    expect(agent?.metadata.permission).toMatchObject({
+    expect(agent?.metadata.permission).toEqual({
       '*': 'deny',
       'palantir-mcp_*': 'allow',
+      bash: { '*': 'deny', 'palantir *': 'allow' },
     });
   });
 
