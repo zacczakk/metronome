@@ -14,7 +14,7 @@ read_when:
 
 Canonical MCP servers in `configs/mcp/`. 4 CLI targets with different
 transport support (Codex: stdio + HTTP). MCPorter is installed globally through
-Bun and currently runs as `mcporter@0.13.6`.
+Bun and currently runs as `mcporter@0.14.2`.
 
 ## Decision
 
@@ -23,7 +23,7 @@ Three access tiers, fastest first:
 1. **Compiled binaries** (`bin/`, on PATH) — Bun-compiled standalone CLIs
    with baked-in schemas. No runtime deps. ~0.3s discovery, ~2.3s HTTP call.
 2. **MCPorter calls** (`mcporter call`) — ad-hoc invocation via bash.
-   ~800ms overhead vs binary. Daemon for chrome-devtools.
+   ~800ms overhead vs binary.
 3. **Native MCP** — high-frequency servers (context7, tavily) stay native
    for schema-at-load and streaming.
 
@@ -33,8 +33,7 @@ Three access tiers, fastest first:
 |---------------------|-----------------------|---------------|-----------------------|
 | context7            | All 4 CLIs            | `context7`    | `mcporter call`       |
 | tavily              | Claude, OC, Antigravity | `tavily`    | `mcporter call`       |
-| chrome-devtools     | —                     | `chrome-devtools` | daemon (keep-alive) |
-| palantir-mcp        | OpenCode (via Tux)    | `palantir`    | ephemeral             |
+| palantir-mcp        | Pi; OC/Claude via Tux | `palantir`    | ephemeral             |
 | shadcn              | —                     | `shadcn`      | ephemeral             |
 
 ## Why Three Tiers
@@ -101,7 +100,6 @@ the explicit command above when `~/.mcporter/mcporter.json` has changed.
 
 - Ad-hoc — any agent with bash can call any registered server.
 - Config: `~/.mcporter/mcporter.json` (system-level, no editor imports).
-- Daemon keeps chrome-devtools warm (`lifecycle: keep-alive`).
 - Discovery: `mcporter config list` (77ms, no connections). Never bare `mcporter list`.
 
 ### Native MCP
@@ -142,7 +140,7 @@ repeated stdio calls (warm connection).
 
 | Risk | Mitigation |
 |---|---|
-| npx cold-start latency | Daemon for chrome-devtools; binaries for discovery |
+| npx cold-start latency | Binaries for discovery |
 | No tool schemas at agent startup | Binaries embed schemas; `mcporter config list` for fast discovery |
 | MCPorter version drift | Update the Bun-global package, then regenerate every compiled binary |
 | Secret exposure | `${VAR}` interpolation from env; no plaintext in config |

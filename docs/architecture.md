@@ -20,7 +20,7 @@ read_when:
   - `instructions/AGENTS.md` — Unified agent operating system (ground truth)
   - `instructions/TOOLS.md` — Tool-use reference
 - **scripts/** — Helper tools on PATH (committer, ask-model, sessions, sessions_opencode.py, docs-list.ts, sync-upstream-skills.ts)
-- **bin/** — Compiled binaries on PATH (6 MCP CLI binaries, docs-list)
+- **bin/** — Compiled binaries on PATH (4 MCP CLI binaries: context7, palantir, shadcn, tavily; plus docs-list)
 - **docs/** — Operational documentation, plans, design decisions
 - **backups/** — Pre-sync backups (gitignored)
 
