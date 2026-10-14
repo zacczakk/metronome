@@ -61,6 +61,7 @@ mcporter records its own version in the artifact metadata:
 repo="$HOME/Repos/zacczakk/metronome"
 (
   cd /tmp
+  PALANTIR_MCP_TOOL_SEARCH=false \
   mcporter --config "$HOME/.mcporter/mcporter.json" generate-cli \
     --server palantir-mcp \
     --runtime bun \
@@ -71,7 +72,7 @@ repo="$HOME/Repos/zacczakk/metronome"
 
 Build requirements:
 
-- Do not set `PALANTIR_MCP_TOOL_SEARCH=true` or pass `--tool-search` while generating.
+- Set `PALANTIR_MCP_TOOL_SEARCH=false` while generating. The server defaults to tool-search mode, which exposes only `search-tools` and produces a one-tool snapshot. Do not pass `--tool-search`.
 - Do not pass `--include-tools` or `--exclude-tools`; the shell fallback is intended to contain the complete catalog.
 - Provide `FOUNDRY_HOST` and `FOUNDRY_TOKEN` during generation. The host is resolved into the snapshot; the token remains environment interpolation and is never embedded.
 
@@ -155,26 +156,32 @@ mcporter --version
 bun info mcporter version
 ```
 
-Update the Bun-global install normally:
+This workspace has a seven-day release-age policy. Install the newest version
+published at least seven days ago (check dates with `npm view mcporter time`):
 
 ```bash
-bun add --global mcporter@latest
+bun add --global mcporter@<version>
 ```
 
-This workspace has a seven-day Bun `minimumReleaseAge` policy. If a newly
-published release has been verified against the upstream GitHub release and npm
-metadata, bypass the age gate for this command only:
+If a newer release has been verified against the upstream GitHub release and
+npm metadata, bypass the age gate for this command only:
 
 ```bash
-bun add --global mcporter@latest --minimum-release-age 0
+bun add --global mcporter@<version> --minimum-release-age 0
 ```
 
-MCPorter `0.13.6` declares Node `>=24`; use a supported Node runtime before
+MCPorter `0.13.9` and later need a one-time `mcporter daemon migrate` when a
+daemon from an older version is running (`mcporter daemon status`).
+
+MCPorter `0.14.2` declares Node `>=24`; use a supported Node runtime before
 relying on the installation. The current local smoke test succeeds under an
 older runtime, but that is outside the package contract.
 After updating mcporter, run the full-catalog generation command in the
 Palantir shell fallback section and verify with `inspect-cli`, `palantir --help`,
-`palantir search-tools`, and one read-only tool call.
+`palantir search-tools`, one read-only tool call, and a catalog check: every
+tool listed by `PALANTIR_MCP_TOOL_SEARCH=false mcporter list palantir-mcp --json`
+must print `Usage: <tool>` as the first line of `palantir <tool> --help`.
+Unknown tools also exit 0 from `--help`, so check the output, not the exit code.
 
 ## References
 

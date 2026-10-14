@@ -581,7 +581,7 @@ Tux resolves Foundry host and keychain-backed authentication at runtime; keep
 Foundry credentials out of editor and repository config.
 
 - Prefer native `palantir-mcp` when it is loaded and responsive. For shell calls, use the compiled `palantir` CLI before MCPorter when its runtime configuration is available.
-- Canonical OpenCode rendering enables it via Tux with a 20-second catalog/execution timeout and direct tool exposure. Claude Code and Codex render it disabled by default. Antigravity excludes it from its active MCP set. Local/manual config can change the effective state.
+- Canonical config is disabled by default. Tux owns the OpenCode and Claude Code entries (`external_for`); Tux currently leaves OpenCode disabled, so OpenCode agents, including `foundry-sql`, use the `palantir` CLI. Pi enables it with a 20-second timeout and direct tool exposure. Codex renders it disabled. Antigravity excludes it from its active MCP set. Local/manual config can change the effective state.
 - If native MCP is missing, disabled, or offline, use the `palantir` shell facade on `$PATH`: `palantir --help` is intentionally concise, `palantir search-tools "<task>"` invokes MCP `search_tools` for focused discovery, and returned tools can be invoked directly, for example `palantir list-foundry-namespaces`.
 - `bin/palantir` is a separate mcporter-generated snapshot, not the canonical Tux launcher. Inspect it with `mcporter inspect-cli bin/palantir --json` before relying on its auth/config; generation resolves `FOUNDRY_HOST` into the snapshot and keeps `FOUNDRY_TOKEN` as runtime interpolation.
 - Generation and update runbook: `docs/design/mcporter-hybrid-mcp.md` under “Palantir shell fallback” and “Updating the Palantir CLI”.
@@ -597,6 +597,6 @@ Canonical definitions in `configs/mcp/*.json`. Rendered to each CLI via `metrono
 | `context7` | All CLIs | `context7` | HTTP; library docs |
 | `tavily` | Claude, OpenCode, Antigravity, Codex | `tavily` | Disabled by default; `TAVILY_API_KEY`, `UPTIMIZE_ENV=dev`; extract is approved-domain only |
 | `github` | Claude, OpenCode, Antigravity, Codex | — | HTTP; `GITHUB_PERSONAL_ACCESS_TOKEN`; native MCP, not necessarily MCPorter |
-| `palantir-mcp` | OpenCode enabled; Claude/Codex disabled; Antigravity excluded | `palantir` snapshot | Tux launcher for native config; snapshot has separate auth/config |
+| `palantir-mcp` | Pi enabled; OpenCode/Claude Tux-owned; Codex disabled; Antigravity excluded | `palantir` snapshot | Tux launcher for native config; snapshot has separate auth/config |
 | `peekaboo` | All CLIs | `npx -y @steipete/peekaboo@latest mcp` | Disabled by default; macOS automation; requires Screen Recording + Accessibility; OpenCode timeout 30s |
 | `shadcn` | OpenCode | `shadcn` | shadcn/ui |

@@ -49,7 +49,7 @@ describe('canonical OpenCode permissions applied to Pi tools', () => {
     expect(call('read', { path: '.env' })).toBe('deny');
     expect(call('read', { path: '/h/.zsh_secrets' })).toBe('deny');
     expect(call('edit', { path: 'src/index.ts' })).toBe('allow');
-    expect(call('write', { path: '/h/Repos/other/x.ts' })).toBe('deny');
+    expect(call('write', { path: '/h/Repos/other/x.ts' })).toBe('ask');
     expect(call('edit', { path: '/h/.config/oe/x.json' })).toBe('allow');
   });
 

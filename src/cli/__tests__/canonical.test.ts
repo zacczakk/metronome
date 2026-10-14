@@ -121,18 +121,27 @@ describe('canonical agent routing', () => {
     }
   });
 
-  test('sets Codex base to Tux GPT-6.1 Sol without reasoning', () => {
+  test('sets Codex base to a declared provider profile without reasoning', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'codex.json'), 'utf8'),
-    ) as Record<string, unknown>;
+    ) as {
+      model?: string;
+      model_provider?: string;
+      profile_files?: Record<string, { model?: string; model_provider?: string }>;
+    };
 
     expect(settings).toMatchObject({
-      model: 'gpt-6.1-sol',
-      model_provider: 'tux',
       model_reasoning_effort: 'none',
-      profile_files: { tux: { model: 'gpt-6.1-sol', model_provider: 'tux' } },
+      profile_files: {
+        enterprise: { model: 'gpt-5.6-terra', model_provider: 'openai' },
+        tux: { model: 'gpt-6.1-sol', model_provider: 'tux' },
+      },
       approval_policy: 'never',
       sandbox_mode: 'workspace-write',
+    });
+    expect(Object.values(settings.profile_files ?? {})).toContainEqual({
+      model: settings.model,
+      model_provider: settings.model_provider,
     });
   });
 
