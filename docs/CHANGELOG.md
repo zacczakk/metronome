@@ -17,7 +17,7 @@ read_when:
 ## Unreleased
 
 - **Tux-owned MCP servers** — the new canonical `external_for` field marks servers another tool owns. `palantir-mcp` and `uptimize-docs-ihub` are owned by `tux integrate` for Claude Code and OpenCode, so metronome keeps those entries as-is.
-- **Codex default** — Tux GPT-6.1 Sol, reasoning `none`; the `tux` profile uses the same model.
+- **Codex default** — GPT-6.1 Sol on both profiles (Tux and Enterprise), reasoning `high`, sandbox `danger-full-access`.
 - **Codex provider choice is local** — `metronome codex-provider` saves the choice in gitignored `.metronome/codex-provider` (default `tux`) instead of editing `configs/settings/codex.json`. Settings pull now keeps keys the canonical file owns, so Codex `profile_files` survive a pull.
 - **foundry-sql uses the palantir CLI** — when native `palantir-mcp` tools are absent (OpenCode), the agent runs `palantir <tool> --raw '<json>'`; its shell is limited to `palantir` commands.
 - **MCP binaries rebuilt with mcporter 0.14.2** — `context7`, `palantir`, `shadcn`, `tavily`. Removed `chrome-devtools` (no longer registered) and `sequential-thinking` (unused).

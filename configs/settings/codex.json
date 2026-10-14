@@ -1,7 +1,7 @@
 {
-  "model_reasoning_effort": "none",
+  "model_reasoning_effort": "high",
   "approval_policy": "never",
-  "sandbox_mode": "workspace-write",
+  "sandbox_mode": "danger-full-access",
   "model_providers": {
     "tux": {
       "name": "Tux",
@@ -11,7 +11,7 @@
   },
   "profile_files": {
     "enterprise": {
-      "model": "gpt-5.6-terra",
+      "model": "gpt-6.1-sol",
       "model_provider": "openai"
     },
     "tux": {

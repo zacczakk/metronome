@@ -127,13 +127,13 @@ describe('canonical agent routing', () => {
     );
 
     expect(settings).toMatchObject({
-      model_reasoning_effort: 'none',
+      model_reasoning_effort: 'high',
       profile_files: {
-        enterprise: { model: 'gpt-5.6-terra', model_provider: 'openai' },
+        enterprise: { model: 'gpt-6.1-sol', model_provider: 'openai' },
         tux: { model: 'gpt-6.1-sol', model_provider: 'tux' },
       },
       approval_policy: 'never',
-      sandbox_mode: 'workspace-write',
+      sandbox_mode: 'danger-full-access',
     });
     expect(settings).not.toHaveProperty('model');
     expect(settings).not.toHaveProperty('model_provider');
