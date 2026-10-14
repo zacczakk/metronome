@@ -1,52 +1,23 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { atomicWrite } from '../infra/atomic-write';
-import { PROJECT_ROOT } from './canonical';
+import {
+  CODEX_PROVIDERS,
+  codexProfile,
+  DEFAULT_CODEX_PROVIDER,
+  isCodexProvider,
+  readCodexProviderState,
+  writeCodexProviderState,
+  type CodexProvider,
+} from '../core/codex-provider-state';
+import { PROJECT_ROOT, SETTINGS_DIR } from './canonical';
 import { runPush } from './push';
-
-const PROVIDERS = ['enterprise', 'tux'] as const;
-type CodexProvider = (typeof PROVIDERS)[number];
-
-interface ProviderConfig {
-  model?: unknown;
-  model_provider?: unknown;
-}
-
-interface CodexSettings extends ProviderConfig {
-  profile_files?: Record<string, ProviderConfig>;
-  [key: string]: unknown;
-}
 
 export interface CodexProviderResult {
   provider: CodexProvider;
   model: string;
   changed: boolean;
   output: string;
-}
-
-function settingsPath(projectDir: string): string {
-  return join(projectDir, 'configs', 'settings', 'codex.json');
-}
-
-async function readSettings(projectDir: string): Promise<{ path: string; raw: string; settings: CodexSettings }> {
-  const path = settingsPath(projectDir);
-  const raw = await readFile(path, 'utf8');
-  return { path, raw, settings: JSON.parse(raw) as CodexSettings };
-}
-
-function currentProvider(settings: CodexSettings): CodexProvider {
-  const match = PROVIDERS.find((name) => settings.model_provider === settings.profile_files?.[name]?.model_provider);
-  if (!match) throw new Error(`Unsupported active Codex provider '${String(settings.model_provider)}'.`);
-  return match;
-}
-
-function profile(settings: CodexSettings, provider: CodexProvider): { model: string; modelProvider: string } {
-  const config = settings.profile_files?.[provider];
-  if (typeof config?.model !== 'string' || typeof config.model_provider !== 'string') {
-    throw new Error(`Codex profile '${provider}' is missing model or model_provider.`);
-  }
-  return { model: config.model, modelProvider: config.model_provider };
 }
 
 function formatResult(provider: CodexProvider, model: string, changed: boolean, json: boolean): string {
@@ -65,19 +36,20 @@ export async function runCodexProvider(
   options: { projectDir?: string; homeDir?: string; json?: boolean } = {},
 ): Promise<CodexProviderResult> {
   const projectDir = options.projectDir ?? PROJECT_ROOT;
-  const { path, raw, settings } = await readSettings(projectDir);
-  const provider = requested ?? currentProvider(settings);
-  if (!PROVIDERS.includes(provider as CodexProvider)) {
-    throw new Error(`Unknown provider '${provider}'. Choose: ${PROVIDERS.join(', ')}.`);
+  const settings: Record<string, unknown> = JSON.parse(
+    await readFile(join(projectDir, SETTINGS_DIR, 'codex.json'), 'utf8'),
+  );
+  const saved = await readCodexProviderState(projectDir);
+  const current = saved ?? DEFAULT_CODEX_PROVIDER;
+  const provider = requested ?? current;
+  if (!isCodexProvider(provider)) {
+    throw new Error(`Unknown provider '${provider}'. Choose: ${CODEX_PROVIDERS.join(', ')}.`);
   }
 
-  const selected = provider as CodexProvider;
-  const target = profile(settings, selected);
-  const changed = settings.model !== target.model || settings.model_provider !== target.modelProvider;
+  const target = codexProfile(settings, provider);
+  const changed = provider !== current;
   if (changed) {
-    settings.model = target.model;
-    settings.model_provider = target.modelProvider;
-    await atomicWrite(path, JSON.stringify(settings, null, 2) + '\n');
+    await writeCodexProviderState(projectDir, provider);
     try {
       const pushed = await runPush({
         projectDir,
@@ -88,16 +60,16 @@ export async function runCodexProvider(
       });
       if (pushed.failed > 0 || pushed.rolledBack) throw new Error('Codex settings push failed.');
     } catch (error) {
-      await atomicWrite(path, raw);
+      await writeCodexProviderState(projectDir, saved);
       throw error;
     }
   }
 
   return {
-    provider: selected,
+    provider,
     model: target.model,
     changed,
-    output: formatResult(selected, target.model, changed, options.json ?? false),
+    output: formatResult(provider, target.model, changed, options.json ?? false),
   };
 }
 

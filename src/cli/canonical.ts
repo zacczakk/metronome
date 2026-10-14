@@ -11,6 +11,7 @@ import { PiAdapter } from '../adapters/pi';
 import type { ToolAdapter } from '../adapters/base';
 import type { TargetName, ItemType, CanonicalItem, CanonicalSettings, CanonicalHookConfig, MCPServer } from '../types';
 import type { SkillProjectionOperation } from '../core/skill-projection';
+import { codexProfile, DEFAULT_CODEX_PROVIDER, readCodexProviderState } from '../core/codex-provider-state';
 
 /** Repo root — resolved from module location so metronome works from any cwd */
 export const PROJECT_ROOT = resolve(import.meta.dir, '..', '..');
@@ -226,6 +227,17 @@ export async function readCanonicalSettings(
   target: TargetName,
 ): Promise<CanonicalSettings | null> {
   const filePath = join(projectDir, SETTINGS_DIR, settingsFileName(target));
+  const settings = await readSettingsFile(projectDir, filePath, target);
+  if (!settings || target !== 'codex' || !('profile_files' in settings.keys)) return settings;
+  const provider = (await readCodexProviderState(projectDir)) ?? DEFAULT_CODEX_PROVIDER;
+  return { target, keys: { ...settings.keys, ...codexProfile(settings.keys, provider) } };
+}
+
+async function readSettingsFile(
+  projectDir: string,
+  filePath: string,
+  target: TargetName,
+): Promise<CanonicalSettings | null> {
   try {
     const raw = await readFile(filePath, 'utf-8');
     const keys = JSON.parse(raw) as Record<string, unknown>;

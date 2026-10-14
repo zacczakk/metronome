@@ -121,14 +121,10 @@ describe('canonical agent routing', () => {
     }
   });
 
-  test('sets Codex base to a declared provider profile without reasoning', () => {
+  test('keeps Codex provider profiles canonical and the active choice local', () => {
     const settings = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'settings', 'codex.json'), 'utf8'),
-    ) as {
-      model?: string;
-      model_provider?: string;
-      profile_files?: Record<string, { model?: string; model_provider?: string }>;
-    };
+    );
 
     expect(settings).toMatchObject({
       model_reasoning_effort: 'none',
@@ -139,10 +135,8 @@ describe('canonical agent routing', () => {
       approval_policy: 'never',
       sandbox_mode: 'workspace-write',
     });
-    expect(Object.values(settings.profile_files ?? {})).toContainEqual({
-      model: settings.model,
-      model_provider: settings.model_provider,
-    });
+    expect(settings).not.toHaveProperty('model');
+    expect(settings).not.toHaveProperty('model_provider');
   });
 
   test('keeps all validated Tux reasoning variants for Luna and Terra', () => {

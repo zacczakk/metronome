@@ -1,6 +1,4 @@
 {
-  "model": "gpt-6.1-sol",
-  "model_provider": "tux",
   "model_reasoning_effort": "none",
   "approval_policy": "never",
   "sandbox_mode": "workspace-write",

@@ -348,9 +348,17 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
         const installedContent = await readFile(paths.getSettingsPath(), 'utf-8');
         const canonicalSettings = await readCanonicalSettings(projectDir, options.source);
         const canonicalKeys = canonicalSettings ? Object.keys(canonicalSettings.keys) : [];
-        const rendered = collapseHomePaths(adapter.extractSettingsKeys(canonicalKeys, installedContent), homeDir);
+        const extracted: Record<string, unknown> = JSON.parse(
+          collapseHomePaths(adapter.extractSettingsKeys(canonicalKeys, installedContent), homeDir),
+        );
+        const owned: Record<string, unknown> = existingSettingsFile(item.targetPath)
+          ? JSON.parse(await readFile(item.targetPath, 'utf-8'))
+          : extracted;
+        for (const key of Object.keys(owned)) {
+          if (key in extracted) owned[key] = extracted[key];
+        }
         await mkdir(join(projectDir, SETTINGS_DIR), { recursive: true });
-        await atomicWrite(item.targetPath, rendered);
+        await atomicWrite(item.targetPath, JSON.stringify(owned, null, 2) + '\n');
       } else if (item.type === 'mcp') {
         const mcpContent = await readFile(paths.getMCPConfigPath(), 'utf-8');
         const servers = adapter.parseMCPServers(mcpContent);

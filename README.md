@@ -45,6 +45,10 @@ metronome codex-provider tux        # switch Codex Desktop to Tux
 metronome codex-provider enterprise # switch back; OpenAI chats become visible
 ```
 
+The Codex provider choice is machine-local in `.metronome/codex-provider`
+(gitignored; default `tux`). `configs/settings/codex.json` holds only the
+`profile_files`; the active profile supplies `model` and `model_provider` at render time.
+
 ## Directory Layout
 
 ```
