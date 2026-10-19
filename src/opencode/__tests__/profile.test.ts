@@ -103,13 +103,13 @@ describe('switchOpenCodeVersion', () => {
     const metadata = JSON.parse(await readFile(join(process.cwd(), 'test/fixtures/tux-model-metadata.json'), 'utf8'));
     canonical.providers = { tux: { package: 'aisdk:@ai-sdk/anthropic', settings: { baseURL: 'http://127.0.0.1:18080/v1' }, models: metadata.models } };
     await writeFile(canonicalPath, JSON.stringify(canonical));
-    await writeFile(join(paths.projectDir, 'configs/agents/tux-helper.md'), '---\nmodel: tux/gpt-6.1-sol\nreasoningEffort: high\n---\nVerify.\n');
+    await writeFile(join(paths.projectDir, 'configs/agents/tux-helper.md'), '---\nmodel: tux/gpt-6.1-sol\nreasoningEffort: high\ntextVerbosity: low\n---\nVerify.\n');
     await switchOpenCodeVersion(paths);
     const config = JSON.parse(await readFile(join(paths.homeDir, '.config/opencode/opencode.json'), 'utf8'));
     expect(config.provider.tux).toBeUndefined();
     expect(config.custom).toBe(true);
     const models = config.providers.tux.models;
-    expect(models['gpt-6.1-sol'].variants).toContainEqual({ id: 'agent-tux-helper', settings: { reasoningEffort: 'high' } });
+    expect(models['gpt-6.1-sol'].variants).toContainEqual({ id: 'agent-tux-helper', settings: { reasoningEffort: 'high', textVerbosity: 'low' } });
     models['gpt-6.1-sol'].variants = models['gpt-6.1-sol'].variants.filter((variant: { id: string }) => variant.id !== 'agent-tux-helper');
     expect(models).toEqual(metadata.models);
     const agent = await readFile(join(paths.homeDir, '.config/opencode/agents/tux-helper.md'), 'utf8');

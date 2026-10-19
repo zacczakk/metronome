@@ -117,7 +117,11 @@ export function renderOpenCodeAgent(metadata: Record<string, unknown>): Record<s
     else rendered[key] = clone(value);
   }
 
-  if (agentName && modelReference) {
+  const settingKeys = Object.keys(variantSettings);
+  if (modelReference && settingKeys.length === 1 && typeof variantSettings.reasoningEffort === 'string') {
+    // Effort-only agents use the model's built-in effort variant.
+    rendered.model = `${metadata.model}#${variantSettings.reasoningEffort}`;
+  } else if (agentName && modelReference) {
     const id = `agent-${sanitizedAgentName(agentName)}`;
     rendered.model = `${metadata.model}#${id}`;
     rendered._modelVariant = { ...modelReference, id, settings: variantSettings };

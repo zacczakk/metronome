@@ -267,7 +267,7 @@ describe('OpenCodeAdapter native settings', () => {
         old: { models: { model: { variants: { 'agent-execute': { reasoningEffort: 'max' }, 'agent-other': { effort: 'low' } } } } },
       },
     });
-    const execute = { name: 'execute', content: '', metadata: { model: 'tux/sol', reasoningEffort: 'high' } };
+    const execute = { name: 'execute', content: '', metadata: { model: 'tux/sol', reasoningEffort: 'high', textVerbosity: 'low' } };
 
     const rendered = JSON.parse(v2.renderSettings({
       target: 'opencode',
@@ -277,7 +277,7 @@ describe('OpenCodeAdapter native settings', () => {
     expect(rendered.provider.old.models.model.variants).toEqual({ 'agent-other': { effort: 'low' } });
     expect(rendered.providers.tux.models.sol.variants).toEqual([
       { id: 'high', settings: { reasoningEffort: 'high' } },
-      { id: 'agent-execute', settings: { reasoningEffort: 'high' } },
+      { id: 'agent-execute', settings: { reasoningEffort: 'high', textVerbosity: 'low' } },
     ]);
   });
 

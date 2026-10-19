@@ -7,7 +7,6 @@ description: >-
 mode: subagent
 model: tux/gpt-6.1-sol
 reasoningEffort: high
-textVerbosity: low
 color: '#61ffca'
 permission:
   '*': deny

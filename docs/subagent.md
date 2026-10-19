@@ -20,11 +20,11 @@ read_when:
 ## Render targets — agents
 - Claude Code: derive portable frontmatter (`name`, `description`, optional `model`, derived `allowed-tools`), copy to `~/.claude/agents/`.
 - Gemini CLI: same portable frontmatter plus `kind: local`, copy to `~/.gemini/agents/`.
-- OpenCode: convert `permission` to ordered `permissions`; move per-agent request options into a generated model variant, then copy to `~/.config/opencode/agents/`.
+- OpenCode: convert `permission` to ordered `permissions`, then copy to `~/.config/opencode/agents/`. An agent that sets only `reasoningEffort` points at the model's built-in effort variant (`tux/gpt-6.1-sol#high`). Any other request options move into a generated `agent-<name>` model variant.
 - OpenCode V2 agent sync also updates the shared settings catalog so every generated `agent-*` variant referenced by an agent file is registered under its base model.
 - When a managed agent changes model, its generated variant moves with it; the old model loses it.
 - With `--delete`, removing a managed OpenCode agent also removes its generated V2 model variant; unrelated `agent-*` variants are preserved.
-- Tux rewrites `providers.tux` on every refresh. Agents routed through `tux/*` need a Tux build that keeps foreign variants; until then, rerun `metronome push -t opencode --type settings --force`.
+- Tux owns `providers.tux` and rebuilds it on refresh, so agents on `tux/*` models must stay effort-only. A generated variant there would be deleted by Tux.
 - Codex: standalone TOML as `~/.codex/agents/{name}.toml` with `name`, `description`, and `developer_instructions`. `sandbox_mode` is preserved when explicit and derived as `read-only` when canonical metadata denies edits. An `openai/*-fast` model alias renders as the base model with `model_provider = "openai"` and `service_tier = "fast"`.
 - Pi: pi-subagents markdown at `~/.pi/agent/agents/{name}.md` (`src/pi/agents.ts`). `model` passes through, `reasoningEffort` becomes `thinking` (`none` → `off`), `permission` becomes `tools` (`read`, `grep`, `glob` → `find, ls`, `edit` → `edit, write`, `bash`, `<server>_*` → `mcp:<server>`). Every agent gets `advertise: true`, `systemPromptMode: append`, inherited project/global context and skills, and `subagentOnlyExtensions` pointing at the vault instructions loader and the permissions extension. Each agent body ends with `<!-- metronome-agent: <name> -->`, so the permissions extension applies global rules plus that agent's `permission` rules (agent rules take precedence, as in OpenCode). Children have no UI, so `ask` blocks. In `configs/settings/pi.json`, the pi-subagents builtin `scout` stands in for OpenCode `explore` (same model and effort) and `delegate` stands in for `general`; the other builtins are disabled.
 

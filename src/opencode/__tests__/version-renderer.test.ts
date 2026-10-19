@@ -216,12 +216,12 @@ describe('renderOpenCodeSettings', () => {
     const settings = {
       provider: { legacy: { models: { model: { variants: { fast: { temperature: 0 } } } } } },
       providers: { tux: { models: { model: { cost: [], variants: [{ id: 'high', settings: { reasoningEffort: 'high' }, headers: { 'x-tier': 'high' }, body: { service_tier: 'priority' } }] } } } },
-      agent: { helper: { model: 'tux/model', reasoningEffort: 'medium' } },
+      agent: { helper: { model: 'tux/model', reasoningEffort: 'medium', textVerbosity: 'low' } },
     };
     const rendered = renderOpenCodeSettings(settings);
     expect(rendered.providers).toMatchObject({ tux: { models: { model: { cost: [], variants: [
       { id: 'high', settings: { reasoningEffort: 'high' } },
-      { id: 'agent-helper', settings: { reasoningEffort: 'medium' } },
+      { id: 'agent-helper', settings: { reasoningEffort: 'medium', textVerbosity: 'low' } },
     ] } } } });
     const existing = {
       provider: { tux: { models: { model: { variants: { 'agent-retained': { reasoningEffort: 'low' } } } } } },
@@ -230,7 +230,7 @@ describe('renderOpenCodeSettings', () => {
     preserveOpenCodeAgentVariants(rendered, existing, ['stale']);
     expect(rendered.providers).toMatchObject({ tux: { models: { model: { cost: [], variants: [
       { id: 'high', settings: { reasoningEffort: 'high' } },
-      { id: 'agent-helper', settings: { reasoningEffort: 'medium' } },
+      { id: 'agent-helper', settings: { reasoningEffort: 'medium', textVerbosity: 'low' } },
       { id: 'agent-retained', settings: { reasoningEffort: 'low' } },
     ] } } } });
     removeOpenCodeAgentVariants(rendered, ['helper', 'retained']);
@@ -260,6 +260,11 @@ describe('renderOpenCodeSettings', () => {
 });
 
 describe('renderOpenCodeAgent', () => {
+  test('uses the built-in effort variant when effort is the only request setting', () => {
+    expect(renderOpenCodeAgent({ _agentName: 'execute', model: 'tux/gpt-6.1-sol', reasoningEffort: 'high' }))
+      .toEqual({ model: 'tux/gpt-6.1-sol#high' });
+  });
+
   test('creates a named model variant descriptor and removes inert overlays', () => {
     const rendered = renderOpenCodeAgent({
       _agentName: 'Research Review!',
