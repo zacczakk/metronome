@@ -15,13 +15,11 @@ test('renders every canonical Tux model', () => {
 test('OpenAI models use Responses on /v1 with mapped thinking levels', () => {
   expect(byId['gpt-6.1-sol']).toMatchObject({
     api: 'openai-responses', baseUrl: 'http://127.0.0.1:18080/v1', reasoning: true,
-    input: ['image', 'text'], contextWindow: 1_050_000, maxTokens: 128_000,
+    input: ['text', 'image'], contextWindow: 1_050_000, maxTokens: 128_000,
     thinkingLevelMap: { off: 'none', minimal: null, low: 'low', medium: 'medium', high: 'high', xhigh: 'xhigh', max: 'max' },
     cost: { input: 2.4, output: 12, cacheRead: 0.12, cacheWrite: 3,
       tiers: [{ input: 4.8, output: 18, cacheRead: 0.24, cacheWrite: 6, inputTokensAbove: 272_000 }] },
   });
-  expect(byId['gpt-5.5'].thinkingLevelMap?.max).toBeNull();
-  expect(byId['gpt-5.5'].cost).toEqual({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
 });
 
 test('Claude models use adaptive Anthropic thinking without tool streaming', () => {
@@ -33,5 +31,4 @@ test('Claude models use adaptive Anthropic thinking without tool streaming', () 
   });
   expect(byId['claude-opus-5-5'].api).toBeUndefined();
   expect(byId['claude-haiku-4-5-20251001'].reasoning).toBe(false);
-  expect(byId['glm-5.2'].cost.cacheWrite).toBe(0);
 });

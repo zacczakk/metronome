@@ -87,32 +87,31 @@ the projection.
 
 #### Tux model metadata
 
-`configs/settings/opencode.json` stores all 19 Tux models under native
-`providers.tux`. Limits and Agentic prices come directly from Tux develop
-`d93882070071f3d0df763461750efa8c9ebd103a` (2026-10-01), captured in
-`test/fixtures/tux-model-metadata.json`. Refresh after Tux metadata changes:
+Tux owns `providers.tux` in `~/.config/opencode/opencode.json` and rewrites it
+from its live model cards. `configs/settings/opencode.json` mirrors that block
+(16 models from Tux 0.13.0-beta.38, 2026-10-19), captured in
+`test/fixtures/tux-model-metadata.json`, so pushes do not fight Tux. Refresh
+after Tux updates its models:
 
 ```sh
-bun scripts/sync-tux-model-metadata.ts ~/Repos/merckgroup/tux
-bun scripts/sync-tux-model-metadata.ts ~/Repos/merckgroup/tux --check
+bun scripts/sync-tux-model-metadata.ts
+bun scripts/sync-tux-model-metadata.ts --check
 bun test src/cli/__tests__/tux-model-parity.test.ts
 ```
 
-Run from the Metronome repository with a clean, current Tux develop checkout.
-The refresh records the source revision and timestamp; `--check` verifies
-current rates against both canonical settings and the captured fixture.
+The script reads the installed OpenCode config (or a path argument), drops
+generated `agent-*` variants, and records the installed Tux version and
+timestamp; `--check` verifies canonical settings and the fixture still match.
 
 | Models | Context | Output |
 | --- | ---: | ---: |
-| All seven GPT models | 1,050,000 | 128,000 |
-| Opus 4.6–5.5, Sonnet 4.6/5/5.5 | 1,000,000 | 128,000 |
+| All six GPT models | 1,050,000 | 128,000 |
+| Opus 4.6/5.5, Sonnet 4.6/5/5.5, Haiku 5.5 | 1,000,000 | 128,000 |
 | Sonnet 4.5, Haiku 4.5 | 200,000 | 64,000 |
-| DeepSeek V4 Pro, GLM 5.2 | 200,000 | 32,000 |
+| DeepSeek V4 Pro | 1,000,000 | 384,000 |
+| DeepSeek V4.1 Flash | 327,680 | 32,768 |
 
-DeepSeek/GLM limits remain Tux's documented unverified fallbacks. Costs retain
-all six GPT tiers at exactly 272,000 input tokens, cache rates, and omitted
-unpublished cache-write rates. GPT-5.5 has `cost: []`: its Agentic price card is
-unknown, rather than borrowing public OpenAI pricing. Prices are USD per million
+Costs retain all six GPT tiers at exactly 272,000 input tokens. Prices are USD per million
 tokens for Agentic, not a claim about other Tux upstreams. Renderer, settings
 merge, profile activation, and agent-variant operations preserve native pricing
 and variant arrays unchanged; settings-only sync backs up installed config.

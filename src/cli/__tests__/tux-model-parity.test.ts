@@ -4,9 +4,10 @@ import { join } from 'node:path';
 import { renderOpenCodeSettings } from '../../opencode/version-renderer';
 
 const canonical = JSON.parse(readFileSync(join(process.cwd(), 'configs/settings/opencode.json'), 'utf8'));
+const LEGACY_CLAUDE = ['claude-sonnet-4-5', 'claude-haiku-4-5-20251001'];
 const fixture = JSON.parse(readFileSync(join(process.cwd(), 'test/fixtures/tux-model-metadata.json'), 'utf8'));
 
-test('renders every Tux develop model with exact limits, prices, and behavior', () => {
+test('renders every model Tux writes with exact limits, prices, and behavior', () => {
   const rendered = renderOpenCodeSettings(canonical);
   expect(rendered.provider).toEqual(canonical.provider);
   expect(rendered.providers).toEqual(canonical.providers);
@@ -15,24 +16,23 @@ test('renders every Tux develop model with exact limits, prices, and behavior', 
   expect(provider.package).toBe('aisdk:@ai-sdk/anthropic');
   expect(provider.settings).toEqual({ baseURL: 'http://127.0.0.1:18080/v1', apiKey: 'does-not-matter', toolStreaming: false });
   expect(provider.models).toEqual(fixture.models);
-  expect(Object.keys(provider.models)).toHaveLength(19);
+  expect(Object.keys(provider.models)).toHaveLength(16);
   expect(canonical.provider.tux).toBeUndefined();
   expect(canonical.model).toBe('tux/gpt-6-luna');
 });
 
-test('uses reviewed context/output limits and preserves explicit metadata gaps', () => {
+test('uses the context/output limits Tux writes', () => {
   const models = canonical.providers?.tux.models;
   expect(models).toBeDefined();
   for (const [id, model] of Object.entries(fixture.models)) {
     const expected = id.startsWith('gpt-') ? { context: 1_050_000, output: 128_000 }
-      : ['claude-sonnet-4-5', 'claude-haiku-4-5-20251001'].includes(id) ? { context: 200_000, output: 64_000 }
+      : LEGACY_CLAUDE.includes(id) ? { context: 200_000, output: 64_000 }
       : id.startsWith('claude-') ? { context: 1_000_000, output: 128_000 }
-      : { context: 200_000, output: 32_000 };
+      : id === 'deepseek-v4-pro' ? { context: 1_000_000, output: 384_000 }
+      : { context: 327_680, output: 32_768 };
     expect(models[id].limit, id).toEqual(expected);
     expect(model).toEqual(models[id]);
   }
-  expect(models['gpt-5.5'].cost).toEqual([]);
-  expect(models['glm-5.2'].cost.cache.write).toBeUndefined();
   expect(models['deepseek-v4-pro'].variants).toContainEqual({ id: 'none', settings: { thinking: { type: 'disabled' } } });
 });
 
@@ -56,7 +56,7 @@ test('preserves Claude thinking summaries for default models and enabled variant
   const models = rendered.providers?.tux.models;
   for (const [id, value] of Object.entries(models)) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Expected model');
-    if (!id.startsWith('claude-') || id === 'claude-haiku-4-5-20251001') {
+    if (!id.startsWith('claude-') || LEGACY_CLAUDE.includes(id)) {
       expect('body' in value, id).toBe(false);
       continue;
     }

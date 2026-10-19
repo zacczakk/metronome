@@ -16,6 +16,8 @@ read_when:
 
 ## Unreleased
 
+- **Tux models mirror Tux** — canonical `providers.tux` is copied from the block Tux writes (16 models, Tux 0.13.0-beta.38). `scripts/sync-tux-model-metadata.ts` now reads the installed OpenCode config instead of a Tux checkout.
+- **Agent variants follow their model** — when an agent changes model, its `agent-*` variant is removed from the old model. `metronome diff` now shows agent variant changes.
 - **Tux-owned MCP servers** — the new canonical `external_for` field marks servers another tool owns. `palantir-mcp` and `uptimize-docs-ihub` are owned by `tux integrate` for Claude Code and OpenCode, so metronome keeps those entries as-is.
 - **Codex default** — GPT-6.1 Sol on both profiles (Tux and Enterprise), reasoning `high`, sandbox `danger-full-access`.
 - **Codex provider choice is local** — `metronome codex-provider` saves the choice in gitignored `.metronome/codex-provider` (default `tux`) instead of editing `configs/settings/codex.json`. Settings pull now keeps keys the canonical file owns, so Codex `profile_files` survive a pull.

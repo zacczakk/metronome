@@ -345,23 +345,36 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -370,7 +383,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -379,183 +393,20 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
               }
-            }
-          ]
-        },
-        "claude-opus-5": {
-          "name": "Claude Opus 5",
-          "cost": {
-            "input": 5.5,
-            "output": 27.5,
-            "cache": {
-              "read": 0.55,
-              "write": 6.875
-            }
-          },
-          "limit": {
-            "context": 1000000,
-            "output": 128000
-          },
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "image",
-              "text"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
-          },
-          "variants": [
-            {
-              "id": "low",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "low"
-              }
             },
             {
-              "id": "medium",
+              "id": "max",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
-                "effort": "medium"
-              }
-            },
-            {
-              "id": "high",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "high"
-              }
-            }
-          ]
-        },
-        "claude-opus-4-8": {
-          "name": "Claude Opus 4.8",
-          "cost": {
-            "input": 5.5,
-            "output": 27.5,
-            "cache": {
-              "read": 0.55,
-              "write": 6.875
-            }
-          },
-          "limit": {
-            "context": 1000000,
-            "output": 128000
-          },
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "image",
-              "text"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
-          },
-          "variants": [
-            {
-              "id": "low",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "low"
-              }
-            },
-            {
-              "id": "medium",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "medium"
-              }
-            },
-            {
-              "id": "high",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "high"
-              }
-            }
-          ]
-        },
-        "claude-opus-4-7": {
-          "name": "Claude Opus 4.7",
-          "cost": {
-            "input": 5.5,
-            "output": 27.5,
-            "cache": {
-              "read": 0.55,
-              "write": 6.875
-            }
-          },
-          "limit": {
-            "context": 1000000,
-            "output": 128000
-          },
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "image",
-              "text"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
-          },
-          "variants": [
-            {
-              "id": "low",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "low"
-              }
-            },
-            {
-              "id": "medium",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "medium"
-              }
-            },
-            {
-              "id": "high",
-              "settings": {
-                "thinking": {
-                  "type": "adaptive", "display": "summarized"
-                },
-                "effort": "high"
+                "effort": "max"
               }
             }
           ]
@@ -577,23 +428,36 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -602,7 +466,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -611,9 +476,20 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "max"
               }
             }
           ]
@@ -635,23 +511,36 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -660,7 +549,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -669,9 +559,30 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "xhigh",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "xhigh"
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "max"
               }
             }
           ]
@@ -693,23 +604,36 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -718,7 +642,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -727,9 +652,30 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "xhigh",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "xhigh"
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "max"
               }
             }
           ]
@@ -751,23 +697,36 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
-            "toolStreaming": false
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -776,7 +735,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -785,9 +745,20 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "max"
               }
             }
           ]
@@ -809,23 +780,79 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "thinking": { "type": "adaptive", "display": "summarized" },
             "toolStreaming": false
+          }
+        },
+        "claude-haiku-5-5": {
+          "name": "Claude Haiku 5.5",
+          "cost": [
+            {
+              "input": 0.11,
+              "output": 0.55,
+              "cache": {
+                "read": 0.011,
+                "write": 0.1375
+              }
+            },
+            {
+              "tier": {
+                "type": "context",
+                "size": 100000
+              },
+              "input": 0.55,
+              "output": 2.75,
+              "cache": {
+                "read": 0.055,
+                "write": 0.6875
+              }
+            }
+          ],
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "settings": {
+            "toolStreaming": false,
+            "thinking": {
+              "type": "adaptive",
+              "display": "summarized"
+            }
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "low"
               }
@@ -834,7 +861,8 @@
               "id": "medium",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "medium"
               }
@@ -843,9 +871,30 @@
               "id": "high",
               "settings": {
                 "thinking": {
-                  "type": "adaptive", "display": "summarized"
+                  "type": "adaptive",
+                  "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "xhigh",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "xhigh"
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "max"
               }
             }
           ]
@@ -867,8 +916,9 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
@@ -876,21 +926,7 @@
           },
           "settings": {
             "toolStreaming": false
-          },
-          "variants": [
-            {
-              "id": "low",
-              "settings": {}
-            },
-            {
-              "id": "medium",
-              "settings": {}
-            },
-            {
-              "id": "high",
-              "settings": {}
-            }
-          ]
+          }
         },
         "gpt-6.1-sol": {
           "name": "GPT-6.1 Sol",
@@ -924,16 +960,20 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1030,16 +1070,20 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1136,16 +1180,20 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1232,16 +1280,20 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1338,16 +1390,20 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1444,9 +1500,9 @@
           "capabilities": {
             "tools": true,
             "input": [
+              "text",
               "image",
-              "pdf",
-              "text"
+              "pdf"
             ],
             "output": [
               "text"
@@ -1522,81 +1578,6 @@
             }
           ]
         },
-        "gpt-5.5": {
-          "name": "GPT-5.5",
-          "cost": [],
-          "limit": {
-            "context": 1050000,
-            "output": 128000
-          },
-          "package": "aisdk:@ai-sdk/openai",
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "image",
-              "pdf",
-              "text"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "settings": {
-            "reasoningSummary": "auto"
-          },
-          "variants": [
-            {
-              "id": "none",
-              "settings": {
-                "reasoningEffort": "none",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            },
-            {
-              "id": "low",
-              "settings": {
-                "reasoningEffort": "low",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            },
-            {
-              "id": "medium",
-              "settings": {
-                "reasoningEffort": "medium",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            },
-            {
-              "id": "high",
-              "settings": {
-                "reasoningEffort": "high",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            },
-            {
-              "id": "xhigh",
-              "settings": {
-                "reasoningEffort": "xhigh",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            }
-          ]
-        },
         "deepseek-v4-pro": {
           "name": "DeepSeek V4 Pro",
           "cost": {
@@ -1608,13 +1589,12 @@
             }
           },
           "limit": {
-            "context": 200000,
-            "output": 32000
+            "context": 1000000,
+            "output": 384000
           },
           "capabilities": {
             "tools": true,
             "input": [
-              "image",
               "text"
             ],
             "output": [
@@ -1625,6 +1605,14 @@
             "toolStreaming": false
           },
           "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "thinking": {
+                  "type": "disabled"
+                }
+              }
+            },
             {
               "id": "low",
               "settings": {
@@ -1651,36 +1639,27 @@
                 },
                 "effort": "high"
               }
-            },
-            {
-              "id": "none",
-              "settings": {
-                "thinking": {
-                  "type": "disabled"
-                }
-              }
             }
           ]
         },
-        "glm-5.2": {
-          "name": "GLM 5.2",
+        "deepseek-v4.1-flash": {
+          "name": "oneHPC DeepSeek V4.1 Flash",
           "cost": {
-            "input": 1.54,
-            "output": 4.84,
+            "input": 0.07,
+            "output": 0.5,
             "cache": {
-              "read": 0.15
+              "read": 0.04,
+              "write": 0
             }
           },
           "limit": {
-            "context": 200000,
-            "output": 32000
+            "context": 327680,
+            "output": 32768
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
             "tools": true,
             "input": [
-              "image",
-              "pdf",
               "text"
             ],
             "output": [
@@ -1688,7 +1667,11 @@
             ]
           },
           "settings": {
-            "reasoningSummary": "auto"
+            "reasoningSummary": "auto",
+            "reasoningEffort": "high",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
           },
           "variants": [
             {
@@ -1712,16 +1695,6 @@
               }
             },
             {
-              "id": "medium",
-              "settings": {
-                "reasoningEffort": "medium",
-                "reasoningSummary": "auto",
-                "include": [
-                  "reasoning.encrypted_content"
-                ]
-              }
-            },
-            {
               "id": "high",
               "settings": {
                 "reasoningEffort": "high",
@@ -1735,6 +1708,16 @@
               "id": "xhigh",
               "settings": {
                 "reasoningEffort": "xhigh",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "reasoningEffort": "max",
                 "reasoningSummary": "auto",
                 "include": [
                   "reasoning.encrypted_content"
