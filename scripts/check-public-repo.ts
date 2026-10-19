@@ -17,7 +17,7 @@ const INTERNAL_REFERENCE = /(?:\bmerck\b|merckgroup\.com|liquid-outcome-engine|\
 const PERSONAL_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 const ALLOWED_EMAILS = /[A-Z0-9._%+-]+@users\.noreply\.github\.com|noreply@anthropic\.com|[A-Z0-9._%+-]+@example\.(?:com|org|net)/gi;
 const SECRET_PATTERN = /(?:BEGIN (?:RSA|EC|OPENSSH|PGP) PRIVATE KEY|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|\b(?:[A-Z0-9_]*(?:API_KEY|TOKEN|SECRET|PASSWORD|PASSWD))\b[ \t]*[:=][ \t]*["']?(?!\$\{|\{env:)[A-Za-z0-9._+/=-]{20,})/i;
-const HISTORY_SCAN_PATTERNS = [
+const HISTORY_SCAN_PATTERN = new RegExp([
   'merck',
   'liquid-outcome-engine',
   'm[0-9]{6}',
@@ -29,7 +29,7 @@ const HISTORY_SCAN_PATTERNS = [
   'github_pat_[A-Za-z0-9_]{20,}',
   'xox[baprs]-[A-Za-z0-9-]{20,}',
   'AKIA[0-9A-Z]{16}',
-];
+].join('|'), 'i');
 /**
  * Sensitive content before this commit is already public and accepted as-is (no history
  * rewrite, decided 2026-10-06). History scanning covers only commits after it.
@@ -91,15 +91,17 @@ function historyLeaks(): PublicRepoLeak[] {
     return [];
   }
 
-  for (const pattern of HISTORY_SCAN_PATTERNS) {
-    try {
-      const output = execFileSync('git', ['log', ...historyRevisions(), '--full-history', '-i', `-G${pattern}`, '--format=%H', '--', ':!scripts/check-public-repo.ts', ':!scripts/__tests__/check-public-repo.test.ts'], { encoding: 'utf8' });
-      if (output.trim() !== '') return [{ rule: 'history-sensitive-content', path: 'git history' }];
-    } catch {
-      continue;
-    }
+  try {
+    const patches = execFileSync('git', ['log', ...historyRevisions(), '--full-history', '-p', '-U0', '--no-color', '--format=', '--', ':!scripts/check-public-repo.ts', ':!scripts/__tests__/check-public-repo.test.ts'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    if (hasSensitiveHistoryPatch(patches)) return [{ rule: 'history-sensitive-content', path: 'git history' }];
+  } catch {
+    return [];
   }
   return [];
+}
+
+export function hasSensitiveHistoryPatch(patch: string): boolean {
+  return patch.split('\n').some((line) => line.startsWith('+') && !line.startsWith('+++ b/') && line !== '+++ /dev/null' && HISTORY_SCAN_PATTERN.test(line));
 }
 
 function main(): void {

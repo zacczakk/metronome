@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ACCEPTED_HISTORY_BASELINE, findPublicRepoLeaks, historyRevisions, repositoryPaths } from '../check-public-repo';
+import { ACCEPTED_HISTORY_BASELINE, findPublicRepoLeaks, hasSensitiveHistoryPatch, historyRevisions, repositoryPaths } from '../check-public-repo';
 
 describe('findPublicRepoLeaks', () => {
   test('reports absolute home paths for every supported platform without printing matching content', () => {
@@ -72,6 +72,18 @@ describe('repositoryPaths', () => {
       'shared.md',
       'untracked.md',
     ]);
+  });
+});
+
+describe('hasSensitiveHistoryPatch', () => {
+  const patch = (lines: string) => `diff --git a/docs/x.md b/docs/x.md\n--- a/docs/x.md\n+++ b/docs/x.md\n@@ -1 +1 @@\n${lines}\n`;
+
+  test('flags sensitive content in added lines', () => {
+    expect(hasSensitiveHistoryPatch(patch('+clone ~/Repos/merckgroup/tux'))).toBe(true);
+  });
+
+  test('ignores sensitive content that a commit removes', () => {
+    expect(hasSensitiveHistoryPatch(patch('-clone ~/Repos/merckgroup/tux\n+clone the Tux repo'))).toBe(false);
   });
 });
 
