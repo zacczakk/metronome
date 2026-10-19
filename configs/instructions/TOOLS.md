@@ -254,6 +254,7 @@ GitHub CLI for PRs, issues, CI, and releases.
 gh issue view <url> --comments -R owner/repo
 gh pr view <url> --comments --files -R owner/repo
 gh pr create --title "title" --body "body"
+gh pr comment 13 --attach './before.png#Before' --attach './after.png#After'
 gh run list --limit 5
 gh run view <id>
 ```

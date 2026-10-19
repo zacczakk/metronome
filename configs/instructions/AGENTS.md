@@ -31,6 +31,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - Full flags and rules in `~/Repos/zacczakk/metronome/configs/instructions/TOOLS.md`.
 - **Past coding sessions:** `qmd query "..." -c memory` for curated memory, `sessions` cli; `sessions export` adds recent sessions to the index
 - **GitHub:** use `github` MCP for repo, issue, PR, code, Actions, and review work. Use `gh` for URL-driven PR/CI operations or when MCP is unavailable. MCP auth requires `GITHUB_PERSONAL_ACCESS_TOKEN`.
+- **Screenshots in PRs/issues:** `gh pr|issue create|edit|comment --attach './shot.png#alt text'` (repeat flag; not `pr review`). Body `![alt](./shot.png)` → rewritten to the upload.
 - **Palantir Foundry:** `palantir-mcp` when loaded and responsive; fallback `palantir` cli with `palantir search-tools`. Tux owns MCP auth and host wiring; read `TOOLS.md` for generation and updates.
 - **MCP discovery:** `mcporter config list` (fast local/project registry), `mcporter config list --source import` (editor imports), then `mcporter list <server> --schema --json`. Native MCP config is separate, but MCPorter can discover imported editor definitions.
 - On PATH: `trash`, `metronome`, `committer`, `sessions`, `agent-browser`, `qmd`, `obsidian`, `gh`, `mcporter`, `palantir`, `bird`, `markitdown`.
