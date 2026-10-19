@@ -14,6 +14,7 @@ import {
   readCanonicalSkills,
   readCanonicalSettings,
   readCanonicalHooks,
+  isCanonicalAgentForTarget,
 } from './canonical';
 import { runCheck } from './check';
 import { mapTargets, mapTypes, collect, validateTargets, validateTypes } from './cli-helpers';
@@ -132,7 +133,8 @@ async function renderOpDiff(
       } catch {
         // No existing file
       }
-      rendered = adapter.renderSettings(settings, existingContent);
+      const agents = cache.agents.filter((agent) => isCanonicalAgentForTarget(agent, target));
+      rendered = adapter.renderSettings(settings, existingContent, agents);
     }
   } else if (op.itemType === 'hook') {
     if (!caps.hooks) return null;

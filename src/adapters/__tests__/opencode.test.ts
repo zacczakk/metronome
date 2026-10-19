@@ -260,6 +260,27 @@ describe('OpenCodeAdapter native settings', () => {
     });
   });
 
+  it('moves a managed agent variant when the agent changes model', () => {
+    const v2 = new OpenCodeAdapter();
+    const existing = JSON.stringify({
+      provider: {
+        old: { models: { model: { variants: { 'agent-execute': { reasoningEffort: 'max' }, 'agent-other': { effort: 'low' } } } } },
+      },
+    });
+    const execute = { name: 'execute', content: '', metadata: { model: 'tux/sol', reasoningEffort: 'high' } };
+
+    const rendered = JSON.parse(v2.renderSettings({
+      target: 'opencode',
+      keys: { providers: { tux: { models: { sol: { variants: [{ id: 'high', settings: { reasoningEffort: 'high' } }] } } } } },
+    }, existing, [execute]));
+
+    expect(rendered.provider.old.models.model.variants).toEqual({ 'agent-other': { effort: 'low' } });
+    expect(rendered.providers.tux.models.sol.variants).toEqual([
+      { id: 'high', settings: { reasoningEffort: 'high' } },
+      { id: 'agent-execute', settings: { reasoningEffort: 'high' } },
+    ]);
+  });
+
   it('uses OpenCode MCP overrides for the active V2 profile', () => {
     const v2 = new OpenCodeAdapter();
     const mcp = v2.renderMCPServers([{

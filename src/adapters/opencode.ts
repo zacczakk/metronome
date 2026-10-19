@@ -137,7 +137,7 @@ export class OpenCodeAdapter extends BaseAdapter {
     let rendered = renderOpenCodeSettings(settings.keys);
     rendered = applyOpenCodeAgentVariants(rendered, renderOpenCodeAgentVariants(agents));
     configureOpenCodeV2Plugins(rendered, existing);
-    removeOpenCodeAgentVariants(existing, staleAgentNames);
+    removeOpenCodeAgentVariants(existing, [...staleAgentNames, ...agents.map((agent) => agent.name)]);
     preserveOpenCodeAgentVariants(rendered, existing, staleAgentNames);
     return JSON.stringify(mergeOpenCodeSettings(existing, rendered), null, 2) + '\n';
   }

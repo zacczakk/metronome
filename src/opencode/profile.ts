@@ -9,6 +9,7 @@ import {
   applyOpenCodeAgentVariants,
   configureOpenCodeV2Plugins,
   mergeOpenCodeSettings,
+  removeOpenCodeAgentVariants,
   renderOpenCodeAgent,
   renderOpenCodeMcp,
   renderOpenCodeSettings,
@@ -172,7 +173,7 @@ async function restoreCompleteBackup(homeDir: string, backupRoot: string): Promi
   }
 }
 
-async function renderAgents(projectDir: string): Promise<{ files: Map<string, string>; variants: OpenCodeModelVariant[] }> {
+async function renderAgents(projectDir: string): Promise<{ files: Map<string, string>; variants: OpenCodeModelVariant[]; names: string[] }> {
   const target = 'opencode';
   const agents = (await readCanonicalAgents(projectDir, () => false))
     .filter((agent) => isCanonicalAgentForTarget(agent, target));
@@ -185,7 +186,7 @@ async function renderAgents(projectDir: string): Promise<{ files: Map<string, st
     if (descriptor && typeof descriptor === 'object') variants.push(descriptor as OpenCodeModelVariant);
     files.set(`${agent.name}.md`, stringifyFrontmatter(agent.content, metadata));
   }
-  return { files, variants };
+  return { files, variants, names: agents.map((agent) => agent.name) };
 }
 
 async function deployPlugins(options: SwitchOpenCodeOptions, written: string[]): Promise<void> {
@@ -242,6 +243,7 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
       rendered.mcp = renderOpenCodeMcp(mcp, 'opencode');
       rendered = applyOpenCodeAgentVariants(rendered, renderedAgents.variants);
       configureOpenCodeV2Plugins(rendered, existing);
+      removeOpenCodeAgentVariants(existing, renderedAgents.names);
       const merged = mergeOpenCodeSettings(existing, rendered);
       await mkdir(join(configDir, 'agents'), { recursive: true });
       await atomicWrite(configPath, `${JSON.stringify(merged, null, 2)}\n`);
