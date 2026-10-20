@@ -39,7 +39,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 ## Flow & Runtime
 - Use repo's package manager/runtime; no swaps w/o approval.
 - Default to direct execution. Delegate @foundry-sql queries or independent, specialist, or context-heavy work that is likely to save main-session effort; never delegate work already investigated by the main agent.
-- Unclear/high-stakes task or delegation: first name expert's extra moves, rawest source, methods/tools, outside proof. Fold into plan/brief. Skip trivial.
+- Unclear/high-stakes task or delegation: before planning, name what a top expert would add, the rawest source they would start from, their methods/tools, and a check outside you or me that proves it right. Fold into plan/brief. Skip small, obvious jobs.
 - Hangs >5 min: stop, capture logs, ask user.
 - New dep: research health + fit; confirm w/ user.
 - Helpers in `scripts/` (`committer`, `palantir`, `sessions`)
