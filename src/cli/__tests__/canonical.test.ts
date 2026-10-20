@@ -85,7 +85,7 @@ describe('canonical agent routing', () => {
       };
     };
 
-    expect(settings.model).toBe('tux/gpt-6-luna');
+    expect(settings.model).toBe('tux/claude-opus-5-5#high');
     expect(settings.agents?.explore).toEqual({ model: 'github-copilot/gpt-6-luna#agent-explore' });
     expect(settings.provider?.['github-copilot']?.models?.['gpt-6-luna']?.variants?.['agent-explore'])
       .toEqual({ reasoningEffort: 'medium' });

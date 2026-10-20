@@ -10,9 +10,11 @@ import { PI_INSTRUCTIONS_LOADER } from '../../pi/agents';
 
 const opencode = JSON.parse(readFileSync(join(PROJECT_ROOT, 'configs/settings/opencode.json'), 'utf8'));
 
-test('Pi default model equals OpenCode default model', async () => {
+test('Pi default model and thinking level equal the OpenCode default model and variant', async () => {
   const pi = await readCanonicalSettings(PROJECT_ROOT, 'pi');
-  expect(`${pi!.keys.defaultProvider}/${pi!.keys.defaultModel}`).toBe(opencode.model);
+  const [model, variant] = String(opencode.model).split('#');
+  expect(`${pi!.keys.defaultProvider}/${pi!.keys.defaultModel}`).toBe(model);
+  expect(pi!.keys.defaultThinkingLevel).toBe(variant);
 });
 
 test('Pi models.json covers every OpenCode Tux model', async () => {

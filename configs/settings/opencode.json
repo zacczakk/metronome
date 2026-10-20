@@ -8,7 +8,7 @@
     "~/Vaults/Memory/STYLE.md",
     "~/Vaults/Memory/MEMORY.md"
   ],
-  "model": "tux/gpt-6-luna",
+  "model": "tux/claude-opus-5-5#high",
   "permissions": [
     {
       "action": "*",

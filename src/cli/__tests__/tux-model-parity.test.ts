@@ -18,7 +18,7 @@ test('renders every model Tux writes with exact limits, prices, and behavior', (
   expect(provider.models).toEqual(fixture.models);
   expect(Object.keys(provider.models)).toHaveLength(16);
   expect(canonical.provider.tux).toBeUndefined();
-  expect(canonical.model).toBe('tux/gpt-6-luna');
+  expect(canonical.model).toBe('tux/claude-opus-5-5#high');
 });
 
 test('uses the context/output limits Tux writes', () => {
