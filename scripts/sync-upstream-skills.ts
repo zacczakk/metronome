@@ -91,12 +91,20 @@ function fetchRepoTree(name: string, url: string): string {
   const repo = parseGitHubRepo(url);
   const tarball = join(TMP_BASE, `${name}.tar.gz`);
 
-  // Download tarball via gh API (single request, no git subprocess)
-  execSync(`gh api /repos/${repo}/tarball/HEAD > "${tarball}"`, {
-    stdio: "pipe",
-    timeout: 60_000,
-    shell: "/bin/sh",
-  });
+  // Download tarball via gh API (single request, no git subprocess); one retry for slow networks
+  for (let attempt = 1; ; attempt++) {
+    try {
+      execSync(`gh api /repos/${repo}/tarball/HEAD > "${tarball}"`, {
+        stdio: "pipe",
+        timeout: 180_000,
+        shell: "/bin/sh",
+      });
+      break;
+    } catch (err) {
+      if (attempt >= 2) throw err;
+      log(`${name}: download failed (${err instanceof Error ? err.message : String(err)}), retrying`);
+    }
+  }
 
   // Extract: GitHub tarballs have a single top-level directory with a hash suffix
   execSync(`tar -xzf "${tarball}" -C "${dest}" --strip-components=1`, {
