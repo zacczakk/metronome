@@ -159,6 +159,18 @@ describe('CodexAdapter.renderMCPServers', () => {
     expect(mcp['disabled-stdio'].enabled).toBe(false);
   });
 
+  test('codex target option overrides the shared enabled flag', () => {
+    const server: MCPServer = {
+      name: 'palantir-mcp',
+      transport: 'stdio',
+      command: 'tux',
+      enabled: false,
+      targetOptions: { codex: { enabled: true }, pi: { enabled: false } },
+    };
+    const mcp = readToml<Record<string, unknown>>(adapter.renderMCPServers([server])).mcp_servers as Record<string, Record<string, unknown>>;
+    expect(mcp['palantir-mcp'].enabled).toBe(true);
+  });
+
   test('getRenderedServerNames excludes only disabledFor matches', () => {
     const disabled: MCPServer = {
       name: 'disabled-stdio',

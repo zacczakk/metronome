@@ -9,6 +9,9 @@
   "enabled": false,
   "external_for": ["claude-code", "opencode"],
   "target_options": {
+    "codex": {
+      "enabled": true
+    },
     "pi": {
       "enabled": true,
       "exposure": "direct",

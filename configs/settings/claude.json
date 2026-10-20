@@ -10,7 +10,12 @@
     "ENABLE_TOOL_SEARCH": "true",
     "DISABLE_TELEMETRY": "1",
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:18080",
-    "ANTHROPIC_AUTH_TOKEN": "managed-by-tux"
+    "ANTHROPIC_AUTH_TOKEN": "managed-by-tux",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5-5[1m]",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-5-5[1m]",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "Haiku 5.5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5-5[1m]",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "Opus 5.5"
   },
   "permissions": {
     "allow": [

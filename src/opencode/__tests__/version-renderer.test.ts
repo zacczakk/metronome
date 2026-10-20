@@ -264,6 +264,11 @@ describe('renderOpenCodeAgent', () => {
       .toEqual({ model: 'tux/gpt-6.1-sol#high' });
   });
 
+  test('drops Codex-only model_verbosity', () => {
+    expect(renderOpenCodeAgent({ _agentName: 'execute', model: 'tux/gpt-6.1-sol', reasoningEffort: 'high', model_verbosity: 'low' }))
+      .toEqual({ model: 'tux/gpt-6.1-sol#high' });
+  });
+
   test('creates a named model variant descriptor and removes inert overlays', () => {
     const rendered = renderOpenCodeAgent({
       _agentName: 'Research Review!',

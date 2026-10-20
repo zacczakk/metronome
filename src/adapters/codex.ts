@@ -534,7 +534,10 @@ export class CodexAdapter extends BaseAdapter {
         }
       }
 
-      if (server.enabled === false) {
+      const targetEnabled = server.targetOptions?.codex?.enabled;
+      if (typeof targetEnabled === 'boolean') {
+        cfg.enabled = targetEnabled;
+      } else if (server.enabled === false) {
         cfg.enabled = false;
       }
 

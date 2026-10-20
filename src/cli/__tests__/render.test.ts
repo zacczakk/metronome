@@ -90,7 +90,7 @@ describe('render subcommand logic', () => {
       args: ['palantir-mcp', 'start'],
       enabled: false,
       externalFor: ['claude-code', 'opencode'],
-      targetOptions: { pi: { enabled: true, exposure: 'direct', timeout: 20 } },
+      targetOptions: { codex: { enabled: true }, pi: { enabled: true, exposure: 'direct', timeout: 20 } },
     });
   });
 
@@ -105,7 +105,7 @@ describe('render subcommand logic', () => {
     const codexRendered = createAdapter('codex').renderMCPServers([palantir!]);
     expect(codexRendered).toContain('[mcp_servers.palantir-mcp]');
     expect(codexRendered).toContain('command = "tux"');
-    expect(codexRendered).toContain('enabled = false');
+    expect(codexRendered).toContain('enabled = true');
 
     const antigravityRendered = createAdapter('antigravity').renderMCPServers([palantir!]);
     expect(antigravityRendered).toContain('"palantir-mcp"');

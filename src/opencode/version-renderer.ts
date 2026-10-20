@@ -112,7 +112,7 @@ export function renderOpenCodeAgent(metadata: Record<string, unknown>): Record<s
   const modelReference = splitModel(metadata.model);
 
   for (const [key, value] of Object.entries(metadata)) {
-    if (key === '_agentName' || key === 'options' || key === 'reasoningEffort' || key === 'textVerbosity' || key === 'request') continue;
+    if (key === '_agentName' || key === 'options' || key === 'reasoningEffort' || key === 'textVerbosity' || key === 'model_verbosity' || key === 'request') continue;
     if (key === 'permission') rendered.permissions = renderPermissions(value);
     else rendered[key] = clone(value);
   }
