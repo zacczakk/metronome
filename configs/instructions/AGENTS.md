@@ -42,6 +42,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - Hangs >5 min: stop, capture logs, ask user.
 - New dep: research health + fit; confirm w/ user.
 - Helpers in `scripts/` (`committer`, `palantir`, `sessions`)
+- Text Phil sends under his name (email, Teams, GitHub issues/PRs/reviews/comments): load `phil-voice` skill.
 
 ## Browser
 - `agent-browser` for browser work (automation, scraping, screenshots, console/network, authenticated pages).
