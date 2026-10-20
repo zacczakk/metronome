@@ -315,10 +315,6 @@
       }
     }
   },
-  "disabled_providers": [
-    "opencode",
-    "opencode-go"
-  ],
   "providers": {
     "tux": {
       "name": "Tux",
@@ -1661,7 +1657,8 @@
           "capabilities": {
             "tools": true,
             "input": [
-              "text"
+              "text",
+              "image"
             ],
             "output": [
               "text"

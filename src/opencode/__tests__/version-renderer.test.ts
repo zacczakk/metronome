@@ -173,7 +173,6 @@ describe('renderOpenCodeSettings', () => {
       },
     }, {
       providers: { foundry: { package: 'aisdk:managed-foundry' } },
-      disabled_providers: ['opencode', 'opencode-go'],
       mcp: { servers: { managed: { type: 'local', command: ['managed'], disabled: false } } },
     });
 
@@ -182,7 +181,7 @@ describe('renderOpenCodeSettings', () => {
       external: { package: 'aisdk:external' },
       foundry: { package: 'aisdk:managed-foundry' },
     });
-    expect(merged.disabled_providers).toEqual(['local-provider', 'opencode', 'opencode-go']);
+    expect(merged.disabled_providers).toEqual(['local-provider']);
     expect(merged.mcp).toEqual({
       servers: {
         legacy: { type: 'remote', url: 'https://legacy.example/mcp', disabled: false },

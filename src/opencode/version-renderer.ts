@@ -248,13 +248,6 @@ export function mergeOpenCodeSettings(
     }
   }
 
-  if (Array.isArray(output.disabled_providers)) {
-    output.disabled_providers = [...new Set([
-      ...(Array.isArray(existing.disabled_providers) ? existing.disabled_providers : []),
-      ...output.disabled_providers,
-    ])];
-  }
-
   Object.assign(next, output);
   if (Array.isArray(next.plugins)) next.plugins = withoutChatGPTWebSearchPlugin(next.plugins);
   return next;

@@ -23,7 +23,7 @@ read_when:
 |-----|------------|--------|---------|-------------|
 | Claude | `~/.claude.json` | JSON | `mcpServers` | n/a |
 | Claude | `~/.claude/settings.json` | JSON | n/a | `permissions`, `env` |
-| OpenCode | `~/.config/opencode/opencode.json` | JSON | `mcp.servers` | `provider`, `plugins`, `permissions`, `agents`, `model`, `instructions`, `websearch`, `disabled_providers` |
+| OpenCode | `~/.config/opencode/opencode.json` | JSON | `mcp.servers` | `provider`, `plugins`, `permissions`, `agents`, `model`, `instructions`, `websearch` |
 | Antigravity | `~/.gemini/antigravity-cli/settings.json` | JSON | `mcpServers` | n/a |
 | Codex | `~/.codex/config.toml` | TOML | `[mcp_servers.*]` sections | n/a |
 
@@ -772,7 +772,7 @@ The `opencode` target uses the stable profile from
 `~/.config/opencode/migration-manifest.json` and is in `ALL_TARGETS`.
 
 **Managed keys**: `provider`, `plugins`, `permissions`, `agents`, `model`,
-`instructions`, `websearch`, `disabled_providers`. V2 retains the canonical ChatGPT websearch
+`instructions`, `websearch`. Tux owns provider deny policies (`experimental.policies`). V2 retains the canonical ChatGPT websearch
 settings; runtime verification requires `opencode.chatgpt-websearch`.
 
 Note: `mcp` is also a managed key but is handled separately by MCP sync

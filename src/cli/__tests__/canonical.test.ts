@@ -100,7 +100,7 @@ describe('canonical agent routing', () => {
     for (const model of ['claude-opus-5-5', 'claude-sonnet-4-5', 'gpt-6-sol', 'gpt-6-luna']) {
       expect(models[model]).toBeDefined();
     }
-    expect(settings.disabled_providers).toEqual(['opencode', 'opencode-go']);
+    expect(settings.disabled_providers).toBeUndefined();
     expect(models['claude-sonnet-5']?.cost).toEqual({ input: 2.2, output: 11, cache: { read: 0.22, write: 2.75 } });
     expect(models['gpt-5.6-sol']?.cost).toEqual([
       { input: 5.5, output: 33, cache: { read: 0.55, write: 6.88 } },
