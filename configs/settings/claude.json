@@ -108,7 +108,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\""
+            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\" IDENTITY.md"
+          },
+          {
+            "type": "command",
+            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\" SOUL.md"
+          },
+          {
+            "type": "command",
+            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\" USER.md"
+          },
+          {
+            "type": "command",
+            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\" STYLE.md"
+          },
+          {
+            "type": "command",
+            "command": "node \"$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js\" MEMORY.md"
           }
         ]
       }

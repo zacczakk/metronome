@@ -52,7 +52,7 @@ describe('push settings E2E', () => {
     const userPromptSubmitGroups = claudeHooks.UserPromptSubmit ?? [];
     const sessionStartCommands = sessionStartGroups.flatMap((group) => group.hooks.map((hook) => hook.command));
     const userPromptSubmitCommands = userPromptSubmitGroups.flatMap((group) => group.hooks.map((hook) => hook.command));
-    const vaultLoaderCommand = 'node "$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js"';
+    const vaultLoaderCommand = 'node "$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js" STYLE.md';
 
     expect(claudeActual.trimEnd()).toBe(claudeGolden.trimEnd());
     expect(claudeHooks.SessionStart).toBeArray();

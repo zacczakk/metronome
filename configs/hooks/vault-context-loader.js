@@ -8,7 +8,8 @@ const path = require('path');
 const os = require('os');
 
 const VAULT_DIR = path.join(os.homedir(), 'Vaults', 'Memory');
-const FILES = ['IDENTITY.md', 'SOUL.md', 'USER.md', 'STYLE.md', 'MEMORY.md'];
+// Optional file-name args: Claude Code caps each hook value at 10,000 characters, so settings run one hook per file.
+const FILES = process.argv.length > 2 ? process.argv.slice(2) : ['IDENTITY.md', 'SOUL.md', 'USER.md', 'STYLE.md', 'MEMORY.md'];
 
 let input = '';
 const stdinTimeout = setTimeout(() => process.exit(0), 3000);
