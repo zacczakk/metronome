@@ -227,3 +227,16 @@ describe('ClaudeCodeAdapter capabilities', () => {
     expect(adapter.displayName).toBe('Claude Code');
   });
 });
+
+describe('canonical Claude hooks', () => {
+  it('carry no _managed marker and are recognisable by their metronome script path', async () => {
+    // Claude Code drops unknown keys such as `_managed` on save, so a marker would only show as false drift.
+    const canonical = await Bun.file(path.join(import.meta.dir, '../../../configs/settings/claude.json')).json();
+    const groups = Object.values(canonical.hooks as Record<string, Array<{ _managed?: string; hooks: Array<{ command: string }> }>>).flat();
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      expect(group._managed).toBeUndefined();
+      for (const hook of group.hooks) expect(hook.command).toContain('metronome/configs/hooks/');
+    }
+  });
+});

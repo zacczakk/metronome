@@ -29,7 +29,6 @@
         ]
       },
       {
-        "_managed": "metronome",
         "hooks": [
           {
             "type": "command",
@@ -56,7 +55,6 @@
     ],
     "PostToolUse": [
       {
-        "_managed": "metronome",
         "matcher": "Edit|Write",
         "hooks": [
           {
@@ -69,7 +67,6 @@
     ],
     "Notification": [
       {
-        "_managed": "metronome",
         "matcher": "idle_prompt|auth_success",
         "hooks": [
           {
