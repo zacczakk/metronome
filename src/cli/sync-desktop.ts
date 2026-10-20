@@ -36,7 +36,7 @@ Examples:
   )
   .option(
     '--memory-vault <path>',
-    'Path to Memory vault containing IDENTITY.md/SOUL.md/USER.md',
+    'Path to Memory vault containing IDENTITY.md/SOUL.md/USER.md/STYLE.md',
     join(os.homedir(), 'Vaults/Memory'),
   )
   .option('--dry-run', 'Show what would happen without writing', false)

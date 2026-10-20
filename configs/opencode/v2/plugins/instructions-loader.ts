@@ -7,6 +7,7 @@ const DEFAULT_PATHS = [
   "~/Vaults/Memory/SOUL.md",
   "~/Vaults/Memory/IDENTITY.md",
   "~/Vaults/Memory/USER.md",
+  "~/Vaults/Memory/STYLE.md",
   "~/Vaults/Memory/MEMORY.md",
 ]
 

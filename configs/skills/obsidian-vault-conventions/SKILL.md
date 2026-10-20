@@ -177,7 +177,7 @@ Type-specific extra fields:
 | `project` | `repo: {url}`, `language:`, `framework:`, `status: active` |
 | `collection` | groups 3+ same-folder leaves under a theme |
 
-Root files (`IDENTITY.md`, `SOUL.md`, `USER.md`, `MEMORY.md`) use their own types and are exempt from `parent:`.
+Root files (`IDENTITY.md`, `SOUL.md`, `USER.md`, `STYLE.md`, `MEMORY.md`) use their own types and are exempt from `parent:`.
 
 ### Memory Vault Folder Scoping
 

@@ -21,6 +21,7 @@ const home = mkdtempSync(join(tmpdir(), 'pi-instr-'));
 mkdirSync(join(home, 'Vaults/Memory'), { recursive: true });
 writeFileSync(join(home, 'Vaults/Memory/SOUL.md'), 'soul');
 writeFileSync(join(home, 'Vaults/Memory/USER.md'), 'user');
+writeFileSync(join(home, 'Vaults/Memory/STYLE.md'), 'style');
 
 test('appends existing vault files after AGENTS.md in canonical order', async () => {
   const files = await harness(INSTRUCTION_PATHS, home)();
@@ -28,18 +29,19 @@ test('appends existing vault files after AGENTS.md in canonical order', async ()
     { path: join(home, '.pi/agent/AGENTS.md'), content: 'agents' },
     { path: join(home, 'Vaults/Memory/SOUL.md'), content: 'soul' },
     { path: join(home, 'Vaults/Memory/USER.md'), content: 'user' },
+    { path: join(home, 'Vaults/Memory/STYLE.md'), content: 'style' },
   ]);
 });
 
 test('double load does not duplicate files', async () => {
   const files = await harness(INSTRUCTION_PATHS, home, 2)();
-  expect(files.map((f) => f.path)).toHaveLength(3);
+  expect(files.map((f) => f.path)).toHaveLength(4);
 });
 
 test('reapplies on every run (fresh prompt options per turn)', async () => {
   const run = harness(INSTRUCTION_PATHS, home);
   await run();
-  expect(await run()).toHaveLength(3);
+  expect(await run()).toHaveLength(4);
 });
 
 test('forced system prompts (pi-subagents children) get files appended to the prompt once', async () => {
@@ -54,5 +56,5 @@ test('forced system prompts (pi-subagents children) get files appended to the pr
     if (result?.systemPrompt) systemPrompt = result.systemPrompt;
   }
   const soul = join(home, 'Vaults/Memory/SOUL.md');
-  expect(systemPrompt).toBe(`BASE\n\n<instruction-source path="${soul}">\nsoul\n</instruction-source>\n\n<instruction-source path="${join(home, 'Vaults/Memory/USER.md')}">\nuser\n</instruction-source>`);
+  expect(systemPrompt).toBe(`BASE\n\n<instruction-source path="${soul}">\nsoul\n</instruction-source>\n\n<instruction-source path="${join(home, 'Vaults/Memory/USER.md')}">\nuser\n</instruction-source>\n\n<instruction-source path="${join(home, 'Vaults/Memory/STYLE.md')}">\nstyle\n</instruction-source>`);
 });

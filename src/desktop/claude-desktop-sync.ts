@@ -110,6 +110,7 @@ export async function composeInstructions(configsDir: string, memoryVaultDir: st
     { label: 'IDENTITY', path: join(memoryVaultDir, 'IDENTITY.md') },
     { label: 'SOUL', path: join(memoryVaultDir, 'SOUL.md') },
     { label: 'USER', path: join(memoryVaultDir, 'USER.md') },
+    { label: 'STYLE', path: join(memoryVaultDir, 'STYLE.md') },
   ];
 
   const parts: string[] = [INSTRUCTIONS_HEADER, '\n', agents.trimEnd(), '\n'];

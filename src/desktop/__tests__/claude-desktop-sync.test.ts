@@ -88,6 +88,7 @@ function seedSourceConfigs(): { configsDir: string; memoryVaultDir: string } {
   writeFileSync(join(memoryVaultDir, 'IDENTITY.md'), '# IDENTITY\n\nid body\n');
   writeFileSync(join(memoryVaultDir, 'SOUL.md'), '# SOUL\n\nsoul body\n');
   writeFileSync(join(memoryVaultDir, 'USER.md'), '# USER\n\nuser body\n');
+  writeFileSync(join(memoryVaultDir, 'STYLE.md'), '# STYLE\n\nstyle body\n');
 
   writeFileSync(
     join(configsDir, 'skills', 'release', 'SKILL.md'),
@@ -159,17 +160,19 @@ describe('discoverAccountAndOrg', () => {
 // ── composeInstructions ─────────────────────────────────────────────────────
 
 describe('composeInstructions', () => {
-  test('concatenates AGENTS + IDENTITY + SOUL + USER in order', async () => {
+  test('concatenates AGENTS + IDENTITY + SOUL + USER + STYLE in order', async () => {
     const { configsDir, memoryVaultDir } = seedSourceConfigs();
     const out = await composeInstructions(configsDir, memoryVaultDir);
     const idxAgents = out.indexOf('agents body');
     const idxIdentity = out.indexOf('id body');
     const idxSoul = out.indexOf('soul body');
     const idxUser = out.indexOf('user body');
+    const idxStyle = out.indexOf('style body');
     expect(idxAgents).toBeGreaterThan(-1);
     expect(idxIdentity).toBeGreaterThan(idxAgents);
     expect(idxSoul).toBeGreaterThan(idxIdentity);
     expect(idxUser).toBeGreaterThan(idxSoul);
+    expect(idxStyle).toBeGreaterThan(idxUser);
   });
 
   test('throws when AGENTS.md missing', async () => {

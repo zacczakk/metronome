@@ -8,7 +8,7 @@ const path = require('path');
 const os = require('os');
 
 const VAULT_DIR = path.join(os.homedir(), 'Vaults', 'Memory');
-const FILES = ['IDENTITY.md', 'SOUL.md', 'USER.md', 'MEMORY.md'];
+const FILES = ['IDENTITY.md', 'SOUL.md', 'USER.md', 'STYLE.md', 'MEMORY.md'];
 
 let input = '';
 const stdinTimeout = setTimeout(() => process.exit(0), 3000);
