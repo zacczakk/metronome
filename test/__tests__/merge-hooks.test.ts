@@ -20,6 +20,27 @@ describe('mergeHooks', () => {
     expect(result.SessionStart[1]._managed).toBe('metronome');
   });
 
+  test('replaces metronome groups whose _managed marker the target stripped', () => {
+    const loader = 'node "$HOME/Repos/zacczakk/metronome/configs/hooks/vault-context-loader.js"';
+    const existing = {
+      SessionStart: [
+        { hooks: [{ type: 'command', command: loader }] },
+        { matcher: 'startup', hooks: [{ type: 'command', command: 'repowise-augment' }] },
+        { hooks: [{ type: 'command', command: loader }] },
+      ],
+    };
+    const canonical = {
+      SessionStart: [{ _managed: 'metronome', hooks: [{ type: 'command', command: loader }] }],
+    };
+
+    const result = mergeHooks(existing, canonical);
+    expect(result.SessionStart).toEqual([
+      { matcher: 'startup', hooks: [{ type: 'command', command: 'repowise-augment' }] },
+      { _managed: 'metronome', hooks: [{ type: 'command', command: loader }] },
+    ]);
+    expect(extractManagedHooks(existing).SessionStart).toHaveLength(2);
+  });
+
   test('replaces managed groups on re-push (no duplication)', () => {
     const existing = {
       SessionStart: [

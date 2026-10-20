@@ -38,16 +38,12 @@ interface HookGroup {
 /** The full hooks object: event key → array of hook groups */
 type HooksObject = Record<string, HookGroup[]>;
 
-const STALE_METRONOME_HOOK_PATTERNS = [
-  'configs/hooks/caveman-sessionstart-claude.js',
-  'configs/hooks/caveman-userprompt-claude.js',
-  'configs/hooks/vault-context-loader-codex.js',
-];
+const METRONOME_HOOK_PATH = 'metronome/configs/hooks/';
 
-function isStaleMetronomeHookGroup(group: HookGroup): boolean {
-  return group.hooks.some((hook) =>
-    STALE_METRONOME_HOOK_PATTERNS.some((pattern) => hook.command.includes(pattern)),
-  );
+/** Claude Code drops unknown keys such as `_managed` when it rewrites settings, so also match by script path. */
+function isMetronomeHookGroup(group: HookGroup): boolean {
+  return group._managed === 'metronome'
+    || group.hooks.some((hook) => typeof hook.command === 'string' && hook.command.includes(METRONOME_HOOK_PATH));
 }
 
 /**
@@ -66,9 +62,7 @@ export function mergeHooks(existing: HooksObject, canonical: HooksObject): Hooks
     const canonicalGroups = canonical[eventKey] ?? [];
 
     // Keep user groups (not managed by metronome)
-    const userGroups = existingGroups.filter((g) =>
-      g._managed !== 'metronome' && !isStaleMetronomeHookGroup(g),
-    );
+    const userGroups = existingGroups.filter((g) => !isMetronomeHookGroup(g));
 
     // Append canonical groups (all have _managed: "metronome")
     result[eventKey] = [...userGroups, ...canonicalGroups];
@@ -84,7 +78,7 @@ export function mergeHooks(existing: HooksObject, canonical: HooksObject): Hooks
 export function extractManagedHooks(hooks: HooksObject): HooksObject {
   const result: HooksObject = {};
   for (const [eventKey, groups] of Object.entries(hooks)) {
-    const managed = groups.filter((g) => g._managed === 'metronome');
+    const managed = groups.filter(isMetronomeHookGroup);
     if (managed.length > 0) {
       result[eventKey] = managed;
     }
