@@ -90,7 +90,7 @@ describe('render subcommand logic', () => {
       args: ['palantir-mcp', 'start'],
       enabled: false,
       externalFor: ['claude-code', 'opencode'],
-      targetOptions: { codex: { enabled: true }, pi: { enabled: true, exposure: 'direct', timeout: 20 } },
+      targetOptions: { codex: { enabled: true }, pi: { enabled: true, exposure: 'direct' } },
     });
   });
 
@@ -100,7 +100,7 @@ describe('render subcommand logic', () => {
     expect(palantir).toBeDefined();
 
     const piRendered = JSON.parse(createAdapter('pi').renderMCPServers([palantir!]));
-    expect(piRendered.mcpServers['palantir-mcp']).toEqual({ command: 'tux', args: ['palantir-mcp', 'start'], enabled: true, exposure: 'direct', timeout: 20 });
+    expect(piRendered.mcpServers['palantir-mcp']).toEqual({ command: 'tux', args: ['palantir-mcp', 'start'], enabled: true, exposure: 'direct' });
 
     const codexRendered = createAdapter('codex').renderMCPServers([palantir!]);
     expect(codexRendered).toContain('[mcp_servers.palantir-mcp]');
