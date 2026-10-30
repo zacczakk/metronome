@@ -2,6 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import os from 'node:os';
 import path from 'node:path';
 import { OpenCodeAdapter } from '../opencode';
+import type { CanonicalSettings } from '../../types';
 
 const HOME = os.homedir();
 
@@ -201,6 +202,16 @@ describe('OpenCodeAdapter native settings', () => {
     expect(mcp).toContain('"servers"');
     expect(mcp).toContain('"disabled": true');
     expect(mcp).toContain('"catalog": 12');
+  });
+
+  it('installs canonical themes into the themes directory and keeps them out of opencode.json', () => {
+    const v2 = new OpenCodeAdapter('/h');
+    const settings: CanonicalSettings = { target: 'opencode', keys: { _themes: { 'rex-merino.json': '{"base":{}}\n' } } };
+
+    expect(v2.renderAdditionalSettings(settings)).toEqual([
+      { relativePath: '/h/.config/opencode/themes/rex-merino.json', content: '{"base":{}}\n' },
+    ]);
+    expect(v2.renderSettings(settings)).not.toContain('_themes');
   });
 
   it('preserves native providers and configured external plugins', () => {

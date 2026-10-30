@@ -59,6 +59,7 @@ configs/
   agents/                    Agent definitions (2)
   skills/                    Skill directories (29 active, with upstream sync)
   opencode/v2/plugins/       OpenCode V2 profile-owned plugins
+  opencode/themes/*.json     OpenCode themes (Rex palettes via scripts/rex-opencode-themes.py)
   pi/extensions/             Pi extensions referenced in place (vault instructions loader)
   mcp/*.json                 MCP server definitions
   settings/*.json            Settings definitions (claude, opencode, codex, pi)

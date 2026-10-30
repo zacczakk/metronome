@@ -14,6 +14,7 @@ read_when:
   - `agents/` — Subagent definitions (10 .md files)
   - `skills/` — Skill bundles (28 active directories)
   - `opencode/v2/plugins/` — profile-owned native V2 plugins
+  - `opencode/themes/` — OpenCode themes, pushed with settings to `~/.config/opencode/themes/`
   - `mcp/` — MCP server definitions (9 .json files)
   - `settings/` — Per-CLI settings (4 .json files)
   - `hooks/` — Hook scripts (see [Hooks](#hooks) below)
@@ -75,6 +76,14 @@ OpenCode uses a **plugin system** instead of shell hooks. Local plugins are auto
 `configs/opencode/v2/plugins/` is the sole Metronome OpenCode plugin source.
 The profile service deploys these files to `~/.config/opencode/plugins/` and
 generic sync does not copy plugin files.
+
+`configs/opencode/themes/*.json` are copied verbatim to
+`~/.config/opencode/themes/` by `metronome push --type settings`. The `rex-*`
+themes are generated from the Rex app's bundled palettes: run
+`python3 scripts/rex-opencode-themes.py`, then push. The generator raises
+accent, status, and syntax colors to a 4.5:1 contrast ratio against the
+background and dialog surfaces. Removing a canonical theme leaves the installed
+file in place.
 
 The profile service backs up `opencode.json`, agents, plugin roots, CLI settings,
 package manifests, and lockfiles before writing. Unknown plugins and unowned

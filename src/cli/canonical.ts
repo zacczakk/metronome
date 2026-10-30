@@ -248,10 +248,17 @@ async function readSettingsFile(
       const agents = (await readCanonicalAgents(projectDir, () => false)).filter((agent) => isCanonicalAgentForTarget(agent, 'pi'));
       keys._agentPermissions = Object.fromEntries(agents.flatMap((agent) => agent.metadata.permission ? [[agent.name, agent.metadata.permission]] : []));
     }
+    if (target === 'opencode') keys._themes = await readOpenCodeThemes(projectDir);
     return { target, keys };
   } catch {
     return null;
   }
+}
+
+async function readOpenCodeThemes(projectDir: string): Promise<Record<string, string>> {
+  const dir = join(projectDir, CANONICAL_ROOT, 'opencode', 'themes');
+  const names = (await readdir(dir).catch(() => [])).filter((name) => name.endsWith('.json')).sort();
+  return Object.fromEntries(await Promise.all(names.map(async (name) => [name, await readFile(join(dir, name), 'utf-8')])));
 }
 
 function hooksFileName(target: TargetName): string {

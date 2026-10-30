@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { BaseAdapter } from './base';
 import { stringifyFrontmatter } from '../formats/markdown';
 import { readJsonc } from '../formats/jsonc';
@@ -152,6 +153,14 @@ export class OpenCodeAdapter extends BaseAdapter {
       }
     }
     return JSON.stringify(extracted, null, 2) + '\n';
+  }
+
+  /** Canonical themes from configs/opencode/themes, copied verbatim into the global themes directory */
+  override renderAdditionalSettings(settings: CanonicalSettings): RenderedFile[] {
+    const themes = settings.keys._themes;
+    if (!themes || typeof themes !== 'object') return [];
+    return Object.entries(themes).flatMap(([name, content]) =>
+      typeof content === 'string' ? [{ relativePath: join(this.paths.getBaseDir(), 'themes', name), content }] : []);
   }
 
   override renderMCPServers(servers: MCPServer[], existingContent?: string): string {

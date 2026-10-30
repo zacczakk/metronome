@@ -90,6 +90,7 @@ metronome/
     agents/                    10 agent definitions (canonical)
     skills/                    28 active skill directories (canonical)
     opencode/v2/plugins/       Native V2 profile-owned plugins
+    opencode/themes/*.json     OpenCode themes, pushed with settings
     mcp/*.json                 9 MCP server definitions (canonical)
     settings/*.json            3 settings definitions (claude, opencode, token-tracker)
     hooks/*.js                 Hook scripts (not deployed — absolute-path refs)

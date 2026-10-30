@@ -16,6 +16,7 @@ read_when:
 
 ## Unreleased
 
+- **OpenCode themes** — `configs/opencode/themes/` holds OpenCode themes, installed by `metronome push --type settings`. Adds 39 `rex-*` themes generated from Rex's palettes (`scripts/rex-opencode-themes.py`) plus the existing `kaku` theme.
 - **Tux models mirror Tux** — canonical `providers.tux` is copied from the block Tux writes (16 models, Tux 0.13.0-beta.38). `scripts/sync-tux-model-metadata.ts` now reads the installed OpenCode config instead of a Tux checkout.
 - **Agent variants follow their model** — when an agent changes model, its `agent-*` variant is removed from the old model. `metronome diff` now shows agent variant changes.
 - **`execute` uses Tux's own `high` preset** — effort-only OpenCode agents point at the model's built-in effort variant instead of a generated one. `execute` drops `textVerbosity: low`, so Tux no longer deletes its preset and the agent always starts.

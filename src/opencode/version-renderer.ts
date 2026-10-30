@@ -134,6 +134,7 @@ export function renderOpenCodeSettings(settings: Record<string, unknown>): Recor
   const agentVariants: Array<{ providerID: string; modelID: string; id: string; settings: UnknownRecord }> = [];
 
   for (const [key, value] of Object.entries(settings)) {
+    if (key.startsWith('_')) continue;
     if (key === 'permission') rendered.permissions = renderPermissions(value);
     else if (key === 'plugin') {
       const configured = Array.isArray(value) ? withoutChatGPTWebSearchPlugin(clone(value)) : [];
