@@ -359,14 +359,6 @@
           },
           "variants": [
             {
-              "id": "none",
-              "settings": {
-                "thinking": {
-                  "type": "disabled"
-                }
-              }
-            },
-            {
               "id": "low",
               "settings": {
                 "thinking": {
@@ -394,6 +386,16 @@
                   "display": "summarized"
                 },
                 "effort": "high"
+              }
+            },
+            {
+              "id": "xhigh",
+              "settings": {
+                "thinking": {
+                  "type": "adaptive",
+                  "display": "summarized"
+                },
+                "effort": "xhigh"
               }
             },
             {
@@ -1650,7 +1652,7 @@
             }
           },
           "limit": {
-            "context": 327680,
+            "context": 320000,
             "output": 32768
           },
           "package": "aisdk:@ai-sdk/openai",

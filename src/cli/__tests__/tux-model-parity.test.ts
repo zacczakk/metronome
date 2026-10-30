@@ -29,7 +29,7 @@ test('uses the context/output limits Tux writes', () => {
       : LEGACY_CLAUDE.includes(id) ? { context: 200_000, output: 64_000 }
       : id.startsWith('claude-') ? { context: 1_000_000, output: 128_000 }
       : id === 'deepseek-v4-pro' ? { context: 1_000_000, output: 384_000 }
-      : { context: 327_680, output: 32_768 };
+      : { context: 320_000, output: 32_768 };
     expect(models[id].limit, id).toEqual(expected);
     expect(model).toEqual(models[id]);
   }

@@ -98,7 +98,7 @@ the projection.
 
 Tux owns `providers.tux` in `~/.config/opencode/opencode.json` and rewrites it
 from its live model cards. `configs/settings/opencode.json` mirrors that block
-(16 models from Tux 0.13.0-beta.38, 2026-10-19), captured in
+(16 models from Tux 0.14.0, 2026-10-30), captured in
 `test/fixtures/tux-model-metadata.json`, so pushes do not fight Tux. Refresh
 after Tux updates its models:
 
