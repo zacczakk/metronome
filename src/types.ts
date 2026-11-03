@@ -58,6 +58,13 @@ export interface PrivateSkillDrift {
   delete: number;
 }
 
+/** Claude Desktop variant (regular or Cowork 3p) whose composed instructions or skills differ from canonical. */
+export interface DesktopDrift {
+  variant: 'claude' | 'claude-3p';
+  instructions: boolean;
+  skills: boolean;
+}
+
 export interface ExclusionResult {
   excluded: boolean;
   reason?: string;

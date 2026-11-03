@@ -2,12 +2,13 @@ import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, mkdir, rm, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { atomicWrite } from '../infra/atomic-write';
 import { readJson, writeJson } from '../formats/json';
 import { parseFrontmatter } from '../formats/markdown';
+import type { DesktopDrift } from '../types';
 
-export type Variant = 'claude' | 'claude-3p';
+export type Variant = DesktopDrift['variant'];
 
 const VARIANT_DIR_NAME: Record<Variant, string> = {
   claude: 'Claude',
@@ -36,9 +37,10 @@ export interface AccountOrg {
   org: string;
 }
 
-export interface SyncResult {
-  variants: Variant[];
-  details: Record<Variant, { instructions: boolean; skills: number } | null>;
+/** What a variant needs written. `apply` writes only the parts that drifted. */
+export interface DesktopPlan extends DesktopDrift {
+  userSkills: number;
+  apply: () => Promise<void>;
 }
 
 export interface SyncOpts {
@@ -60,6 +62,15 @@ function instructionsPath(base: string, account: string, org: string): string {
 
 function skillsPluginRoot(base: string, account: string, org: string): string {
   return join(base, 'local-agent-mode-sessions', 'skills-plugin', org, account);
+}
+
+async function readTextOrNull(path: string): Promise<string | null> {
+  try {
+    return await readFile(path, 'utf-8');
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') return null;
+    throw err;
+  }
 }
 
 // ── Discovery ───────────────────────────────────────────────────────────────
@@ -102,6 +113,7 @@ export async function discoverAccountAndOrg(variantBase: string): Promise<Accoun
 
 const INSTRUCTIONS_HEADER = '# Composed by metronome — do not edit by hand. Source: configs/instructions/AGENTS.md + Memory vault.\n';
 
+/** Missing Memory files are skipped; unreadable ones (e.g. iCloud locks) throw so a partial file is never written. */
 export async function composeInstructions(configsDir: string, memoryVaultDir: string): Promise<string> {
   const agentsPath = join(configsDir, 'instructions', 'AGENTS.md');
   const agents = await readFile(agentsPath, 'utf-8'); // throws if missing — required
@@ -115,12 +127,9 @@ export async function composeInstructions(configsDir: string, memoryVaultDir: st
 
   const parts: string[] = [INSTRUCTIONS_HEADER, '\n', agents.trimEnd(), '\n'];
   for (const o of optional) {
-    try {
-      const body = await readFile(o.path, 'utf-8');
-      parts.push(`\n\n---\n\n<!-- from ${o.label} -->\n`, body.trimEnd(), '\n');
-    } catch {
-      // missing optional file — skip silently
-    }
+    const body = await readTextOrNull(o.path);
+    if (body === null) continue;
+    parts.push(`\n\n---\n\n<!-- from ${o.label} -->\n`, body.trimEnd(), '\n');
   }
   return parts.join('');
 }
@@ -136,6 +145,8 @@ interface ManifestEntry {
   name: string;
   description: string;
   creatorType: 'anthropic' | 'user';
+  /** false marks a local skill; Cowork's skills sync deletes user entries without it. */
+  syncManaged?: boolean;
   updatedAt: number | null;
   enabled: boolean;
 }
@@ -145,20 +156,34 @@ interface SkillManifest {
   skills: ManifestEntry[];
 }
 
+interface SourceSkill {
+  name: string;
+  description: string;
+  dir: string;
+}
+
+interface SkillsPlan {
+  writePluginJson: boolean;
+  copy: SourceSkill[];
+  remove: string[];
+  manifest: string | null;
+  userSkills: number;
+}
+
 const PLUGIN_JSON_DEFAULT = {
   name: 'anthropic-skills',
   version: '1.0.0',
   description: 'Anthropic-managed skills for Claude Desktop',
 };
 
-async function readSourceSkills(sourceSkillsDir: string): Promise<Array<{ name: string; description: string; dir: string }>> {
+async function readSourceSkills(sourceSkillsDir: string): Promise<SourceSkill[]> {
   let entries: string[];
   try {
     entries = await readdir(sourceSkillsDir);
   } catch {
     return [];
   }
-  const skills: Array<{ name: string; description: string; dir: string }> = [];
+  const skills: SourceSkill[] = [];
   for (const entry of entries) {
     if (entry.startsWith('.')) continue;
     const dir = join(sourceSkillsDir, entry);
@@ -198,6 +223,107 @@ async function copyDirRecursive(src: string, dest: string): Promise<void> {
   }
 }
 
+/** Relative paths of regular files under `dir`, the same set copyDirRecursive copies. */
+async function listFiles(dir: string, root = dir): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...(await listFiles(path, root)));
+    else if (entry.isFile()) files.push(relative(root, path));
+  }
+  return files.sort();
+}
+
+async function treesEqual(src: string, dest: string): Promise<boolean> {
+  if (!existsSync(dest)) return false;
+  const [srcFiles, destFiles] = await Promise.all([listFiles(src), listFiles(dest)]);
+  if (srcFiles.length !== destFiles.length || srcFiles.some((f, i) => f !== destFiles[i])) return false;
+  for (const file of srcFiles) {
+    const [a, b] = await Promise.all([readFile(join(src, file)), readFile(join(dest, file))]);
+    if (!a.equals(b)) return false;
+  }
+  return true;
+}
+
+async function planSkills(root: string, sourceSkillsDir: string): Promise<SkillsPlan> {
+  const skillsRoot = join(root, 'skills');
+
+  // Read existing manifest (preserve Anthropic entries)
+  const existingRaw = await readTextOrNull(join(root, 'manifest.json'));
+  let existingManifest: SkillManifest = { lastUpdated: 0, skills: [] };
+  if (existingRaw !== null) {
+    try {
+      existingManifest = readJson<SkillManifest>(existingRaw);
+    } catch {
+      // unparseable — rebuild
+    }
+  }
+  const anthropicEntries = existingManifest.skills.filter(
+    (s) => s.creatorType === 'anthropic' && !DISABLED_SKILLS.has(s.name),
+  );
+  const anthropicNames = new Set(anthropicEntries.map((s) => s.name));
+
+  // Never overwrite Anthropic skills
+  const sourceSkills = (await readSourceSkills(sourceSkillsDir)).filter((s) => !anthropicNames.has(s.name));
+  const sourceNames = new Set(sourceSkills.map((s) => s.name));
+
+  // Disabled skills, and stale user skill dirs (not in source, not Anthropic-managed)
+  const remove: string[] = [];
+  if (existsSync(skillsRoot)) {
+    for (const name of await readdir(skillsRoot)) {
+      if (DISABLED_SKILLS.has(name) || (!anthropicNames.has(name) && !sourceNames.has(name))) remove.push(name);
+    }
+  }
+
+  const copy: SourceSkill[] = [];
+  for (const s of sourceSkills) {
+    if (!(await treesEqual(s.dir, join(skillsRoot, s.name)))) copy.push(s);
+  }
+
+  const userEntries: ManifestEntry[] = sourceSkills.map((s) => ({
+    skillId: s.name,
+    name: s.name,
+    description: s.description,
+    creatorType: 'user' as const,
+    syncManaged: false,
+    updatedAt: null,
+    enabled: true,
+  }));
+
+  // Anthropic first (preserve order), then user (alphabetical)
+  const newSkills = [...anthropicEntries, ...userEntries];
+
+  // Deterministic lastUpdated: hash of skill list (idempotency)
+  const lastUpdated = parseInt(createHash('sha256').update(JSON.stringify(newSkills)).digest('hex').slice(0, 12), 16);
+  const newManifest: SkillManifest = { lastUpdated, skills: newSkills };
+  const manifest = writeJson(newManifest);
+
+  return {
+    writePluginJson: !existsSync(join(root, '.claude-plugin', 'plugin.json')),
+    copy,
+    remove,
+    manifest: manifest === existingRaw ? null : manifest,
+    userSkills: userEntries.length,
+  };
+}
+
+function skillsDrifted(plan: SkillsPlan): boolean {
+  return plan.writePluginJson || plan.copy.length > 0 || plan.remove.length > 0 || plan.manifest !== null;
+}
+
+async function applySkills(root: string, plan: SkillsPlan): Promise<void> {
+  const skillsRoot = join(root, 'skills');
+  if (plan.writePluginJson) await atomicWrite(join(root, '.claude-plugin', 'plugin.json'), writeJson(PLUGIN_JSON_DEFAULT));
+  for (const name of plan.remove) await rm(join(skillsRoot, name), { recursive: true, force: true });
+  for (const s of plan.copy) {
+    const destDir = join(skillsRoot, s.name);
+    await rm(destDir, { recursive: true, force: true });
+    await copyDirRecursive(s.dir, destDir);
+  }
+  if (plan.manifest !== null) await atomicWrite(join(root, 'manifest.json'), plan.manifest);
+}
+
 export async function syncSkills(
   base: string,
   account: string,
@@ -205,90 +331,19 @@ export async function syncSkills(
   sourceSkillsDir: string,
 ): Promise<number> {
   const root = skillsPluginRoot(base, account, org);
-  const skillsRoot = join(root, 'skills');
-  const pluginJsonPath = join(root, '.claude-plugin', 'plugin.json');
-  const manifestPath = join(root, 'manifest.json');
-
-  // Ensure plugin.json exists (create default if missing — preserve if present)
-  if (!existsSync(pluginJsonPath)) {
-    await atomicWrite(pluginJsonPath, writeJson(PLUGIN_JSON_DEFAULT));
-  }
-
-  // Read existing manifest (preserve Anthropic entries)
-  let existingManifest: SkillManifest = { lastUpdated: 0, skills: [] };
-  try {
-    existingManifest = readJson<SkillManifest>(await readFile(manifestPath, 'utf-8'));
-  } catch {
-    // missing — start fresh
-  }
-  const anthropicEntries = existingManifest.skills.filter(
-    (s) => s.creatorType === 'anthropic' && !DISABLED_SKILLS.has(s.name),
-  );
-  const anthropicNames = new Set(anthropicEntries.map((s) => s.name));
-
-  // Read source skills
-  const sourceSkills = await readSourceSkills(sourceSkillsDir);
-  const sourceNames = new Set(sourceSkills.map((s) => s.name));
-
-  // Remove stale user skill dirs (not in source, and not Anthropic-managed)
-  if (existsSync(skillsRoot)) {
-    const present = await readdir(skillsRoot);
-    for (const name of present) {
-      if (DISABLED_SKILLS.has(name)) {
-        await rm(join(skillsRoot, name), { recursive: true, force: true });
-        continue;
-      }
-      if (anthropicNames.has(name)) continue;
-      if (sourceNames.has(name)) continue;
-      await rm(join(skillsRoot, name), { recursive: true, force: true });
-    }
-  }
-
-  // Copy each source skill dir
-  for (const s of sourceSkills) {
-    if (anthropicNames.has(s.name)) continue; // never overwrite Anthropic skills
-    const destDir = join(skillsRoot, s.name);
-    if (existsSync(destDir)) await rm(destDir, { recursive: true, force: true });
-    await copyDirRecursive(s.dir, destDir);
-  }
-
-  // Build user manifest entries
-  const userEntries: ManifestEntry[] = sourceSkills
-    .filter((s) => !anthropicNames.has(s.name))
-    .map((s) => ({
-      skillId: s.name,
-      name: s.name,
-      description: s.description,
-      creatorType: 'user' as const,
-      updatedAt: null,
-      enabled: true,
-    }));
-
-  // Compose manifest: Anthropic first (preserve order), then user (alphabetical)
-  const newSkills = [...anthropicEntries, ...userEntries];
-
-  // Compute deterministic lastUpdated: hash of skill list (idempotency)
-  const hashInput = JSON.stringify(newSkills);
-  const lastUpdated = parseInt(createHash('sha256').update(hashInput).digest('hex').slice(0, 12), 16);
-
-  const newManifest: SkillManifest = { lastUpdated, skills: newSkills };
-  await atomicWrite(manifestPath, writeJson(newManifest));
-
-  return userEntries.length;
+  const plan = await planSkills(root, sourceSkillsDir);
+  await applySkills(root, plan);
+  return plan.userSkills;
 }
 
 // ── Top-level orchestrator ──────────────────────────────────────────────────
 
-export async function syncClaudeDesktop(opts: SyncOpts): Promise<SyncResult> {
+/** Compare canonical sources with each detected variant without writing anything. */
+export async function planClaudeDesktop(opts: SyncOpts): Promise<DesktopPlan[]> {
   const homeDir = opts.homeDir ?? os.homedir();
   const candidate = opts.variants ?? (await discoverVariants(homeDir));
-
-  const instructionsContent = candidate.length > 0 ? await composeInstructions(opts.configsDir, opts.memoryVaultDir) : '';
-
-  const result: SyncResult = {
-    variants: [],
-    details: { claude: null, 'claude-3p': null },
-  };
+  const plans: DesktopPlan[] = [];
+  let instructionsContent: string | undefined;
 
   for (const variant of candidate) {
     const base = variantBaseDir(homeDir, variant);
@@ -296,15 +351,32 @@ export async function syncClaudeDesktop(opts: SyncOpts): Promise<SyncResult> {
 
     const accountOrg = await discoverAccountAndOrg(base);
     if (!accountOrg) continue; // skip variant without account/org
-
     const { account, org } = accountOrg;
 
-    await syncInstructions(base, account, org, instructionsContent);
-    const skillsCount = await syncSkills(base, account, org, join(opts.configsDir, 'skills'));
+    instructionsContent ??= await composeInstructions(opts.configsDir, opts.memoryVaultDir);
+    const content = instructionsContent;
+    const instructions = (await readTextOrNull(instructionsPath(base, account, org))) !== content;
+    const root = skillsPluginRoot(base, account, org);
+    const skillsPlan = await planSkills(root, join(opts.configsDir, 'skills'));
+    const skills = skillsDrifted(skillsPlan);
 
-    result.variants.push(variant);
-    result.details[variant] = { instructions: true, skills: skillsCount };
+    plans.push({
+      variant,
+      instructions,
+      skills,
+      userSkills: skillsPlan.userSkills,
+      apply: async () => {
+        if (instructions) await syncInstructions(base, account, org, content);
+        if (skills) await applySkills(root, skillsPlan);
+      },
+    });
   }
 
-  return result;
+  return plans;
+}
+
+export async function syncClaudeDesktop(opts: SyncOpts): Promise<DesktopPlan[]> {
+  const plans = await planClaudeDesktop(opts);
+  for (const plan of plans) await plan.apply();
+  return plans;
 }

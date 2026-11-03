@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import { loadManifest, saveManifest, updateManifestItem } from '../core/manifest';
 import { createBackup, createDirectoryBackup, restoreAll, cleanupAll } from '../core/rollback';
 import { formatDryRunResult, formatPushResult } from '../core/formatter';
-import type { PushTargetResult } from '../core/formatter';
+import type { DesktopPushResult, PushTargetResult } from '../core/formatter';
 import { atomicWrite } from '../infra/atomic-write';
 import { createExclusionFilter } from '../infra/exclusion';
 import {
@@ -24,7 +24,7 @@ import {
   readCanonicalSettings,
   readCanonicalHooks,
 } from './canonical';
-import { runCheck, staleAgentNamesForTarget } from './check';
+import { desktopDrift, runCheck, staleAgentNamesForTarget } from './check';
 import { confirm, mapTargets, mapTypes, collect, validateTargets, validateTypes } from './cli-helpers';
 import type { SyncOptions } from './canonical';
 import type { DiffResult } from '../types';
@@ -119,7 +119,7 @@ export async function runPush(options: SyncOptions = {}): Promise<OrchestratorPu
 
   if (options.dryRun) {
     const pretty = options.pretty ?? !options.json;
-    const { output, hasDrift } = formatDryRunResult(checkResult.diffs, pretty, options.homeDir, checkResult.privateSkillDrift);
+    const { output, hasDrift } = formatDryRunResult(checkResult.diffs, pretty, options.homeDir, checkResult.privateSkillDrift, desktopDrift(checkResult.desktopPlans));
     return {
       diffs: checkResult.diffs,
       hasDrift,
@@ -300,8 +300,23 @@ export async function runPush(options: SyncOptions = {}): Promise<OrchestratorPu
     });
   }
 
+  // Claude Desktop files are written only after every target push succeeded.
+  const desktop: DesktopPushResult = { written: [] };
+  if (totalFailed === 0) {
+    try {
+      for (const plan of checkResult.desktopPlans) {
+        await plan.apply();
+        desktop.written.push(...desktopDrift([plan]));
+        totalWritten++;
+      }
+    } catch (err) {
+      totalFailed++;
+      desktop.error = err instanceof Error ? err.message : String(err);
+    }
+  }
+
   const prettyOut = options.pretty ?? !options.json;
-  const output = formatPushResult(pushResults, prettyOut);
+  const output = formatPushResult(pushResults, prettyOut, desktop);
   return {
     diffs: checkResult.diffs,
     hasDrift: checkResult.hasDrift || privateDrift || totalFailed > 0,
@@ -321,6 +336,9 @@ rendered files. Creates backups before each write; rolls back all changes on fai
 
 Without --force, shows drift and asks for confirmation before writing.
 With --delete, also removes stale target files not present in canonical source.
+
+The Claude target also syncs Claude Desktop and Cowork instructions (AGENTS.md +
+Memory vault) and skills, after all other writes succeed (see sync-desktop).
 
 Examples:
   metronome push                           Check, confirm, then push all

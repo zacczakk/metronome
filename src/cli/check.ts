@@ -30,7 +30,8 @@ import {
 import { mapTargets, mapTypes, collect, validateTargets, validateTypes } from './cli-helpers';
 import type { SyncOptions } from './canonical';
 import type { ToolAdapter } from '../adapters/base';
-import type { ItemType, Manifest, MCPServer, MCPWarning, Operation, DiffResult, PrivateSkillDrift, TargetName } from '../types';
+import type { DesktopDrift, ItemType, Manifest, MCPServer, MCPWarning, Operation, DiffResult, PrivateSkillDrift, TargetName } from '../types';
+import { planClaudeDesktop, type DesktopPlan } from '../desktop/claude-desktop-sync';
 import type { SourceItem } from '../core/diff';
 import { hashRenderedSkillTree, hashSkillTree, hasPublicSkillMarker, historicallyOwnedSharedSkillNames, planSkillProjection, projectionNeedsUpdate } from '../core/skill-projection';
 import { hashMCPServer } from '../core/hash';
@@ -40,6 +41,8 @@ export interface OrchestratorCheckResult {
   hasDrift: boolean;
   output: string;
   privateSkillDrift?: PrivateSkillDrift;
+  /** Claude Desktop variants (incl. Cowork) that need instructions or skills written. */
+  desktopPlans: DesktopPlan[];
 }
 
 /**
@@ -427,11 +430,20 @@ export async function runCheck(options: SyncOptions = {}): Promise<OrchestratorC
     diffs.push(diff);
   }
 
+  const desktopPlans = targets.includes('claude-code') && (!options.types || options.types.some((type) => type === 'instruction' || type === 'skill'))
+    ? (await planClaudeDesktop({ configsDir: join(projectDir, 'configs'), memoryVaultDir: join(homeDir, 'Vaults', 'Memory'), homeDir }))
+      .filter((plan) => plan.instructions || plan.skills)
+    : [];
+
   const pretty = options.pretty ?? !options.json;
   const verbose = options.verbose ?? false;
   const hasPrivateSkillDrift = privateSkillDrift.create + privateSkillDrift.update + privateSkillDrift.delete > 0;
-  const { output, hasDrift } = formatCheckResult(diffs, pretty, verbose, homeDir, hasPrivateSkillDrift ? privateSkillDrift : undefined);
-  return { diffs, hasDrift: hasDrift || hasPrivateSkillDrift, output, privateSkillDrift: hasPrivateSkillDrift ? privateSkillDrift : undefined };
+  const { output, hasDrift } = formatCheckResult(diffs, pretty, verbose, homeDir, hasPrivateSkillDrift ? privateSkillDrift : undefined, desktopDrift(desktopPlans));
+  return { diffs, hasDrift: hasDrift || hasPrivateSkillDrift, output, privateSkillDrift: hasPrivateSkillDrift ? privateSkillDrift : undefined, desktopPlans };
+}
+
+export function desktopDrift(plans: DesktopPlan[]): DesktopDrift[] {
+  return plans.map(({ variant, instructions, skills }) => ({ variant, instructions, skills }));
 }
 
 export const checkCommand = new Command('check')

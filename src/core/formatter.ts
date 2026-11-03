@@ -1,11 +1,16 @@
 import pc from 'picocolors';
 import { homedir } from 'node:os';
-import type { DiffResult, MCPWarning, Operation, PrivateSkillDrift, TargetName } from '../types';
+import type { DesktopDrift, DiffResult, MCPWarning, Operation, PrivateSkillDrift, TargetName } from '../types';
 
 export interface PushTargetResult {
   target: TargetName;
   operations: Operation[];
   success: boolean;
+  error?: string;
+}
+
+export interface DesktopPushResult {
+  written: DesktopDrift[];
   error?: string;
 }
 
@@ -28,7 +33,18 @@ function privateDriftTotal(drift: PrivateSkillDrift | undefined): number {
   return drift ? drift.create + drift.update + drift.delete : 0;
 }
 
-export function formatDiffJson(results: DiffResult[], verbose = false, homeDir?: string, privateSkillDrift?: PrivateSkillDrift): string {
+const DESKTOP_LABEL: Record<DesktopDrift['variant'], string> = { claude: 'Claude Desktop', 'claude-3p': 'Cowork' };
+
+function desktopParts(drift: DesktopDrift): string {
+  return [drift.instructions ? 'instructions' : '', drift.skills ? 'skills' : ''].filter(Boolean).join(' and ');
+}
+
+function desktopDriftLines(desktopDrift: DesktopDrift[]): string[] {
+  if (desktopDrift.length === 0) return [];
+  return [...desktopDrift.map((d) => `  ${pc.yellow('~')} ${pc.bold(DESKTOP_LABEL[d.variant])}: ${desktopParts(d)} to update`), ''];
+}
+
+export function formatDiffJson(results: DiffResult[], verbose = false, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): string {
   const targets: Record<
     string,
     { create: number; update: number; skip: number; delete: number; operations: Operation[]; mcpWarning?: MCPWarning }
@@ -62,6 +78,7 @@ export function formatDiffJson(results: DiffResult[], verbose = false, homeDir?:
         targets,
         summary: { totalCreate, totalUpdate, totalSkip, totalDelete },
         ...(privateSkillDrift ? { privateSkills: privateSkillDrift } : {}),
+        ...(desktopDrift.length > 0 ? { claudeDesktop: desktopDrift } : {}),
       },
       null,
       2,
@@ -69,7 +86,7 @@ export function formatDiffJson(results: DiffResult[], verbose = false, homeDir?:
   );
 }
 
-export function formatDiffPretty(results: DiffResult[], verbose = false, privateSkillDrift?: PrivateSkillDrift): string {
+export function formatDiffPretty(results: DiffResult[], verbose = false, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): string {
   const lines: string[] = ['', 'metronome check', ''];
 
   let totalCreate = 0;
@@ -150,9 +167,10 @@ export function formatDiffPretty(results: DiffResult[], verbose = false, private
     summaryParts.push(pc.red(`${totalRemove} to remove`));
   if (totalSkip > 0) summaryParts.push(pc.dim(`${totalSkip} up to date`));
 
-  if (summaryParts.length === 0) {
+  lines.push(...desktopDriftLines(desktopDrift));
+  if (summaryParts.length === 0 && desktopDrift.length === 0) {
     lines.push(`  ${pc.dim('All targets up to date.')}`);
-  } else {
+  } else if (summaryParts.length > 0) {
     lines.push(`  Summary: ${summaryParts.join(', ')}`);
   }
   if (privateDriftTotal(privateSkillDrift) > 0) {
@@ -171,6 +189,7 @@ export function formatDiffPretty(results: DiffResult[], verbose = false, private
 export function formatPushResult(
   results: PushTargetResult[],
   pretty: boolean,
+  desktop: DesktopPushResult = { written: [] },
 ): string {
   if (!pretty) {
     const targets: Record<
@@ -197,6 +216,7 @@ export function formatPushResult(
             succeeded: results.filter((r) => r.success).length,
             failed: results.filter((r) => !r.success).length,
           },
+          ...(desktop.written.length > 0 || desktop.error ? { claudeDesktop: desktop } : {}),
         },
         null,
         2,
@@ -221,10 +241,17 @@ export function formatPushResult(
     lines.push('');
   }
 
+  for (const d of desktop.written) {
+    lines.push(`  ${pc.green('✓')} ${pc.bold(DESKTOP_LABEL[d.variant])}`, `    ${pc.dim(`${desktopParts(d)} written`)}`, '');
+  }
+  if (desktop.error) {
+    lines.push(`  ${pc.red('✗')} ${pc.bold('Claude Desktop')}`, `    ${pc.red(desktop.error)}`, '');
+  }
+
   return lines.join('\n');
 }
 
-export function formatDryRunJson(results: DiffResult[], homeDir?: string, privateSkillDrift?: PrivateSkillDrift): string {
+export function formatDryRunJson(results: DiffResult[], homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): string {
   const actions: Array<{
     action: 'create' | 'update' | 'delete';
     target: string;
@@ -262,11 +289,12 @@ export function formatDryRunJson(results: DiffResult[], homeDir?: string, privat
   };
   if (warnings.length > 0) output.warnings = warnings;
   if (privateSkillDrift) output.privateSkills = privateSkillDrift;
+  if (desktopDrift.length > 0) output.claudeDesktop = desktopDrift;
 
   return JSON.stringify(output, null, 2) + '\n';
 }
 
-export function formatDryRunPretty(results: DiffResult[], homeDir?: string, privateSkillDrift?: PrivateSkillDrift): string {
+export function formatDryRunPretty(results: DiffResult[], homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): string {
   const lines: string[] = ['', 'metronome push --dry-run', ''];
 
   let totalCreate = 0;
@@ -314,9 +342,9 @@ export function formatDryRunPretty(results: DiffResult[], homeDir?: string, priv
     lines.push('');
   }
 
+  lines.push(...desktopDriftLines(desktopDrift));
   if (totalCreate === 0 && totalUpdate === 0 && totalDelete === 0) {
-    lines.push(`  ${pc.dim('Nothing to push — all targets up to date.')}`);
-    lines.push('');
+    if (desktopDrift.length === 0) lines.push(`  ${pc.dim('Nothing to push — all targets up to date.')}`, '');
   } else {
     const parts: string[] = [];
     if (totalCreate > 0) parts.push(pc.green(`${totalCreate} to create`));
@@ -338,18 +366,18 @@ export function formatDryRunPretty(results: DiffResult[], homeDir?: string, priv
   return lines.join('\n');
 }
 
-export function formatDryRunResult(results: DiffResult[], pretty: boolean, homeDir?: string, privateSkillDrift?: PrivateSkillDrift): CheckResult {
+export function formatDryRunResult(results: DiffResult[], pretty: boolean, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): CheckResult {
   const hasDrift = results.some(
     (r) => r.summary.create > 0 || r.summary.update > 0 || r.summary.delete > 0,
   );
-  const output = pretty ? formatDryRunPretty(results, homeDir, privateSkillDrift) : formatDryRunJson(results, homeDir, privateSkillDrift);
-  return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 };
+  const output = pretty ? formatDryRunPretty(results, homeDir, privateSkillDrift, desktopDrift) : formatDryRunJson(results, homeDir, privateSkillDrift, desktopDrift);
+  return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 || desktopDrift.length > 0 };
 }
 
-export function formatCheckResult(results: DiffResult[], pretty: boolean, verbose = false, homeDir?: string, privateSkillDrift?: PrivateSkillDrift): CheckResult {
+export function formatCheckResult(results: DiffResult[], pretty: boolean, verbose = false, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): CheckResult {
   const hasDrift = results.some(
     (r) => r.summary.create > 0 || r.summary.update > 0 || r.summary.delete > 0,
   );
-  const output = pretty ? formatDiffPretty(results, verbose, privateSkillDrift) : formatDiffJson(results, verbose, homeDir, privateSkillDrift);
-  return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 };
+  const output = pretty ? formatDiffPretty(results, verbose, privateSkillDrift, desktopDrift) : formatDiffJson(results, verbose, homeDir, privateSkillDrift, desktopDrift);
+  return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 || desktopDrift.length > 0 };
 }

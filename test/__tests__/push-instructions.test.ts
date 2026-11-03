@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTestHome, createTestProject } from '../helpers/backup';
 import { runPush } from '../../src/cli/push';
@@ -52,5 +52,22 @@ describe('push instructions E2E', () => {
     const result2 = await runPush({ projectDir, force: true, types: ['instruction'], homeDir: fakeHome });
     expect(result2.hasDrift).toBe(false);
     expect(result2.written).toBe(0);
+  });
+
+  test('syncs Cowork instructions when only the Memory vault changed', async () => {
+    const fakeHome = createTestHome('push-instr-cowork');
+    const projectDir = createTestProject('push-instr-cowork', FIXTURE_ROOT);
+    const accountDir = join(fakeHome, 'Library/Application Support/Claude-3p/local-agent-mode-sessions', 'f2345c46-7345-402b-bf22-3bfd122ed95a', '00000000-0000-4000-8000-000000000001');
+    const vaultDir = join(fakeHome, 'Vaults', 'Memory');
+    mkdirSync(accountDir, { recursive: true });
+    mkdirSync(vaultDir, { recursive: true });
+
+    await runPush({ projectDir, force: true, types: ['instruction'], homeDir: fakeHome });
+    writeFileSync(join(vaultDir, 'SOUL.md'), '# SOUL\n\nnew soul\n');
+    const result = await runPush({ projectDir, force: true, types: ['instruction'], homeDir: fakeHome });
+
+    expect(result.failed).toBe(0);
+    expect(result.written).toBe(1);
+    expect(readFileSync(join(accountDir, 'memory', 'CLAUDE.md'), 'utf-8')).toContain('new soul');
   });
 });

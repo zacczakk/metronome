@@ -16,6 +16,8 @@ read_when:
 
 ## Unreleased
 
+- **Cowork follows `metronome push`** — pushing the Claude target (instructions or skills) also syncs Claude Desktop and Cowork: `CLAUDE.md` from `AGENTS.md` plus the Memory vault, and skills. Only changed parts are written, after all other writes succeed. `metronome check` reports Desktop drift, including Memory vault edits. `metronome sync-desktop --dry-run` now works.
+- **Cowork keeps metronome skills** — skill entries are marked `syncManaged: false` (local skills). Before, Cowork's 10-minute skill sync deleted them. Unreadable Memory vault files (iCloud locks) now stop the sync instead of writing a partial `CLAUDE.md`.
 - **OpenCode themes** — `configs/opencode/themes/` holds OpenCode themes, installed by `metronome push --type settings`. Adds 39 `rex-*` themes generated from Rex's palettes (`scripts/rex-opencode-themes.py`) plus the existing `kaku` theme.
 - **Tux models mirror Tux** — canonical `providers.tux` is copied from the block Tux writes (16 models, Tux 0.14.0). `scripts/sync-tux-model-metadata.ts` now reads the installed OpenCode config instead of a Tux checkout.
 - **Agent variants follow their model** — when an agent changes model, its `agent-*` variant is removed from the old model. `metronome diff` now shows agent variant changes.

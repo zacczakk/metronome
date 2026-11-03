@@ -41,6 +41,7 @@ metronome diff --all                # unified diff of all drift
 metronome push --force --delete     # push all + delete stale files
 metronome pull -s claude            # pull from Claude to canonical
 metronome push -t pi --force       # render Pi models, MCP, agents, instructions, settings
+metronome sync-desktop --dry-run    # Claude Desktop + Cowork drift (push -t claude syncs it)
 metronome codex-provider tux        # switch Codex Desktop to Tux
 metronome codex-provider enterprise # switch back; OpenAI chats become visible
 ```

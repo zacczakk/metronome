@@ -9,6 +9,7 @@ import {
   syncInstructions,
   syncSkills,
   syncClaudeDesktop,
+  planClaudeDesktop,
   type Variant,
 } from '../claude-desktop-sync';
 
@@ -245,6 +246,7 @@ describe('syncSkills', () => {
     expect(byName.release.creatorType).toBe('user');
     expect(byName.release.description).toBe('Release skill description.');
     expect(byName.release.enabled).toBe(true);
+    expect(byName.release.syncManaged).toBe(false);
     expect(byName.brainstorming).toBeDefined();
     expect(byName.brainstorming.creatorType).toBe('user');
   });
@@ -310,15 +312,15 @@ describe('syncSkills', () => {
 describe('syncClaudeDesktop', () => {
   test('skips when no variants present', async () => {
     const { configsDir, memoryVaultDir } = seedSourceConfigs();
-    const result = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
-    expect(result.variants).toEqual([]);
+    const plans = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+    expect(plans).toEqual([]);
   });
 
   test('syncs instructions + skills for present variant', async () => {
     seedVariant('claude-3p', { withAccount: true, withAnthropicSkills: true });
     const { configsDir, memoryVaultDir } = seedSourceConfigs();
-    const result = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
-    expect(result.variants).toContain('claude-3p');
+    const plans = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+    expect(plans.map((p) => p.variant)).toContain('claude-3p');
     const base = variantBase('claude-3p');
     expect(existsSync(join(base, 'local-agent-mode-sessions', ACCOUNT, ORG, 'memory', 'CLAUDE.md'))).toBe(true);
     expect(existsSync(join(base, 'local-agent-mode-sessions', 'skills-plugin', ORG, ACCOUNT, 'manifest.json'))).toBe(true);
@@ -327,7 +329,24 @@ describe('syncClaudeDesktop', () => {
   test('skips variant without account (no UUID pair) but does not error', async () => {
     seedVariant('claude-3p'); // no account dir
     const { configsDir, memoryVaultDir } = seedSourceConfigs();
-    const result = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
-    expect(result.variants).toEqual([]);
+    const plans = await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+    expect(plans).toEqual([]);
+  });
+});
+
+// ── planClaudeDesktop ───────────────────────────────────────────────────────
+
+describe('planClaudeDesktop', () => {
+  test('reports no drift after sync, then instructions drift after a Memory vault edit', async () => {
+    seedVariant('claude-3p', { withAccount: true, withAnthropicSkills: true });
+    const { configsDir, memoryVaultDir } = seedSourceConfigs();
+    await syncClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+
+    const [clean] = await planClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+    expect(clean).toMatchObject({ variant: 'claude-3p', instructions: false, skills: false });
+
+    writeFileSync(join(memoryVaultDir, 'SOUL.md'), '# SOUL\n\nnew soul\n');
+    const [drifted] = await planClaudeDesktop({ configsDir, memoryVaultDir, homeDir });
+    expect(drifted).toMatchObject({ instructions: true, skills: false });
   });
 });

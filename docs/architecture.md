@@ -32,7 +32,20 @@ configs/  ──→  metronome push  ──→  ~/.claude/
                                     ~/.config/opencode/
                                     ~/.gemini/antigravity-cli/
                                     ~/.codex/
+                                    ~/Library/Application Support/{Claude,Claude-3p}/  (Desktop + Cowork)
 ```
+
+### Claude Desktop and Cowork
+
+`src/desktop/claude-desktop-sync.ts` writes two parts per Desktop variant
+(`Claude`, `Claude-3p` = Cowork): `memory/CLAUDE.md`, composed from
+`configs/instructions/AGENTS.md` plus Memory vault IDENTITY/SOUL/USER/STYLE,
+and `configs/skills/*` in the account's `skills-plugin`. Pushing the Claude
+target (all types, instructions or skills) writes only drifted parts after
+all other writes succeed; `check` reports the drift. `sync-desktop` runs the
+same sync alone. Skill entries carry `syncManaged: false`: Cowork's
+10-minute skill sync deletes user entries without it. The Cowork model list
+lives in the in-app `configLibrary` profile and is owned by Tux, not metronome.
 
 ## Dependency Direction
 
