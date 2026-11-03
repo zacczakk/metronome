@@ -45,7 +45,7 @@ target (all types, instructions or skills) writes only drifted parts after
 all other writes succeed; `check` reports the drift. `sync-desktop` runs the
 same sync alone. Skill entries carry `syncManaged: false`: Cowork's
 10-minute skill sync deletes user entries without it. The Cowork model list
-lives in the in-app `configLibrary` profile and is owned by Tux, not metronome.
+lives in the in-app `configLibrary` profile and is maintained by hand.
 
 ## Dependency Direction
 
