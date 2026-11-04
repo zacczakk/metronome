@@ -17,13 +17,16 @@ export function createOpenCodeAdapter(
   return {
     name: "opencode",
     async runQuery(query: string, targetName: string): Promise<boolean> {
-      const args = ["run", "--format", "json", "--dir", directory];
+      const args = ["run", "--standalone", "--format", "json"];
       if (model) args.push("--model", model);
       args.push(query);
 
+      // OpenCode V2 resolves the project from PWD, which spawn's cwd does not update.
       const proc = spawnFn(["opencode", ...args], {
+        cwd: directory,
+        env: { ...process.env, PWD: directory },
         stdout: "pipe",
-        stderr: "ignore",
+        stderr: "pipe",
       });
 
       try {
@@ -31,6 +34,14 @@ export function createOpenCodeAdapter(
           streamParse(proc, targetName),
           timeout(timeoutMs),
         ]);
+        if (result === "ended") {
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = proc.stderr instanceof ReadableStream ? await new Response(proc.stderr).text() : "";
+            throw new Error(`opencode run exited ${exitCode}: ${stderr.replace(/\s+/g, " ").trim().slice(0, 200)}`);
+          }
+          return false;
+        }
         return result ?? false;
       } finally {
         try {
@@ -44,7 +55,7 @@ export function createOpenCodeAdapter(
 async function streamParse(
   proc: ReturnType<typeof Bun.spawn>,
   targetName: string,
-): Promise<boolean> {
+): Promise<boolean | "ended"> {
   const reader = proc.stdout.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -69,10 +80,10 @@ async function streamParse(
 
           if (event.type === "tool_use") {
             const part = event.part;
-            if (part?.tool === "skill" && part?.state?.input?.name === targetName) {
+            if (part?.tool === "skill" && part?.state?.input?.id === targetName) {
               return true;
             }
-            if (part?.tool === "task" && part?.state?.input?.subagent_type === targetName) {
+            if (part?.tool === "subagent" && part?.state?.input?.agent === targetName) {
               return true;
             }
           }
@@ -103,7 +114,7 @@ async function streamParse(
     reader.releaseLock();
   }
 
-  return false;
+  return "ended";
 }
 
 function timeout(ms: number): Promise<undefined> {

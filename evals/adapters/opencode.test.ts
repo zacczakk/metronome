@@ -1,16 +1,20 @@
 import { describe, expect, it, mock } from "bun:test";
 
-function createSpawn(output: string) {
+function textStream(text: string) {
   const encoder = new TextEncoder();
-  const stream = new ReadableStream({
+  return new ReadableStream({
     start(controller) {
-      controller.enqueue(encoder.encode(`${output}\n`));
+      if (text) controller.enqueue(encoder.encode(`${text}\n`));
       controller.close();
     },
   });
+}
 
+function createSpawn(output: string, exitCode = 0, stderr = "") {
   return {
-    stdout: stream,
+    stdout: textStream(output),
+    stderr: textStream(stderr),
+    exited: Promise.resolve(exitCode),
     kill: mock(),
   } as unknown as ReturnType<typeof Bun.spawn>;
 }
@@ -20,7 +24,7 @@ describe("createOpenCodeAdapter", () => {
     const { createOpenCodeAdapter } = await import("./opencode");
     const spawn = createSpawn(
       [
-        JSON.stringify({ type: "tool_use", part: { tool: "skill", state: { input: { name: "session-notes" } } } }),
+        JSON.stringify({ type: "tool_use", part: { tool: "skill", state: { input: { id: "session-notes" } } } }),
       ].join("\n"),
     );
 
@@ -29,12 +33,12 @@ describe("createOpenCodeAdapter", () => {
     expect(triggered).toBe(true);
   });
 
-  it("detects agent auto-routing via task tool subagent_type", async () => {
+  it("detects agent auto-routing via subagent tool agent", async () => {
     const { createOpenCodeAdapter } = await import("./opencode");
     const spawn = createSpawn(
       [
         JSON.stringify({ type: "text", part: { type: "text", text: "Launching research agent" } }),
-        JSON.stringify({ type: "tool_use", part: { tool: "task", state: { input: { subagent_type: "research" } } } }),
+        JSON.stringify({ type: "tool_use", part: { tool: "subagent", state: { input: { agent: "research" } } } }),
       ].join("\n"),
     );
 
@@ -67,5 +71,13 @@ describe("createOpenCodeAdapter", () => {
     const adapter = createOpenCodeAdapter(undefined, { timeoutMs: 50, spawnFn: mock(() => spawn) as typeof Bun.spawn });
     const triggered = await adapter.runQuery("fix a test", "research");
     expect(triggered).toBe(false);
+  });
+
+  it("throws when opencode run fails before emitting events", async () => {
+    const { createOpenCodeAdapter } = await import("./opencode");
+    const spawn = createSpawn("", 1, "ERROR\n  Unrecognized flag: --dir in command opencode run");
+
+    const adapter = createOpenCodeAdapter(undefined, { timeoutMs: 50, spawnFn: mock(() => spawn) as typeof Bun.spawn });
+    await expect(adapter.runQuery("write a session note", "session-notes")).rejects.toThrow("opencode run exited 1");
   });
 });
