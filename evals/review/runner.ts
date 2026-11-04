@@ -60,10 +60,15 @@ async function git(args: string[], cwd: string): Promise<void> {
 // Depth 2 fetch: the reviewer sees the commit and its parent, never the later fix.
 async function checkout(commit: string): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), "review-case-"));
-  await git(["init", "-q"], dir);
-  await git(["fetch", "-q", "--depth", "2", `file://${resolve(set.repo)}`, commit], dir);
-  await git(["checkout", "-q", "--detach", "FETCH_HEAD"], dir);
-  return dir;
+  try {
+    await git(["init", "-q"], dir);
+    await git(["fetch", "-q", "--depth", "2", `file://${resolve(set.repo)}`, commit], dir);
+    await git(["checkout", "-q", "--detach", "FETCH_HEAD"], dir);
+    return dir;
+  } catch (error) {
+    rmSync(dir, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 async function review(dir: string): Promise<{ review: string; cost: number; log: string }> {
@@ -79,8 +84,10 @@ async function review(dir: string): Promise<{ review: string; cost: number; log:
     proc.kill();
   }, timeoutMs);
   const log = await new Response(proc.stdout).text();
+  const exitCode = await proc.exited;
   clearTimeout(timer);
   if (timedOut) throw new Error(`timed out after ${values.timeout} minutes`);
+  if (exitCode !== 0) throw new Error(`opencode run exited ${exitCode}`);
 
   let text = "";
   let cost = 0;
@@ -106,12 +113,12 @@ async function runCase(reviewCase: ReviewCase): Promise<CaseResult> {
     writeFileSync(join(outDir, `${reviewCase.id}.ndjson`), result.log);
     if (!result.review) throw new Error("no review text from opencode run");
     const score = scoreCase(reviewCase, result.review);
-    console.log(`${score.pass ? "PASS" : "FAIL"} ${reviewCase.id} hit=${score.hit ?? "-"} ship=${score.ship} $${result.cost.toFixed(2)}`);
+    console.log(`${score.pass ? "PASS" : "FAIL"} ${reviewCase.id} hit=${score.hit ?? "-"} verdict=${score.verdict ?? "none"} $${result.cost.toFixed(2)}`);
     return { id: reviewCase.id, kind: reviewCase.kind, cost: result.cost, ...score };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.log(`ERROR ${reviewCase.id}: ${message}`);
-    return { id: reviewCase.id, kind: reviewCase.kind, hit: null, ship: false, pass: false, cost: 0, error: message };
+    return { id: reviewCase.id, kind: reviewCase.kind, hit: null, verdict: null, pass: false, cost: 0, error: message };
   } finally {
     if (dir) rmSync(dir, { recursive: true, force: true });
   }
@@ -129,7 +136,7 @@ results.sort((a, b) => a.id.localeCompare(b.id));
 const bugs = results.filter((r) => r.kind === "bug");
 const clean = results.filter((r) => r.kind === "clean");
 const rows = results.map(
-  (r) => `| ${r.id} | ${r.pass ? "pass" : "fail"} | ${r.hit ?? "-"} | ${r.ship ? "ship" : "block"} | $${r.cost.toFixed(2)} | ${r.error ?? ""} |`,
+  (r) => `| ${r.id} | ${r.pass ? "pass" : "fail"} | ${r.hit ?? "-"} | ${r.verdict ?? "none"} | $${r.cost.toFixed(2)} | ${r.error ?? ""} |`,
 );
 const summary = [
   `# Review eval: ${values.set}`,

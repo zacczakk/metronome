@@ -119,7 +119,7 @@ bun evals/review/runner.ts --set .metronome/review-evals/<repo>.json --case bug-
 | `--timeout` | `20` | Minutes per review |
 | `--out` | temp dir | Review texts, NDJSON logs, `summary.md`, `summary.json` |
 
-Each case runs in a private `opencode run --standalone` session on a depth-2 fetch of the commit, so the reviewer never sees the later fix. A bug case passes when the review names the bug file (`hit=file`) or lines (`hit=line`) and blocks the change. A clean case passes when the verdict is Ship. Read the saved reviews to judge false alarms and pre-existing findings.
+Each case runs in a private `opencode run --standalone` session on a depth-2 fetch of the commit, so the reviewer never sees the later fix. A bug case passes when a finding the verdict blocks on cites the bug file (`hit=file`) or lines (`hit=line`); pre-existing and other unblocked findings do not count, and a cited path in another directory is a miss. A clean case passes only on an explicit Ship verdict. A failed or timed-out `opencode run` is a case error. Read the saved reviews to judge false alarms and pre-existing findings.
 
 Rescore after every change to the review skill, its tools, or its model.
 
