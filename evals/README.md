@@ -87,6 +87,42 @@ Runs `claude -p --output-format stream-json` and parses stream events. Detects s
 
 The improvement prompt is routed through the same adapter as evals — no separate API key needed.
 
+## Review Evals
+
+Scores `ponytail-review` against real commits: bug cases (a commit whose bug was fixed later) and clean cases (a commit never fixed or reverted).
+
+Case sets name private repositories and their bugs, so they stay out of this public repo in the gitignored `.metronome/review-evals/`.
+
+```bash
+bun evals/review/runner.ts --set .metronome/review-evals/<repo>.json
+bun evals/review/runner.ts --set .metronome/review-evals/<repo>.json --case bug-<slug> --model provider/model
+```
+
+```json
+{
+  "repo": "<absolute path to the local clone>",
+  "cases": [
+    { "id": "bug-<slug>", "kind": "bug", "commit": "<sha that added the bug>",
+      "bug": { "file": "src/a.ts", "lines": [37, 45], "summary": "<what goes wrong>", "fixedBy": "<fix sha>" } },
+    { "id": "clean-<slug>", "kind": "clean", "commit": "<sha>" }
+  ]
+}
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--set` | required | Case set JSON (`repo`, `cases[]`) |
+| `--skill` | `configs/skills/ponytail-review/SKILL.md` | Review instructions under test |
+| `--case` | all | Run one case id |
+| `--model` | OpenCode default | Model override |
+| `--workers` | `2` | Concurrent reviews |
+| `--timeout` | `20` | Minutes per review |
+| `--out` | temp dir | Review texts, NDJSON logs, `summary.md`, `summary.json` |
+
+Each case runs in a private `opencode run --standalone` session on a depth-2 fetch of the commit, so the reviewer never sees the later fix. A bug case passes when a finding the verdict blocks on cites the bug file (`hit=file`) or lines (`hit=line`); pre-existing and other unblocked findings do not count, and a cited path in another directory is a miss. A clean case passes only on an explicit Ship verdict. A failed or timed-out `opencode run` is a case error. Read the saved reviews to judge false alarms and pre-existing findings.
+
+Rescore after every change to the review skill, its tools, or its model.
+
 ## Files
 
 ```
@@ -100,4 +136,7 @@ evals/
     claude.ts            Claude Code execution backend
   sets/
     *.json               Eval query sets (one per skill)
+  review/
+    runner.ts            Review eval entry point
+    score.ts             Bug-hit and verdict scoring
 ```

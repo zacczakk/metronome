@@ -57,6 +57,17 @@ Psychopomp runs from its own checkout; paid narration requires approval.
 | psychopomp | psychopomp | psychopomp | Yes (checkout and paid-generation guards) | manual |
 | explainer-motion | explainer-motion | explainer-motion | No | manual |
 
+## Remote: DietrichGebert/ponytail (6)
+
+| Skill | Upstream Name | Local Name | Customized | Sync |
+|-------|--------------|------------|------------|------|
+| ponytail | ponytail | ponytail | No | auto |
+| ponytail-review | ponytail-review | ponytail-review | Yes (pre-existing group, diff-only re-review, third-round rethink) | manual |
+| ponytail-audit | ponytail-audit | ponytail-audit | No | auto |
+| ponytail-debt | ponytail-debt | ponytail-debt | No | auto |
+| ponytail-gain | ponytail-gain | ponytail-gain | No | auto |
+| ponytail-help | ponytail-help | ponytail-help | No | auto |
+
 ## Custom (10)
 
 | Skill | Description |

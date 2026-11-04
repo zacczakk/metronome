@@ -60,7 +60,7 @@
       "basePath": "skills",
       "skills": {
         "ponytail": { "sync": "auto" },
-        "ponytail-review": { "sync": "auto" },
+        "ponytail-review": { "sync": "manual", "note": "Locally customized: pre-existing group, diff-only re-review, third-round rethink" },
         "ponytail-audit": { "sync": "auto" },
         "ponytail-debt": { "sync": "auto" },
         "ponytail-gain": { "sync": "auto" },

@@ -68,7 +68,7 @@ The tables below are a trigger-oriented overview, not an exhaustive registry. So
 | Skill | Trigger | Purpose |
 |---|---|---|
 | `ponytail` | Any coding task or explicit minimalism/YAGNI request | Simplest correct implementation with intensity levels |
-| `ponytail-review` | Review for over-engineering | Diff-focused delete list |
+| `ponytail-review` | Review a change, commit, or PR | Ranked bug, safety, load, test, and lean findings with a verdict; pre-existing problems never block |
 | `ponytail-audit` | Audit a repository for bloat | Repo-wide complexity audit |
 | `ponytail-debt` | Find deferred `ponytail:` shortcuts | Debt ledger from deliberate simplifications |
 | `ponytail-gain` | Show Ponytail impact | Published benchmark scoreboard |
