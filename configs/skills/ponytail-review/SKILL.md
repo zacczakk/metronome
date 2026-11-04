@@ -26,6 +26,9 @@ This is a report the user asked for, so give it in full.
 - Find the expected load in the repo (README, deploy config): one person
   running a script, or many users and processes at once. Judge scale against
   that, and say which load you assumed.
+- Re-review of a change already reviewed: review only what changed since the
+  last review, and do not repeat findings already reported. Third round on the
+  same change: stop listing line fixes and say why the approach needs a rethink.
 
 ## 2. Look for
 
@@ -73,11 +76,13 @@ term the first time you use it. The reader may never have seen this code.
 
 Start with `What this change does:` in two or three sentences.
 
-Then the findings in three groups, skip empty groups:
+Then the findings in four groups, skip empty groups:
 - **Must fix:** bug, security, data loss, breaks at the expected load.
 - **Should fix:** risky code without a test, real slowness, duplication, a
   function that mixes jobs, code that should not exist.
 - **Nice to have:** small speed-ups, shorter forms.
+- **Pre-existing:** real problems that exist without this change. They never
+  block the verdict.
 
 Number findings across all groups, so the user can say "fix 2 and 5".
 Every finding has all four parts, each one or two short sentences:
