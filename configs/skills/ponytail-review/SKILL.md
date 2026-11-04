@@ -28,9 +28,9 @@ This is a report the user asked for, so give it in full.
   that, and say which load you assumed.
 - Re-review of a change already reviewed: review only what changed since the
   last review. Earlier findings still open stay in the verdict by their old
-  number; do not explain them again. Third round on the same change: list only
-  Must fix findings, say why the approach needs a rethink, and end with
-  `Verdict: rethink first.`
+  number; do not explain them again. Third round on the same change with Must
+  fix findings still open: list only those, say why the approach needs a
+  rethink, and end with `Verdict: rethink first.` None open: the usual verdict.
 
 ## 2. Look for
 
