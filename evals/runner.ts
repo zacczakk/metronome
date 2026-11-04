@@ -128,11 +128,10 @@ async function runEval(
           query: item.query,
           should_trigger: item.should_trigger,
           triggered: false,
-          pass: !item.should_trigger,
+          pass: false,
         });
-        if (values.verbose) {
-          process.stderr.write(` \x1b[33mERROR\x1b[0m\n`);
-        }
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`${values.verbose ? " " : ""}\x1b[33mERROR\x1b[0m ${message}\n`);
       }
     }
   }

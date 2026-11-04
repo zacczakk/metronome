@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
 import type { Adapter, EvalResult, EvalSummary } from "./types";
 
 const IMPROVE_PROMPT = `You are optimizing a skill description for an AI coding assistant.
@@ -89,6 +90,7 @@ export async function improveDescription(
 
   const match = text.match(/<new_description>([\s\S]*?)<\/new_description>/);
   const newDesc = match ? match[1].trim() : text.trim();
+  if (!newDesc) throw new Error("improvement prompt returned no description");
 
   if (newDesc.length > 1024) {
     const retryPrompt = `The description below is ${newDesc.length} characters, over the 1024-character limit. Rewrite it to be under 1024 characters while keeping the most important trigger words. Respond with ONLY the text in <new_description> tags.\n\n"${newDesc}"`;
@@ -96,7 +98,9 @@ export async function improveDescription(
     const retryMatch = retryText.match(
       /<new_description>([\s\S]*?)<\/new_description>/,
     );
-    return retryMatch ? retryMatch[1].trim() : retryText.trim();
+    const shortened = retryMatch ? retryMatch[1].trim() : retryText.trim();
+    if (!shortened) throw new Error("shortening prompt returned no description");
+    return shortened;
   }
 
   return newDesc;
@@ -104,12 +108,22 @@ export async function improveDescription(
 
 async function runPrompt(adapterName: string, prompt: string): Promise<string> {
   if (adapterName === "opencode") {
-    const proc = Bun.spawn(["opencode", "run", "--format", "json", "--dir", "/tmp", prompt], {
+    // OpenCode V2 resolves the project from PWD, which spawn's cwd does not update.
+    const dir = tmpdir();
+    const proc = Bun.spawn(["opencode", "run", "--standalone", "--format", "json", prompt], {
+      cwd: dir,
+      env: { ...process.env, PWD: dir },
       stdout: "pipe",
-      stderr: "ignore",
+      stderr: "pipe",
     });
-    const text = await new Response(proc.stdout).text();
-    await proc.exited;
+    const [text, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    if (exitCode !== 0) {
+      throw new Error(`opencode run exited ${exitCode}: ${stderr.replace(/\s+/g, " ").trim().slice(0, 200)}`);
+    }
 
     const parts: string[] = [];
     for (const line of text.split("\n")) {
