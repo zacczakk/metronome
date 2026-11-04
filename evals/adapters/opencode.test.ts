@@ -37,7 +37,7 @@ describe("createOpenCodeAdapter", () => {
     const { createOpenCodeAdapter } = await import("./opencode");
     const spawn = createSpawn(
       [
-        JSON.stringify({ type: "text", part: { type: "text", text: "Launching research agent" } }),
+        JSON.stringify({ type: "text", part: { type: "text", text: "Checking the repository first." } }),
         JSON.stringify({ type: "tool_use", part: { tool: "subagent", state: { input: { agent: "research" } } } }),
       ].join("\n"),
     );

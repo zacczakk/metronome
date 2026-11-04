@@ -98,7 +98,9 @@ export async function improveDescription(
     const retryMatch = retryText.match(
       /<new_description>([\s\S]*?)<\/new_description>/,
     );
-    return retryMatch ? retryMatch[1].trim() : retryText.trim();
+    const shortened = retryMatch ? retryMatch[1].trim() : retryText.trim();
+    if (!shortened) throw new Error("shortening prompt returned no description");
+    return shortened;
   }
 
   return newDesc;
@@ -114,10 +116,12 @@ async function runPrompt(adapterName: string, prompt: string): Promise<string> {
       stdout: "pipe",
       stderr: "pipe",
     });
-    const text = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
+    const [text, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
     if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr).text();
       throw new Error(`opencode run exited ${exitCode}: ${stderr.replace(/\s+/g, " ").trim().slice(0, 200)}`);
     }
 

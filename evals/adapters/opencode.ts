@@ -29,19 +29,21 @@ export function createOpenCodeAdapter(
         stderr: "pipe",
       });
 
-      try {
-        const result = await Promise.race([
-          streamParse(proc, targetName),
-          timeout(timeoutMs),
-        ]);
-        if (result === "ended") {
-          const exitCode = await proc.exited;
-          if (exitCode !== 0) {
-            const stderr = proc.stderr instanceof ReadableStream ? await new Response(proc.stderr).text() : "";
-            throw new Error(`opencode run exited ${exitCode}: ${stderr.replace(/\s+/g, " ").trim().slice(0, 200)}`);
-          }
-          return false;
+      // Drain stderr while the run streams so a full pipe cannot stall it.
+      const stderr = proc.stderr instanceof ReadableStream ? new Response(proc.stderr).text() : Promise.resolve("");
+
+      async function outcome(): Promise<boolean> {
+        const result = await streamParse(proc, targetName);
+        if (result !== "ended") return result;
+        const exitCode = await proc.exited;
+        if (exitCode !== 0) {
+          throw new Error(`opencode run exited ${exitCode}: ${(await stderr).replace(/\s+/g, " ").trim().slice(0, 200)}`);
         }
+        return false;
+      }
+
+      try {
+        const result = await Promise.race([outcome(), timeout(timeoutMs)]);
         return result ?? false;
       } finally {
         try {
