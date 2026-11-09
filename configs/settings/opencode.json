@@ -132,11 +132,6 @@
     },
     {
       "action": "external_directory",
-      "resource": "~/.agent-browser/**",
-      "effect": "allow"
-    },
-    {
-      "action": "external_directory",
       "resource": "~/.agents/**",
       "effect": "allow"
     },

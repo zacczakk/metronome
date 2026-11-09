@@ -156,7 +156,6 @@
   "additionalDirectories": [
     "/tmp",
     "~/Vaults",
-    "~/.agent-browser",
     "~/.agents",
     "/var/folders",
     "~/Downloads",
