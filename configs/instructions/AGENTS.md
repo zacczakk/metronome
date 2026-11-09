@@ -34,7 +34,7 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - **Screenshots in PRs/issues:** `gh pr|issue create|edit|comment --attach './shot.png#alt text'` (repeat flag; not `pr review`). Body `![alt](./shot.png)` → rewritten to the upload.
 - **Palantir Foundry:** `palantir-mcp` when loaded and responsive; fallback `palantir` cli with `palantir search-tools`. Tux owns MCP auth and host wiring; read `TOOLS.md` for generation and updates.
 - **MCP discovery:** `mcporter config list` (fast local/project registry), `mcporter config list --source import` (editor imports), then `mcporter list <server> --schema --json`. Native MCP config is separate, but MCPorter can discover imported editor definitions.
-- On PATH: `trash`, `metronome`, `committer`, `sessions`, `agent-browser`, `qmd`, `obsidian`, `gh`, `mcporter`, `palantir`, `bird`, `markitdown`.
+- On PATH: `trash`, `metronome`, `committer`, `sessions`, `browse`, `qmd`, `obsidian`, `gh`, `mcporter`, `palantir`, `bird`, `markitdown`.
 
 ## Flow & Runtime
 - Use repo's package manager/runtime; no swaps w/o approval.
@@ -45,12 +45,8 @@ zacczakk owns this. Work style: telegraph; brief; drop grammar; min tokens; NO j
 - Helpers in `scripts/` (`committer`, `palantir`, `sessions`)
 
 ## Browser
-- `agent-browser` for browser work (automation, scraping, screenshots, console/network, authenticated pages).
-- Default: `agent-browser --profile Default open <url> --headed`. `Default` = `z/acc`; isolated copy, auth intact. No `--native`.
-- Loop: `snapshot -i` → act on refs → re-snapshot after page changes. Reuse during task; `close` when done.
-- No `--auto-connect` unless Phil explicitly asks. Never `pkill`/restart Chrome. 403: stop.
-- Viewport `1800x1169` (Phil's logical res). Never 1920x1080 — overflows.
-- Skill: `agent-browser skills get core`. Ignore kill/reset advice. Lightpanda: unauthenticated reading only.
+- `browse` MCP for browser work: drives Phil's real Dia through the browse extension; logins and open tabs already there. Fallback: `browse` CLI (same commands).
+- Done: `session_reset` own session. Never close Phil's tabs.
 
 ## Session Notes
 - Write atomic notes to `~/Vaults/Memory/sessions/` using `session-notes` skill (filesystem write, not the `obsidian` app CLI).

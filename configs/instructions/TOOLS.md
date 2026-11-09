@@ -12,6 +12,7 @@ MCP server names and shell command names differ. Route common work explicitly:
 | GitHub repos, issues, PRs, code, Actions | Native `github` MCP | `gh` |
 | Palantir Foundry data, Ontology, or SDK context | Native `palantir-mcp` | `palantir`, then registered MCPorter server |
 | MCP registry discovery | `mcporter config list` | `mcporter list <server> --schema --json` |
+| Browser work | Native `browse` MCP | `browse` CLI |
 
 `github` and `palantir-mcp` are MCP server names, not shell commands. Native
 MCP availability is client/runtime-specific. Native MCP configuration and
@@ -180,39 +181,13 @@ markitdown file.docx -o file.md
 markitdown --list-plugins
 ```
 
-## agent-browser
+## browse
 
-Browser automation CLI. Rust/CDP.
+Drives Phil's real Dia through the browse extension. MCP server and CLI share commands.
 
-- **Install:** `brew install agent-browser` or `npm install -g agent-browser`
-- **Skill:** `agent-browser skills get core`
-- **Default:** `--profile Default` (`z/acc`), `--headed`; isolated auth copy. No `--native`.
-- **Live Chrome:** `--auto-connect` only on explicit request.
-- **Lightweight:** `--engine lightpanda`; unauthenticated reading only.
-
-```bash
-agent-browser --profile Default open <url> --headed
-agent-browser snapshot -i                        # interactive @refs
-agent-browser click @e2
-agent-browser snapshot -i                        # refs stale after page change
-agent-browser fill @e3 "text"
-agent-browser screenshot
-agent-browser chat "do X"                        # AI single-shot (needs AI_GATEWAY_API_KEY)
-agent-browser batch "open <url>" "snapshot -i"   # multi-step
-agent-browser close                              # task done
-```
-
-Never kill/relaunch Chrome. Never close Phil's tabs. Viewport `1800x1169`, never 1920x1080. 403: stop; no retries.
-
-| Task | Tool |
-|---|---|
-| Browse/click/fill/extract | `agent-browser` |
-| Intent-driven task | `agent-browser chat` |
-| Multi-step sequence | `agent-browser batch` |
-| Authenticated pages | `--profile Default` (`z/acc`) |
-| Live Chrome control | `--auto-connect`, explicit request only |
-| Test suites w/ assertions | `agent-browser` plus the repository's test runner |
-| Diagnose install | `agent-browser doctor` |
+- **Install:** `curl -fsSL https://opencode.ai/browse/install | bash` (binary in `~/.local/bin`)
+- **Pair Dia:** `browse pair`, then enter the code in the extension's Options. The installer's own pairing fails on Dia because it tries to launch a second instance.
+- **Diagnose:** `browse doctor`. **Reference:** `browse skill`.
 
 ## curl.md
 
@@ -599,5 +574,6 @@ Canonical definitions in `configs/mcp/*.json`. Rendered to each CLI via `metrono
 | `tavily` | Claude, OpenCode, Antigravity, Codex | `tavily` | Disabled by default; `TAVILY_API_KEY`, `UPTIMIZE_ENV=dev`; extract is approved-domain only |
 | `github` | Claude, OpenCode, Antigravity, Codex | — | HTTP; `GITHUB_PERSONAL_ACCESS_TOKEN`; native MCP, not necessarily MCPorter |
 | `palantir-mcp` | Pi enabled; OpenCode/Claude Tux-owned; Codex disabled; Antigravity excluded | `palantir` snapshot | Tux launcher for native config; snapshot has separate auth/config |
+| `browse` | All CLIs | `browse` | stdio; Phil's real Dia via the browse extension; OpenCode sets `OPENCODE_BROWSER_RUNTIME=auto-update` |
 | `peekaboo` | All CLIs | `npx -y @steipete/peekaboo@latest mcp` | Disabled by default; macOS automation; requires Screen Recording + Accessibility; OpenCode timeout 30s |
 | `shadcn` | OpenCode | `shadcn` | shadcn/ui |
