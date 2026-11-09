@@ -1,4 +1,4 @@
-// Vendored from https://github.com/martinmiglio/opencode-rex-status (cfaaf69).
+// Vendored from https://github.com/martinmiglio/opencode-rex-status (cfaaf69), patched to report only this pane's session.
 // MIT License, Copyright (c) 2026 Martin Miglio.
 import { createHash } from "node:crypto"
 
@@ -76,6 +76,12 @@ export default {
       return route.type === "session" ? rootOf(route.sessionID) : undefined
     }
 
+    // The shared service sends every pane's events to every TUI; report only the session this pane shows.
+    // shortcut: session tabs are ignored, matching tabs.enabled=false; track tab sessions if tabs get enabled.
+    function ours(sessionID) {
+      return Boolean(sessionID) && viewedRoot() === sessionID
+    }
+
     function hasRunningChild(sessionID) {
       return context.data.session
         .family(sessionID)
@@ -100,7 +106,7 @@ export default {
       const timer = setTimeout(() => {
         timers.delete(timer)
         if (running.has(sessionID) || context.data.session.status(sessionID) === "running") return
-        if (focused && viewedRoot() === sessionID) return
+        if (focused || !ours(sessionID)) return
 
         const title = clip(context.data.session.get(sessionID)?.title, 192)
         const record = { state, app: APP, title, message: clip(message, 2048) }
@@ -115,7 +121,7 @@ export default {
 
     function start(event) {
       const sessionID = event.data.sessionID
-      if (!isRoot(sessionID)) return
+      if (!isRoot(sessionID) || !ours(sessionID)) return
       running.add(sessionID)
       finished.delete(sessionID)
       if (rootOwner === sessionID) rootOwner = undefined
@@ -123,7 +129,7 @@ export default {
 
     function block(id, sessionID) {
       const rootID = rootOf(sessionID)
-      if (rootID) blockers.set(id, rootID)
+      if (ours(rootID)) blockers.set(id, rootID)
     }
 
     function onFocus() {
