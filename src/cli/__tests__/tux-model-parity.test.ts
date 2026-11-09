@@ -16,7 +16,7 @@ test('renders every model Tux writes with exact limits, prices, and behavior', (
   expect(provider.package).toBe('aisdk:@ai-sdk/anthropic');
   expect(provider.settings).toEqual({ baseURL: 'http://127.0.0.1:18080/v1', apiKey: 'does-not-matter', toolStreaming: false });
   expect(provider.models).toEqual(fixture.models);
-  expect(Object.keys(provider.models)).toHaveLength(16);
+  expect(Object.keys(provider.models)).toHaveLength(17);
   expect(canonical.provider.tux).toBeUndefined();
   expect(canonical.model).toBe('tux/claude-opus-5-5#high');
 });
@@ -25,11 +25,12 @@ test('uses the context/output limits Tux writes', () => {
   const models = canonical.providers?.tux.models;
   expect(models).toBeDefined();
   for (const [id, model] of Object.entries(fixture.models)) {
-    const expected = id.startsWith('gpt-') ? { context: 1_050_000, output: 128_000 }
+    const expected = id.startsWith('gpt-') ? { context: 1_050_000, output: 128_000, input: 286_667 }
       : LEGACY_CLAUDE.includes(id) ? { context: 200_000, output: 64_000 }
+      : id === 'claude-haiku-5-5' ? { context: 1_000_000, output: 128_000, input: 111_000 }
       : id.startsWith('claude-') ? { context: 1_000_000, output: 128_000 }
       : id === 'deepseek-v4-pro' ? { context: 1_000_000, output: 384_000 }
-      : { context: 320_000, output: 32_768 };
+      : { context: 500_000, output: 32_768 };
     expect(models[id].limit, id).toEqual(expected);
     expect(model).toEqual(models[id]);
   }

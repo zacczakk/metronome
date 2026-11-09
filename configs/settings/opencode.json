@@ -812,7 +812,8 @@
           ],
           "limit": {
             "context": 1000000,
-            "output": 128000
+            "output": 128000,
+            "input": 111000
           },
           "capabilities": {
             "tools": true,
@@ -948,7 +949,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1058,7 +1060,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1168,7 +1171,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1242,6 +1246,117 @@
             }
           ]
         },
+        "gpt-6.1-terra": {
+          "name": "GPT-6.1 Terra",
+          "cost": [
+            {
+              "input": 1.2,
+              "output": 6,
+              "cache": {
+                "read": 0.06,
+                "write": 1.5
+              }
+            },
+            {
+              "tier": {
+                "type": "context",
+                "size": 272000
+              },
+              "input": 2.4,
+              "output": 9,
+              "cache": {
+                "read": 0.12,
+                "write": 3
+              }
+            }
+          ],
+          "limit": {
+            "context": 1050000,
+            "output": 128000,
+            "input": 286667
+          },
+          "package": "aisdk:@ai-sdk/openai",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "settings": {
+            "reasoningSummary": "auto",
+            "reasoningEffort": "medium",
+            "include": [
+              "reasoning.encrypted_content"
+            ]
+          },
+          "variants": [
+            {
+              "id": "none",
+              "settings": {
+                "reasoningEffort": "none",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "low",
+              "settings": {
+                "reasoningEffort": "low",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "medium",
+              "settings": {
+                "reasoningEffort": "medium",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "high",
+              "settings": {
+                "reasoningEffort": "high",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "xhigh",
+              "settings": {
+                "reasoningEffort": "xhigh",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            },
+            {
+              "id": "max",
+              "settings": {
+                "reasoningEffort": "max",
+                "reasoningSummary": "auto",
+                "include": [
+                  "reasoning.encrypted_content"
+                ]
+              }
+            }
+          ]
+        },
         "gpt-5.6-terra": {
           "name": "GPT-5.6 Terra",
           "cost": [
@@ -1268,7 +1383,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1378,7 +1494,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1488,7 +1605,8 @@
           ],
           "limit": {
             "context": 1050000,
-            "output": 128000
+            "output": 128000,
+            "input": 286667
           },
           "package": "aisdk:@ai-sdk/openai",
           "capabilities": {
@@ -1647,7 +1765,7 @@
             }
           },
           "limit": {
-            "context": 320000,
+            "context": 500000,
             "output": 32768
           },
           "package": "aisdk:@ai-sdk/openai",

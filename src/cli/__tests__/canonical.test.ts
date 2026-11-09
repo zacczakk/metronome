@@ -127,7 +127,7 @@ describe('canonical agent routing', () => {
     );
 
     expect(settings).toMatchObject({
-      model_reasoning_effort: 'high',
+      model_reasoning_effort: 'xhigh',
       profile_files: {
         enterprise: { model: 'gpt-6.1-sol', model_provider: 'openai' },
         tux: { model: 'gpt-6.1-sol', model_provider: 'tux' },

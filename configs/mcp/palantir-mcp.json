@@ -14,7 +14,8 @@
     },
     "pi": {
       "enabled": true,
-      "exposure": "direct"
+      "exposure": "direct",
+      "timeout": 20
     }
   }
 }
