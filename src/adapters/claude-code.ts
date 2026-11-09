@@ -113,6 +113,10 @@ export class ClaudeCodeAdapter extends BaseAdapter {
     return JSON.stringify(extracted, null, 2) + '\n';
   }
 
+  override extractSettingsForComparison(settings: CanonicalSettings, targetContent: string): string {
+    return this.extractSettingsKeys(Object.keys(settings.keys), targetContent);
+  }
+
   /**
    * ~/.claude.json mixes mcpServers with Claude Code runtime state (projects,
    * toolUsage, skillUsage, etc.). For drift detection we only care about

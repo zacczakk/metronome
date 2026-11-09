@@ -239,4 +239,14 @@ describe('canonical Claude hooks', () => {
       for (const hook of group.hooks) expect(hook.command).toContain('metronome/configs/hooks/');
     }
   });
+
+  it('ignore the position of hooks other tools own when comparing settings', () => {
+    const managed = { hooks: [{ type: 'command', command: 'node "$HOME/Repos/zacczakk/metronome/configs/hooks/loader.js"' }] };
+    const foreign = { hooks: [{ type: 'command', command: 'rex hook claude' }] };
+    const settings = { keys: { hooks: { SessionStart: [managed] } } };
+    const rendered = adapter.renderSettings(settings, JSON.stringify({ hooks: { SessionStart: [foreign] } }));
+    const reordered = JSON.stringify({ hooks: { SessionStart: [managed, foreign] } });
+    expect(adapter.extractSettingsForComparison(settings, reordered))
+      .toBe(adapter.extractSettingsForComparison(settings, rendered));
+  });
 });
