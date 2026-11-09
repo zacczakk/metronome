@@ -136,4 +136,23 @@ describe('push MCP E2E', () => {
     expect(second.hasDrift).toBe(false);
     expect(second.written).toBe(0);
   }, E2E_TIMEOUT);
+
+  test('removes a stale server when it is the only MCP drift', async () => {
+    const fakeHome = createTestHome('push-mcp-stale-only');
+    const projectDir = createTestProject('push-mcp-stale-only', FIXTURE_ROOT);
+    seedMCPTargets(fakeHome);
+    await runPush({ projectDir, force: true, types: ['mcp'], homeDir: fakeHome });
+
+    const mcpPath = createAdapter('opencode', fakeHome).getPaths().getMCPConfigPath();
+    const synced = JSON.parse(readFileSync(mcpPath, 'utf-8')) as { mcp: { servers: Record<string, unknown> } };
+    synced.mcp.servers['retired-server'] = { type: 'local', command: ['retired'], disabled: true };
+    writeFileSync(mcpPath, JSON.stringify(synced, null, 2) + '\n');
+
+    const result = await runPush({ projectDir, targets: ['opencode'], force: true, types: ['mcp'], homeDir: fakeHome });
+    expect(result.written).toBe(1);
+    expect(readFileSync(mcpPath, 'utf-8')).not.toContain('retired-server');
+
+    const second = await runPush({ projectDir, targets: ['opencode'], force: true, types: ['mcp'], homeDir: fakeHome });
+    expect(second.hasDrift).toBe(false);
+  }, E2E_TIMEOUT);
 });

@@ -144,6 +144,10 @@ export async function runPush(options: SyncOptions = {}): Promise<OrchestratorPu
     const caps = adapter.getCapabilities();
     const targetAgents = agents.filter((agent) => isCanonicalAgentForTarget(agent, target));
     const writeOps = diff.operations.filter((op) => (op.type === 'create' || op.type === 'update') && op.itemType !== 'skill');
+    if (diff.mcpWarning?.action === 'remove' && !writeOps.some((op) => op.itemType === 'mcp')) {
+      const mcpOp = diff.operations.find((op) => op.itemType === 'mcp');
+      if (mcpOp) writeOps.push(mcpOp);
+    }
     const deleteOps = diff.operations.filter((op) => op.type === 'delete' && op.itemType !== 'skill');
     const canonicalAgentNames = new Set(targetAgents.map((agent) => agent.name));
     const staleAgentNames = options.deleteStale

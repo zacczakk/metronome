@@ -366,18 +366,20 @@ export function formatDryRunPretty(results: DiffResult[], homeDir?: string, priv
   return lines.join('\n');
 }
 
-export function formatDryRunResult(results: DiffResult[], pretty: boolean, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): CheckResult {
-  const hasDrift = results.some(
-    (r) => r.summary.create > 0 || r.summary.update > 0 || r.summary.delete > 0,
+function resultsHaveDrift(results: DiffResult[]): boolean {
+  return results.some(
+    (r) => r.summary.create > 0 || r.summary.update > 0 || r.summary.delete > 0 || r.mcpWarning?.action === 'remove',
   );
+}
+
+export function formatDryRunResult(results: DiffResult[], pretty: boolean, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): CheckResult {
+  const hasDrift = resultsHaveDrift(results);
   const output = pretty ? formatDryRunPretty(results, homeDir, privateSkillDrift, desktopDrift) : formatDryRunJson(results, homeDir, privateSkillDrift, desktopDrift);
   return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 || desktopDrift.length > 0 };
 }
 
 export function formatCheckResult(results: DiffResult[], pretty: boolean, verbose = false, homeDir?: string, privateSkillDrift?: PrivateSkillDrift, desktopDrift: DesktopDrift[] = []): CheckResult {
-  const hasDrift = results.some(
-    (r) => r.summary.create > 0 || r.summary.update > 0 || r.summary.delete > 0,
-  );
+  const hasDrift = resultsHaveDrift(results);
   const output = pretty ? formatDiffPretty(results, verbose, privateSkillDrift, desktopDrift) : formatDiffJson(results, verbose, homeDir, privateSkillDrift, desktopDrift);
   return { output, hasDrift: hasDrift || privateDriftTotal(privateSkillDrift) > 0 || desktopDrift.length > 0 };
 }
