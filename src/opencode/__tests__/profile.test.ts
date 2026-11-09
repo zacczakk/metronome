@@ -39,7 +39,8 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
       opencode: { oauth: false, codemode: true },
     },
   }));
-  for (const name of ['chatgpt-websearch.js', 'instructions-loader.ts', 'memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {
+  await mkdir(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', 'rex-status'), { recursive: true });
+  for (const name of ['chatgpt-websearch.js', 'instructions-loader.ts', 'memory-vault-advisor.ts', 'read-guard.ts', 'rex-status/tui.js', 'validate-commit.ts']) {
     await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', name), `// v2 ${name}\n`);
   }
   await writeFile(join(homeDir, '.config', 'opencode', 'opencode.json'), JSON.stringify({
@@ -72,6 +73,7 @@ describe('switchOpenCodeVersion', () => {
     const plugins = join(paths.homeDir, '.config', 'opencode', 'plugins');
     expect(await Bun.file(join(plugins, 'metronome-muxy-notify.js')).exists()).toBe(false);
     expect(await Bun.file(join(plugins, 'third-party.ts')).exists()).toBe(true);
+    expect(await Bun.file(join(plugins, 'rex-status', 'tui.js')).exists()).toBe(true);
   });
 
   test('reports switch stages through the optional progress callback', async () => {

@@ -21,6 +21,7 @@ const MANAGED_GLOBAL_PLUGINS = [
   'instructions-loader.ts',
   'memory-vault-advisor.ts',
   'read-guard.ts',
+  'rex-status/tui.js',
   'validate-commit.ts',
 ];
 

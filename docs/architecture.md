@@ -84,6 +84,7 @@ OpenCode uses a **plugin system** instead of shell hooks. Local plugins are auto
 |--------|----------|---------|
 | `memory-vault-advisor.ts` | `tool.execute.after` | Advisory reminder to check Memory vault before exploratory searches. |
 | `read-guard.ts` | `tool.execute.after`, `tool.execute.before` | Blocks edits to existing files that have not been read in the session. |
+| `rex-status/tui.js` | TUI `session.execution.*` | Reports `done` and `error` to Rex over OSC 7501 for sessions you have not viewed; runs only when `REX_SESSION` is set. Vendored from `martinmiglio/opencode-rex-status` (MIT) until anomalyco/opencode#60411 ships. |
 | `validate-commit.ts` | `tool.execute.before` | Enforces Conventional Commit messages for `git commit`. |
 
 `configs/opencode/v2/plugins/` is the sole Metronome OpenCode plugin source.
