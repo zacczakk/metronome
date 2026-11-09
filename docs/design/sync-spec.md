@@ -353,11 +353,9 @@ than concatenating those files into `AGENTS.md`.
   (`configs/opencode/v2/plugins/chatgpt-websearch.js`) deployed like the other
   managed V2 plugins, not a package entry — upstream
   `opencode-chatgpt-websearch` is unmaintained. Runtime verification requires
-  `opencode.chatgpt-websearch`; `metronome.muxy-notify` is optional and never
-  blocks activation.
-- Deploy the native V2 Muxy port as
-  `~/.config/opencode/plugins/metronome-muxy-notify.js`; preserve Muxy's
-  app-owned `muxy-notify.js` because Muxy regenerates it.
+  `opencode.chatgpt-websearch`.
+- Delete retired Metronome plugin files (`cursor-oauth.js`,
+  `metronome-muxy-notify.js`) from `~/.config/opencode/plugins/`.
 - Record every switch and all output hashes in
   `~/.config/opencode/migration-manifest.json`.
 - Backups live below `~/.config/opencode-backups/metronome/`.
@@ -379,8 +377,7 @@ Equivalent manual flow: `bun install -g --force --trust --minimum-release-age=0
  confirm it matches `opencode --version`, install the same exact
  `@opencode/plugin` build with an explicit `--minimum-release-age=0` override
  in `~/.config/opencode`, restart `opencode service`, then verify
- `opencode api get /api/plugin`. A missing Muxy ID is a warning; the other
-required IDs must be present.
+ `opencode api get /api/plugin`. All required IDs must be present.
 
 #### Pull
 

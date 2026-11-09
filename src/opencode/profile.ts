@@ -20,12 +20,11 @@ const MANAGED_GLOBAL_PLUGINS = [
   'chatgpt-websearch.js',
   'instructions-loader.ts',
   'memory-vault-advisor.ts',
-  'muxy-notify.js',
   'read-guard.ts',
   'validate-commit.ts',
 ];
 
-const V2_MUXY_PLUGIN_NAME = 'metronome-muxy-notify.js';
+const RETIRED_GLOBAL_PLUGINS = ['cursor-oauth.js', 'metronome-muxy-notify.js'];
 
 interface ManifestHistory {
   timestamp: string;
@@ -192,22 +191,15 @@ async function renderAgents(projectDir: string): Promise<{ files: Map<string, st
 async function deployPlugins(options: SwitchOpenCodeOptions, written: string[]): Promise<void> {
   const globalDir = join(options.homeDir, '.config', 'opencode', 'plugins');
   await mkdir(globalDir, { recursive: true });
-  try { await unlink(join(globalDir, 'cursor-oauth.js')); } catch {}
+  for (const name of RETIRED_GLOBAL_PLUGINS) {
+    try { await unlink(join(globalDir, name)); } catch {}
+  }
   const sourceDir = join(options.projectDir, 'configs', 'opencode', 'v2', 'plugins');
   for (const name of MANAGED_GLOBAL_PLUGINS) {
-    const targetName = name === 'muxy-notify.js' ? V2_MUXY_PLUGIN_NAME : name;
-    const target = join(globalDir, targetName);
-    const content = await readFile(join(sourceDir, name), 'utf8');
-    await atomicWrite(target, content);
+    const target = join(globalDir, name);
+    await atomicWrite(target, await readFile(join(sourceDir, name), 'utf8'));
     written.push(target);
-    if (name === 'muxy-notify.js') {
-      const legacyTarget = join(globalDir, name);
-      try {
-        if (await readFile(legacyTarget, 'utf8') === content) await unlink(legacyTarget);
-      } catch {}
-    }
   }
-
 }
 
 async function installedSdkVersion(configDir: string): Promise<string | undefined> {
@@ -275,7 +267,6 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
         'memory-vault-advisor': observedPlugins?.includes('memory-vault-advisor') ? 'active' : 'inactive',
         'metronome.read-guard': observedPlugins?.includes('metronome.read-guard') ? 'active' : 'inactive',
         'metronome.validate-commit': observedPlugins?.includes('metronome.validate-commit') ? 'active' : 'inactive',
-        'metronome.muxy-notify': observedPlugins?.includes('metronome.muxy-notify') ? 'active' : 'inactive',
         'opencode.chatgpt-websearch': observedPlugins?.includes('opencode.chatgpt-websearch') ? 'active' : 'inactive',
       },
       ...(sdk ? { sdk } : {}),

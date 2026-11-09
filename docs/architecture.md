@@ -147,12 +147,8 @@ GPT and DeepSeek metadata stays unchanged. Sync with
 controlled separately by `session.thinking: "show"` in OpenCode's `cli.json`.
 
 Versioned V2 plugins live under `configs/opencode/v2/plugins/`. V2 ports the
-instruction loader, Memory advisor, read guard, commit validator, and Muxy
-notifications. The native Muxy V2 port is deployed globally as
-`metronome-muxy-notify.js` so Muxy's app-owned `muxy-notify.js` cannot overwrite
-it; the app-owned file is preserved because Muxy continuously regenerates it.
-The Metronome port remains the active notification integration. Muxy is optional
-for V2 readiness. The stable runtime uses the `opencode` executable;
+instruction loader, Memory advisor, read guard, and commit validator.
+Activation deletes retired Metronome plugin files. The stable runtime uses the `opencode` executable;
 There is one Metronome target, `opencode`. Cursor OAuth is
 disabled in V2 because the
 public V2 catalog API cannot add a provider. Switching back to
@@ -163,7 +159,7 @@ websearch is a vendored, profile-owned plugin
 (`configs/opencode/v2/plugins/chatgpt-websearch.js`) deployed like the other
 managed V2 plugins, not a package entry: upstream
 `opencode-chatgpt-websearch` is unmaintained. V2 runtime verification requires
-`opencode.chatgpt-websearch`; `metronome.muxy-notify` is optional.
+`opencode.chatgpt-websearch`.
 
 Generic V2 sync handles settings, agents, MCP, commands, skills, and
 instructions. V2 preserves but does not natively resolve the config

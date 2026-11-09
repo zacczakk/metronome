@@ -26,7 +26,6 @@ export function formatVerificationProgress(progress: PluginVerificationProgress)
   const details = [
     progress.failure,
     progress.missing.length > 0 ? `required missing: ${progress.missing.join(', ')}` : undefined,
-    progress.optionalMissing.length > 0 ? `optional unavailable: ${progress.optionalMissing.join(', ')}` : undefined,
   ].filter((value): value is string => value !== undefined).join('; ');
   const suffix = details ? `; ${details}` : '';
   if (progress.status === 'ready') {
@@ -38,7 +37,7 @@ export function formatVerificationProgress(progress: PluginVerificationProgress)
 export function verificationReporter(report: (message: string) => void): (progress: PluginVerificationProgress) => void {
   let lastState = '';
   return (progress) => {
-    const state = [progress.status, progress.failure, progress.missing.join(','), progress.optionalMissing.join(',')].join('|');
+    const state = [progress.status, progress.failure, progress.missing.join(',')].join('|');
     const periodic = progress.attempt === 1 || progress.attempt % 10 === 0 || progress.attempt === progress.attempts;
     if (state !== lastState || periodic || progress.status === 'ready') report(formatVerificationProgress(progress));
     lastState = state;

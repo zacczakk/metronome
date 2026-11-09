@@ -139,12 +139,8 @@ the other managed V2 plugins) rather than a package entry. The upstream
 `opencode-chatgpt-websearch` package is unmaintained, so the integration is
 bundled into a single file under OpenCode's local-plugin auto-discovery
 directory instead. Runtime verification requires the
-`opencode.chatgpt-websearch` plugin. Muxy is an optional V2 integration, so a
-Muxy load problem never aborts profile activation.
+`opencode.chatgpt-websearch` plugin.
 
-The native V2 Muxy port is deployed as
-`~/.config/opencode/plugins/metronome-muxy-notify.js`; Muxy's app-owned
-`muxy-notify.js` file is left untouched because Muxy regenerates it.
 The canonical global profile sets `autoupdate: false`; use
 `metronome opencode upgrade` for trusted, verified CLI updates.
 

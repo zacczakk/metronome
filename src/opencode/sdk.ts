@@ -341,8 +341,6 @@ export const REQUIRED_V2_PLUGIN_IDS = [
   'opencode.chatgpt-websearch',
 ];
 
-export const OPTIONAL_V2_PLUGIN_IDS = ['metronome.muxy-notify'];
-
 export interface PluginVerificationProgress {
   attempt: number;
   attempts: number;
@@ -350,7 +348,6 @@ export interface PluginVerificationProgress {
   missing: string[];
   attemptMs: number;
   elapsedMs: number;
-  optionalMissing: string[];
   failure?: 'request-failed' | 'invalid-response';
 }
 
@@ -411,14 +408,12 @@ export async function verifyOpenCodeV2Plugins(
       failure = 'request-failed';
     }
     missing = REQUIRED_V2_PLUGIN_IDS.filter((id) => !ids.includes(id));
-    const optionalMissing = OPTIONAL_V2_PLUGIN_IDS.filter((id) => !ids.includes(id));
     const ready = missing.length === 0;
     onProgress?.({
       attempt: attempt + 1,
       attempts,
       status: ready ? 'ready' : 'retrying',
       missing,
-      optionalMissing,
       attemptMs: Date.now() - attemptStartedAt,
       elapsedMs: Date.now() - startedAt,
       ...(failure ? { failure } : {}),

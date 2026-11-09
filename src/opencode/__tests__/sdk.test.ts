@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { alignOpenCodePluginSdk, compareOpenCodeVersions, OPTIONAL_V2_PLUGIN_IDS, parseGlobalOpenCodeVersion, parseOpenCodeExecutableVersion, parsePluginIDs, REQUIRED_V2_PLUGIN_IDS, restartAndVerifyOpenCodeV2, runCommand, updateOpenCodeV2, updateOpenCodeV2Safely, verifyOpenCodeV2Plugins, type CommandRunner } from '../sdk';
+import { alignOpenCodePluginSdk, compareOpenCodeVersions, parseGlobalOpenCodeVersion, parseOpenCodeExecutableVersion, parsePluginIDs, REQUIRED_V2_PLUGIN_IDS, restartAndVerifyOpenCodeV2, runCommand, updateOpenCodeV2, updateOpenCodeV2Safely, verifyOpenCodeV2Plugins, type CommandRunner } from '../sdk';
 
 describe('OpenCode V2 SDK alignment', () => {
   test('terminates a child process when aborted', async () => {
@@ -157,22 +157,6 @@ describe('OpenCode V2 SDK alignment', () => {
     const runner: CommandRunner = async (_command, args) => ({ stdout: args.at(-1) === '/api/plugin' ? JSON.stringify({ data: ids.map((id) => ({ id })) }) : '', stderr: '' });
     expect(await restartAndVerifyOpenCodeV2(runner)).toEqual(ids);
     expect(parsePluginIDs(JSON.stringify(ids.map((id) => ({ id }))))).toEqual(ids);
-  });
-
-  test('does not fail readiness when the optional Muxy plugin is absent', async () => {
-    const ids = [...REQUIRED_V2_PLUGIN_IDS];
-    const progress: Array<{ status: string; missing: string[]; optionalMissing: string[] }> = [];
-    const runner: CommandRunner = async (_command, args) => ({
-      stdout: args.at(-1) === '/api/plugin' ? JSON.stringify({ data: ids.map((id) => ({ id })) }) : '',
-      stderr: '',
-    });
-
-    expect(await verifyOpenCodeV2Plugins(runner, 1, 0, (event) => progress.push({
-      status: event.status,
-      missing: event.missing,
-      optionalMissing: event.optionalMissing,
-    }))).toEqual(ids);
-    expect(progress).toEqual([{ status: 'ready', missing: [], optionalMissing: OPTIONAL_V2_PLUGIN_IDS }]);
   });
 
   test('fails fast after a plugin request failure', async () => {

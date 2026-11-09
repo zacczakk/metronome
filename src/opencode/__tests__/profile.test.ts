@@ -42,7 +42,6 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
   for (const name of ['chatgpt-websearch.js', 'instructions-loader.ts', 'memory-vault-advisor.ts', 'read-guard.ts', 'validate-commit.ts']) {
     await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', name), `// v2 ${name}\n`);
   }
-  await writeFile(join(projectDir, 'configs', 'opencode', 'v2', 'plugins', 'muxy-notify.js'), '// v2 muxy\n');
   await writeFile(join(homeDir, '.config', 'opencode', 'opencode.json'), JSON.stringify({
     provider: { tux: { name: 'Tux overlay' } },
     mcp: {
@@ -54,8 +53,7 @@ async function fixture(): Promise<{ projectDir: string; homeDir: string }> {
     custom: true,
   }));
   await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'third-party.ts'), '// preserve\n');
-  await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'muxy-notify.js'), '// external muxy\n');
-  await writeFile(join(homeDir, '.opencode', 'plugins', 'muxy-notify.js'), '// external muxy\n');
+  await writeFile(join(homeDir, '.config', 'opencode', 'plugins', 'metronome-muxy-notify.js'), '// retired\n');
   return { projectDir, homeDir };
 }
 
@@ -66,6 +64,14 @@ describe('switchOpenCodeVersion', () => {
     const result = await switchOpenCodeVersion({ ...paths, dryRun: true });
     expect(result.written).toEqual([]);
     expect(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8')).toBe(before);
+  });
+
+  test('removes retired plugins and keeps third-party plugins', async () => {
+    const paths = await fixture();
+    await switchOpenCodeVersion(paths);
+    const plugins = join(paths.homeDir, '.config', 'opencode', 'plugins');
+    expect(await Bun.file(join(plugins, 'metronome-muxy-notify.js')).exists()).toBe(false);
+    expect(await Bun.file(join(plugins, 'third-party.ts')).exists()).toBe(true);
   });
 
   test('reports switch stages through the optional progress callback', async () => {

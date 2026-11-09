@@ -13,7 +13,7 @@ describe('opencode version command', () => {
     expect(opencodeVersionCommand.commands.find((command) => command.name() === 'use')?.helpInformation()).toContain('--no-align-sdk');
   });
 
-  test('compacts unchanged plugin retries while surfacing optional gaps', () => {
+  test('compacts unchanged plugin retries', () => {
     const messages: string[] = [];
     const report = verificationReporter((message) => messages.push(message));
     const retry = {
@@ -21,7 +21,6 @@ describe('opencode version command', () => {
       attempts: 60,
       status: 'retrying' as const,
       missing: ['required-plugin'],
-      optionalMissing: ['metronome.muxy-notify'],
       attemptMs: 100,
       elapsedMs: 100,
     };
@@ -32,9 +31,9 @@ describe('opencode version command', () => {
     report({ ...retry, attempt: 11, status: 'ready', missing: [], attemptMs: 400, elapsedMs: 400 });
 
     expect(messages).toEqual([
-      'Plugin catalog waiting (1/60; 100ms; required missing: required-plugin; optional unavailable: metronome.muxy-notify)',
-      'Plugin catalog waiting (10/60; 300ms; required missing: required-plugin; optional unavailable: metronome.muxy-notify)',
-      'Plugin catalog ready (11/60; 400ms; optional unavailable: metronome.muxy-notify)',
+      'Plugin catalog waiting (1/60; 100ms; required missing: required-plugin)',
+      'Plugin catalog waiting (10/60; 300ms; required missing: required-plugin)',
+      'Plugin catalog ready (11/60; 400ms)',
     ]);
   });
 });

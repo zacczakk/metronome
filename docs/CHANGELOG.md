@@ -16,6 +16,7 @@ read_when:
 
 ## Unreleased
 
+- **Muxy plugin removed** — Metronome no longer ships the OpenCode Muxy notification plugin, and `metronome opencode use` deletes the old `metronome-muxy-notify.js`.
 - **browse is the default browser tool** — the `browse` MCP (Phil's real Dia via the browse extension) is on for every client and replaces agent-browser and `chrome-devtools-mcp`. The old agent-browser instructions live in `docs/archive/agent-browser.md`.
 - **Stale MCP servers are removed on their own** — `metronome check` now counts a stale server as drift, and `metronome push` rewrites the MCP config even when that is the only change. Before, stale servers stayed until some other MCP server changed.
 - **Claude settings check compares only what metronome manages** — like Codex, it ignores keys outside canonical and hooks other tools own, such as Rex. Before, Rex moving its own hook showed as drift on every check.
