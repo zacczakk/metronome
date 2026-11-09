@@ -3,10 +3,8 @@
   "transport": "stdio",
   "command": "browse",
   "args": ["mcp"],
-  "enabled": false,
   "target_options": {
     "opencode": {
-      "enabled": true,
       "environment": {
         "OPENCODE_BROWSER_RUNTIME": "auto-update"
       }
