@@ -1,0 +1,15 @@
+{
+  "description": "browse: drives the user's real browser (Dia/Chrome) through the browse extension",
+  "transport": "stdio",
+  "command": "browse",
+  "args": ["mcp"],
+  "enabled": false,
+  "target_options": {
+    "opencode": {
+      "enabled": true,
+      "environment": {
+        "OPENCODE_BROWSER_RUNTIME": "auto-update"
+      }
+    }
+  }
+}
