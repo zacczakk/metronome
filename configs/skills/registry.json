@@ -8,7 +8,6 @@
       "basePath": "skills",
       "skills": {
         "docx": { "sync": "auto" },
-        "frontend-design": { "sync": "auto" },
         "pdf": { "sync": "auto" },
         "pptx": { "sync": "auto" },
         "xlsx": { "sync": "auto" }
@@ -23,28 +22,6 @@
         "obsidian-markdown": { "sync": "auto" },
         "json-canvas": { "localName": "obsidian-json-canvas", "sync": "auto" },
         "obsidian-bases": { "sync": "auto" }
-      }
-    },
-    "cursor": {
-      "repo": "https://github.com/cursor/plugins.git",
-      "basePath": "cursor-team-kit/skills",
-      "skills": {
-        "thermo-nuclear-code-quality-review": { "sync": "manual" }
-      }
-    },
-    "obra": {
-      "repo": "https://github.com/obra/superpowers.git",
-      "basePath": "skills",
-      "skills": {
-        "writing-plans": { "sync": "manual" }
-      }
-    },
-    "mattpocock": {
-      "repo": "https://github.com/mattpocock/skills.git",
-      "basePath": "skills/engineering",
-      "skills": {
-        "diagnosing-bugs": { "sync": "auto" },
-        "tdd": { "sync": "auto" }
       }
     },
     "kitlangton-psychopomp": {

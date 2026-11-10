@@ -173,7 +173,7 @@ describe('canonical vault retrieval policy', () => {
 });
 
 describe('upstream skill registry', () => {
-  test('does not resync removed skills and tracks Matt replacements', () => {
+  test('does not resync removed skills', () => {
     const registry = JSON.parse(
       readFileSync(join(process.cwd(), 'configs', 'skills', 'registry.json'), 'utf8'),
     ) as {
@@ -186,16 +186,25 @@ describe('upstream skill registry', () => {
     const registeredSkills = Object.values(registry.upstreams)
       .flatMap((upstream) => Object.keys(upstream.skills));
     const removedSkills = [
+      'design-critique',
+      'diagnosing-bugs',
       'doc-coauthoring',
       'dispatching-parallel-agents',
       'finishing-a-development-branch',
+      'frontend-design',
+      'grill-with-docs',
+      'interface-design',
       'receiving-code-review',
       'requesting-code-review',
+      'screenshot-workflow',
       'skill-creator',
       'systematic-debugging',
+      'tdd',
       'test-driven-development',
+      'thermo-nuclear-code-quality-review',
       'using-git-worktrees',
       'webapp-testing',
+      'writing-plans',
       'writing-skills',
     ];
 
@@ -203,16 +212,6 @@ describe('upstream skill registry', () => {
       expect(registeredSkills).not.toContain(skill);
       expect(existsSync(join(process.cwd(), 'configs', 'skills', skill))).toBe(false);
     }
-    expect(existsSync(join(process.cwd(), 'configs', 'skills', 'diagnosing-bugs', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(process.cwd(), 'configs', 'skills', 'tdd', 'SKILL.md'))).toBe(true);
-    expect(registry.upstreams.mattpocock).toEqual({
-      repo: 'https://github.com/mattpocock/skills.git',
-      basePath: 'skills/engineering',
-      skills: {
-        'diagnosing-bugs': { sync: 'auto' },
-        tdd: { sync: 'auto' },
-      },
-    });
   });
 });
 

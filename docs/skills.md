@@ -1,5 +1,5 @@
 ---
-summary: Skills catalog and portfolio guidance for 29 active globally synced skills.
+summary: Skills catalog and portfolio guidance for 23 active globally synced skills.
 read_when:
   - Adding or modifying skills
   - Reviewing what's available
@@ -8,7 +8,7 @@ read_when:
 
 # Skills Catalog
 
-29 active skills in `configs/skills/`, synced to all targets via `metronome push`.
+23 active skills in `configs/skills/`, synced to all targets via `metronome push`.
 Company-internal skills (e.g. Foundry) are private: they live only in `~/.agents/skills` (see [shared-private-skill-projection](shared-private-skill-projection.md)).
 Skills load on-demand when the agent's task matches the skill description.
 Run `bun scripts/sync-upstream-skills.ts` to pull configured upstreams; `auto`
@@ -20,13 +20,11 @@ The current portfolio is intentionally under review. See [Skill Portfolio Review
 
 | Source | Repo | Count | Notes |
 |---|---|---|---|
-| Custom | this repo | 9 | Vault, design, migration, and workflow skills |
-| Anthropic | `anthropics/skills` | 5 | File-format and frontend-design skills |
-| Superpowers | `obra/superpowers` | 1 | `writing-plans`, locally adapted and manual-sync |
-| Matt Pocock | `mattpocock/skills` | 2 | `diagnosing-bugs` and `tdd`, auto-synced |
+| Custom | this repo | 6 | Vault, migration, handoff, and film skills |
+| Anthropic | `anthropics/skills` | 4 | File-format skills |
 | Kepano | `kepano/obsidian-skills` | 5 | `obsidian-cli` is manually synced due to local app-safety guard |
 | Ponytail | `DietrichGebert/ponytail` | 6 | Minimalism and over-engineering skills, auto-synced from upstream HEAD |
-| Other upstreams | `cursor/plugins` | 1 | Manual sync |
+| Psychopomp | `kitlangton/psychopomp` | 2 | `psychopomp` and `explainer-motion`, manual sync |
 
 ## Selected Inventory
 
@@ -43,8 +41,6 @@ The tables below are a trigger-oriented overview, not an exhaustive registry. So
 | `obsidian-defuddle` | Extracting clean markdown from web pages | — |
 | `obsidian-bases` | Creating .base files, database views, filters | — |
 | `obsidian-vault-conventions` | Vault layout, folder lifecycle, naming conventions | — |
-| `design-critique` | Reviewing UI for anti-slop tells, hierarchy, and UX quality | — |
-| `screenshot-workflow` | "Use a screenshot" or replacing/optimizing image assets | 13 |
 | `session-notes` | Writing atomic session notes to Memory vault (decisions, discoveries, checkpoints) | — |
 
 ### Anthropic Skills
@@ -55,13 +51,6 @@ The tables below are a trigger-oriented overview, not an exhaustive registry. So
 | `pdf` | PDF processing (read, create, merge, OCR) | forms.md, reference.md, scripts/ |
 | `pptx` | Creating/editing PowerPoint presentations | editing.md, pptxgenjs.md, scripts/ |
 | `xlsx` | Creating/editing/cleaning spreadsheets | scripts/ |
-
-### Process Skills
-
-| Skill | Trigger | Status |
-|---|---|---|
-| `diagnosing-bugs` | Hard bugs and performance regressions | Matt Pocock replacement for `systematic-debugging`; auto-sync |
-| `tdd` | Explicit test-first requests and red-green-refactor | Matt Pocock replacement for `test-driven-development`; auto-sync |
 
 ### Ponytail Skills
 
@@ -74,24 +63,15 @@ The tables below are a trigger-oriented overview, not an exhaustive registry. So
 | `ponytail-gain` | Show Ponytail impact | Published benchmark scoreboard |
 | `ponytail-help` | Ask for Ponytail usage help | Modes, skills, and command reference |
 
-### Impeccable Skill (pbakaus/impeccable, Apache 2.0)
-
-| Skill | Trigger | Files |
-|---|---|---|
-| `frontend-design` | Building web UI, pages, components, applications — distinctive, anti-AI-slop aesthetics with local design-context support | SKILL.md |
-
-Replaces former `frontend-aesthetics`. Inspired by Impeccable, but now trimmed and owned locally. Added a metronome-native context protocol and separate review/command layer instead of importing the full upstream command pack.
-
 ## Design Commands
 
-Six design commands in `configs/commands/`, synced with the rest of the canonical command set:
+Five design commands in `configs/commands/`, synced with the rest of the canonical command set:
 
 1. `teach-design-context`
 2. `design-audit`
-3. `design-critique`
-4. `design-normalize`
-5. `design-polish`
-6. `design-typeset`
+3. `design-normalize`
+4. `design-polish`
+5. `design-typeset`
 
 ## Adoption Guidelines
 

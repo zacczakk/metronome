@@ -11,7 +11,7 @@ An agent brief is the contract an AFK agent works from. It should survive stale 
 
 ## When to Use
 
-- After `grill-with-docs` resolves a feature, bug, or design.
+- After requirements for a feature, bug, or design are settled.
 - When making a GitHub issue, Outcome Engine item, or plan ready for agent execution.
 - When handing off work that may sit for days before implementation.
 

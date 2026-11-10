@@ -16,6 +16,7 @@ read_when:
 
 ## Unreleased
 
+- **Fewer skills** — removed `design-critique`, `diagnosing-bugs`, `frontend-design`, `grill-with-docs`, `interface-design`, `screenshot-workflow`, `tdd`, `thermo-nuclear-code-quality-review` and `writing-plans`, plus the `design-critique` command. `metronome push` deletes their old copies. 23 skills remain.
 - **Muxy plugin removed** — Metronome no longer ships the OpenCode Muxy notification plugin, and `metronome opencode use` deletes the old `metronome-muxy-notify.js`.
 - **browse is the default browser tool** — the `browse` MCP (Phil's real Dia via the browse extension) is on for every client and replaces agent-browser and `chrome-devtools-mcp`. The old agent-browser instructions live in `docs/archive/agent-browser.md`.
 - **Stale MCP servers are removed on their own** — `metronome check` now counts a stale server as drift, and `metronome push` rewrites the MCP config even when that is the only change. Before, stale servers stayed until some other MCP server changed.
