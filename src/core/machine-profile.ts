@@ -38,6 +38,16 @@ function objectMap(value: unknown): Record<string, Record<string, unknown>> {
   );
 }
 
+/** `value` with this machine's settings overlay for `target` applied. */
+export async function withMachineSettings(
+  projectDir: string,
+  target: string,
+  value: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const overlay = (await readMachineProfile(projectDir))?.settings[target];
+  return overlay ? applyOverlay(value, overlay) : value;
+}
+
 /** Deep-merge `overlay` onto `base`; a `null` overlay value removes the key. */
 export function applyOverlay(base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = { ...base };

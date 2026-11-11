@@ -91,6 +91,25 @@ describe('switchOpenCodeVersion', () => {
     expect(progress[5]).toContain('Record migration manifest done');
   });
 
+  test('applies the machine profile and drops canonical-only agent keys', async () => {
+    const paths = await fixture();
+    await mkdir(join(paths.projectDir, 'configs', 'machines'), { recursive: true });
+    await mkdir(join(paths.projectDir, '.metronome'), { recursive: true });
+    await writeFile(join(paths.projectDir, '.metronome', 'machine'), 'personal\n');
+    await writeFile(join(paths.projectDir, 'configs', 'machines', 'personal.json'), JSON.stringify({
+      settings: { opencode: { model: 'github-copilot/claude-opus-5.5', provider: { acme: null } } },
+      agents: { review: { model: 'github-copilot/gpt-6.1-sol' } },
+    }));
+    await writeFile(join(paths.projectDir, 'configs', 'agents', 'review.md'), '---\nmodel: acme/claude\ntargets:\n  - opencode\n---\nReview.\n');
+    await switchOpenCodeVersion(paths);
+    const config = JSON.parse(await readFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), 'utf8'));
+    expect(config.model).toBe('github-copilot/claude-opus-5.5');
+    expect(config.provider?.acme).toBeUndefined();
+    const agent = await readFile(join(paths.homeDir, '.config', 'opencode', 'agents', 'review.md'), 'utf8');
+    expect(agent).toContain('model: github-copilot/gpt-6.1-sol');
+    expect(agent).not.toContain('targets');
+  });
+
   test('preserves JSONC-only unrelated and Tux state', async () => {
     const paths = await fixture();
     await writeFile(join(paths.homeDir, '.config', 'opencode', 'opencode.json'), `{

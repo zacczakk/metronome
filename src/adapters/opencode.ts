@@ -12,6 +12,8 @@ import type {
   AdapterCapabilities,
 } from '../types';
 
+export const OPENCODE_CANONICAL_ONLY_KEYS = new Set(['allowed-tools', 'argument-hint', 'name', 'targets']);
+
 export class OpenCodeAdapter extends BaseAdapter {
   constructor(homeDir?: string) {
     super('opencode', 'OpenCode', homeDir);
@@ -22,13 +24,12 @@ export class OpenCodeAdapter extends BaseAdapter {
   }
 
   /** Keys that only exist in the canonical format — strip before rendering */
-  private static readonly CANONICAL_ONLY_KEYS = new Set(['allowed-tools', 'argument-hint', 'name', 'targets']);
 
   renderCommand(item: CanonicalItem): RenderedFile {
     // Pass through all frontmatter except canonical-only keys
     const metadata: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(item.metadata)) {
-      if (!OpenCodeAdapter.CANONICAL_ONLY_KEYS.has(key)) metadata[key] = value;
+      if (!OPENCODE_CANONICAL_ONLY_KEYS.has(key)) metadata[key] = value;
     }
 
     const content = stringifyFrontmatter(item.content, metadata);
@@ -42,7 +43,7 @@ export class OpenCodeAdapter extends BaseAdapter {
     // Pass through all frontmatter except canonical-only keys, inject mode: subagent
     const metadata: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(item.metadata)) {
-      if (!OpenCodeAdapter.CANONICAL_ONLY_KEYS.has(key)) metadata[key] = value;
+      if (!OPENCODE_CANONICAL_ONLY_KEYS.has(key)) metadata[key] = value;
     }
     metadata.mode = 'subagent';
     const rendered = renderOpenCodeAgent({ ...metadata, _agentName: item.name });

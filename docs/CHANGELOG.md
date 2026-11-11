@@ -16,7 +16,8 @@ read_when:
 
 ## Unreleased
 
-- **Per-Mac profiles** — `.metronome/machine` names a profile in `configs/machines/` that overrides settings and agent fields on that Mac only. `personal` uses GitHub Copilot models and leaves out Tux, Foundry and the Merck certificates. `metronome pull` skips overridden items.
+- **Per-Mac profiles** — `.metronome/machine` names a profile in `configs/machines/` that overrides settings and agent fields on that Mac only. `personal` uses GitHub Copilot models and leaves out Tux, Foundry and the corporate certificates. `metronome pull` skips overridden items.
+- **`metronome opencode use` honors per-Mac profiles** — it applied the shared OpenCode settings and kept canonical-only agent keys such as `targets`, so `metronome check` drifted after every profile switch.
 - **Fewer skills** — removed `design-critique`, `diagnosing-bugs`, `frontend-design`, `grill-with-docs`, `interface-design`, `screenshot-workflow`, `tdd`, `thermo-nuclear-code-quality-review` and `writing-plans`, plus the `design-critique` command. `metronome push` deletes their old copies. 23 skills remain.
 - **Muxy plugin removed** — Metronome no longer ships the OpenCode Muxy notification plugin, and `metronome opencode use` deletes the old `metronome-muxy-notify.js`.
 - **browse is the default browser tool** — the `browse` MCP (Phil's real Dia via the browse extension) is on for every client and replaces agent-browser and `chrome-devtools-mcp`. The old agent-browser instructions live in `docs/archive/agent-browser.md`.

@@ -49,7 +49,7 @@ Per-Mac overrides: put a profile name in `.metronome/machine` (gitignored), for 
 `settings` (keyed by target, deep-merged, `null` removes a key) and `agents` (frontmatter
 fields by agent name) at render time. Without the file, nothing is overridden. `metronome pull`
 skips overridden settings and agents, so machine values never land in shared configs.
-`personal` drops Tux, Foundry and the Merck certificate settings and uses GitHub Copilot models.
+`personal` drops Tux, Foundry and the corporate certificate settings and uses GitHub Copilot models.
 
 ## Directory Layout
 

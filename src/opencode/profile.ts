@@ -5,6 +5,8 @@ import { atomicWrite } from '../infra/atomic-write';
 import { stringifyFrontmatter } from '../formats/markdown';
 import { readJsonc } from '../formats/jsonc';
 import { isCanonicalAgentForTarget, readCanonicalAgents, readCanonicalMCPServers } from '../cli/canonical';
+import { OPENCODE_CANONICAL_ONLY_KEYS } from '../adapters/opencode';
+import { withMachineSettings } from '../core/machine-profile';
 import {
   applyOpenCodeAgentVariants,
   configureOpenCodeV2Plugins,
@@ -180,7 +182,8 @@ async function renderAgents(projectDir: string): Promise<{ files: Map<string, st
   const files = new Map<string, string>();
   const variants: OpenCodeModelVariant[] = [];
   for (const agent of agents) {
-    const metadata = renderOpenCodeAgent({ ...agent.metadata, _agentName: agent.name });
+    const fields = Object.fromEntries(Object.entries(agent.metadata).filter(([key]) => !OPENCODE_CANONICAL_ONLY_KEYS.has(key)));
+    const metadata = renderOpenCodeAgent({ ...fields, _agentName: agent.name });
     const descriptor = metadata._modelVariant;
     delete metadata._modelVariant;
     if (descriptor && typeof descriptor === 'object') variants.push(descriptor as OpenCodeModelVariant);
@@ -228,7 +231,7 @@ export async function switchOpenCodeVersion(options: SwitchOpenCodeOptions): Pro
       throwIfAborted(options.signal);
     }
     const renderedState = await timedStage(options.progress, 'Render and write OpenCode V2 profile', async () => {
-      const canonical = await readJson(join(options.projectDir, 'configs', 'settings', 'opencode.json'));
+      const canonical = await withMachineSettings(options.projectDir, 'opencode', await readJson(join(options.projectDir, 'configs', 'settings', 'opencode.json')));
       const existing = await readOpenCodeConfig(configPath);
       const mcp = await readCanonicalMCPServers(options.projectDir);
       const renderedAgents = await renderAgents(options.projectDir);

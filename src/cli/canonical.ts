@@ -12,7 +12,8 @@ import type { ToolAdapter } from '../adapters/base';
 import type { TargetName, ItemType, CanonicalItem, CanonicalSettings, CanonicalHookConfig, MCPServer } from '../types';
 import type { SkillProjectionOperation } from '../core/skill-projection';
 import { codexProfile, DEFAULT_CODEX_PROVIDER, readCodexProviderState } from '../core/codex-provider-state';
-import { applyOverlay, readMachineProfile } from '../core/machine-profile';
+import { applyOverlay, readMachineProfile, withMachineSettings } from '../core/machine-profile';
+import { isPlainObject } from '../adapters/merge';
 
 /** Repo root — resolved from module location so metronome works from any cwd */
 export const PROJECT_ROOT = resolve(import.meta.dir, '..', '..');
@@ -241,23 +242,26 @@ async function readSettingsFile(
   filePath: string,
   target: TargetName,
 ): Promise<CanonicalSettings | null> {
-  const machine = await readMachineProfile(projectDir);
-  const withMachine = (name: TargetName, value: Record<string, unknown>) => {
-    const overlay = machine?.settings[name];
-    return overlay ? applyOverlay(value, overlay) : value;
-  };
+  const base = await readJsonObject(filePath);
+  if (!base) return null;
+  const keys = await withMachineSettings(projectDir, target, base);
+  if (target === 'pi') {
+    const opencodeBase = await readJsonObject(join(projectDir, SETTINGS_DIR, 'opencode.json'));
+    if (!opencodeBase) return null;
+    const opencode = await withMachineSettings(projectDir, 'opencode', opencodeBase);
+    keys._opencodeProviders = opencode.providers ?? {};
+    keys._opencodePermissions = opencode.permissions ?? [];
+    const agents = (await readCanonicalAgents(projectDir, () => false)).filter((agent) => isCanonicalAgentForTarget(agent, 'pi'));
+    keys._agentPermissions = Object.fromEntries(agents.flatMap((agent) => agent.metadata.permission ? [[agent.name, agent.metadata.permission]] : []));
+  }
+  if (target === 'opencode') keys._themes = await readOpenCodeThemes(projectDir);
+  return { target, keys };
+}
+
+async function readJsonObject(path: string): Promise<Record<string, unknown> | null> {
   try {
-    const raw = await readFile(filePath, 'utf-8');
-    const keys = withMachine(target, JSON.parse(raw) as Record<string, unknown>);
-    if (target === 'pi') {
-      const opencode = withMachine('opencode', JSON.parse(await readFile(join(projectDir, SETTINGS_DIR, 'opencode.json'), 'utf-8')) as Record<string, unknown>);
-      keys._opencodeProviders = opencode.providers ?? {};
-      keys._opencodePermissions = opencode.permissions ?? [];
-      const agents = (await readCanonicalAgents(projectDir, () => false)).filter((agent) => isCanonicalAgentForTarget(agent, 'pi'));
-      keys._agentPermissions = Object.fromEntries(agents.flatMap((agent) => agent.metadata.permission ? [[agent.name, agent.metadata.permission]] : []));
-    }
-    if (target === 'opencode') keys._themes = await readOpenCodeThemes(projectDir);
-    return { target, keys };
+    const parsed: unknown = JSON.parse(await readFile(path, 'utf-8'));
+    return isPlainObject(parsed) ? parsed : null;
   } catch {
     return null;
   }
