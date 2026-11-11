@@ -31,13 +31,13 @@ configs/         metronome CLI        CLI system dirs
 ### Push (Repo to System)
 
 `metronome push` reads canonical sources, transforms them to each CLI's native
-format (Markdown, TOML, JSON), injects secrets from `.env`, and writes to
+format (Markdown, TOML, JSON), and writes to
 system directories with atomic writes and rollback on failure.
 
 ### Pull (System to Repo)
 
 `metronome pull` reads system files, reverse-transforms to canonical format,
-redacts secrets, and writes back to the repo.
+and writes back to the repo.
 
 ### Check (Drift Detection)
 
@@ -64,9 +64,9 @@ the 4 different output shapes. Format spec: `docs/design/sync-spec.md`.
 **Canonical source**: `configs/` is the single source of truth. System
 directories are derived. Pull operations extract from system back to canonical.
 
-**Secret separation**: Real values live in `.env` (gitignored). Repo files
-use `${VAR}` placeholders. The CLI handles injection (push) and redaction
-(pull) at the boundary.
+**Secret separation**: Repo files reference env vars (`${VAR}`); each CLI
+gets them in its own syntax (`{env:VAR}` for OpenCode, bare names for Codex).
+Values come from the shell environment (`~/.zsh_secrets`).
 
 **Manifest tracking**: `.metronome/manifest.json` tracks sync state for 3-way
 hash comparison — detecting independent target modifications vs source changes.
@@ -84,7 +84,6 @@ by metronome (the fork is the source of truth). See
 ```
 metronome/
   src/                        TypeScript sync engine (adapters, diff, secrets, formats)
-  .env                        Secrets (gitignored)
   configs/
     commands/*.md              13 slash commands (canonical)
     agents/                    10 agent definitions (canonical)

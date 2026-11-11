@@ -20,13 +20,7 @@ Code-driven sync across Claude Code, OpenCode, Gemini CLI, Codex, and Pi.
    bun install && bun link
    ```
 
-3. Copy `.env.example` to `.env` and fill in secrets:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
-
-4. Push configs to all CLIs:
+3. Push configs to all CLIs:
    ```bash
    metronome push --force --delete
    ```
@@ -60,8 +54,6 @@ skips overridden settings and agents, so machine values never land in shared con
 ## Directory Layout
 
 ```
-.env                         Secrets (gitignored)
-
 configs/
   commands/*.md              Slash commands (7)
   agents/                    Agent definitions (2)
@@ -88,7 +80,7 @@ src/                         TypeScript sync engine
   pi/                        Pi renderers: Tux models.json, MCP, pi-subagents agents
   core/                      Diff engine, formatter, manifest tracking
   formats/                   Parsers (markdown, JSON, JSONC, TOML)
-  secrets/                   .env injection/redaction
+  secrets/                   Env var syntax per CLI
   infra/                     Atomic writes, exclusion filters
 
 scripts/
@@ -109,7 +101,7 @@ The `metronome` CLI handles all sync operations programmatically:
 
 - Reads canonical configs from `configs/`
 - Transforms to each CLI's native format (Markdown, TOML, JSON)
-- Injects secrets from `.env` on push, redacts on pull
+- Keeps secrets out of configs: settings reference env vars (`${VAR}`), rendered in each CLI's syntax; values come from the shell environment
 - Subset-merges settings (preserves user-added keys)
 - Tracks sync state via `.metronome/manifest.json` (3-way hash comparison)
 - Atomic writes with backup/rollback on failure
@@ -193,17 +185,9 @@ to select the OpenCode database; `--project` filters the project directory.
 
 ## Secrets
 
-Copy `.env.example` to `.env` and fill in:
-
-```
-TAVILY_API_KEY=
-UPTIMIZE_ENV=dev
-CONTEXT7_API_KEY=
-GITHUB_PERSONAL_ACCESS_TOKEN=
-# Add your own provider keys as needed
-```
-
-Secrets are injected during push and redacted during pull. Never committed.
+Configs reference secrets by env var name only (for example `GITHUB_PERSONAL_ACCESS_TOKEN`,
+`CONTEXT7_API_KEY`). Export the values in your shell, for example from `~/.zsh_secrets`
+sourced by `~/.zprofile`. Values never land in rendered configs or the repo.
 
 ## Skill Evals
 
