@@ -36,5 +36,10 @@
     "execute": {
       "model": "github-copilot/gpt-6.1-sol"
     }
+  },
+  "mcp": {
+    "palantir-mcp": null,
+    "tavily": null,
+    "uptimize-docs-ihub": null
   }
 }

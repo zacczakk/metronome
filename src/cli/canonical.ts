@@ -161,9 +161,11 @@ export async function readCanonicalMCPServers(projectDir: string): Promise<MCPSe
     return [];
   }
 
+  const removed = (await readMachineProfile(projectDir))?.removedMcp;
   const servers: MCPServer[] = [];
   for (const entry of entries) {
     if (!entry.endsWith('.json')) continue;
+    if (removed?.has(entry.slice(0, -5))) continue;
     const raw = await readFile(join(dir, entry), 'utf-8');
     try {
       const parsed = JSON.parse(raw) as Record<string, unknown>;

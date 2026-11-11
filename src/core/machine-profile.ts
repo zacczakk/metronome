@@ -6,6 +6,8 @@ export type MachineProfile = {
   name: string;
   settings: Record<string, Record<string, unknown>>;
   agents: Record<string, Record<string, unknown>>;
+  /** MCP servers this machine leaves out (`null` entries under `mcp`). */
+  removedMcp: Set<string>;
 };
 
 /** Machine-local profile name from `.metronome/machine`; absent means no overrides. */
@@ -28,7 +30,9 @@ export async function readMachineProfile(projectDir: string): Promise<MachinePro
   }
   const parsed: unknown = JSON.parse(raw);
   if (!isPlainObject(parsed)) throw new Error(`configs/machines/${name}.json must be a JSON object.`);
-  return { name, settings: objectMap(parsed.settings), agents: objectMap(parsed.agents) };
+  const mcp = isPlainObject(parsed.mcp) ? parsed.mcp : {};
+  const removedMcp = new Set(Object.entries(mcp).filter(([, value]) => value === null).map(([key]) => key));
+  return { name, settings: objectMap(parsed.settings), agents: objectMap(parsed.agents), removedMcp };
 }
 
 function objectMap(value: unknown): Record<string, Record<string, unknown>> {
