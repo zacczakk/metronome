@@ -28,7 +28,7 @@ read_when:
 - **Agent variants follow their model** — when an agent changes model, its `agent-*` variant is removed from the old model. `metronome diff` now shows agent variant changes.
 - **`execute` uses Tux's own `high` preset** — effort-only OpenCode agents point at the model's built-in effort variant instead of a generated one. `execute` drops `textVerbosity: low`, so Tux no longer deletes its preset and the agent always starts.
 - **Tux-owned MCP servers** — the new canonical `external_for` field marks servers another tool owns. `palantir-mcp` and `uptimize-docs-ihub` are owned by `tux integrate` for Claude Code and OpenCode, so metronome keeps those entries as-is.
-- **Codex default** — GPT-6.1 Sol on both profiles (Tux and Enterprise), reasoning `high`, sandbox `danger-full-access`.
+- **Codex default** — GPT-6 Astra on Enterprise and GPT-6.1 Sol on Tux, reasoning `max`, sandbox `danger-full-access`.
 - **Codex provider choice is local** — `metronome codex-provider` saves the choice in gitignored `.metronome/codex-provider` (default `tux`) instead of editing `configs/settings/codex.json`. Settings pull now keeps keys the canonical file owns, so Codex `profile_files` survive a pull.
 - **foundry-sql uses the palantir CLI** — when native `palantir-mcp` tools are absent (OpenCode), the agent runs `palantir <tool> --raw '<json>'`; its shell is limited to `palantir` commands.
 - **MCP binaries rebuilt with mcporter 0.14.2** — `context7`, `palantir`, `shadcn`, `tavily`. Removed `chrome-devtools` (no longer registered) and `sequential-thinking` (unused).
