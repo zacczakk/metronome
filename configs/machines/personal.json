@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "opencode": {
+      "model": "github-copilot/claude-opus-5.5#high",
+      "provider": { "foundry": null },
+      "providers": { "tux": null }
+    },
+    "claude-code": {
+      "env": {
+        "GH_CA_BUNDLE": null,
+        "SSL_CERT_FILE": null,
+        "NODE_EXTRA_CA_CERTS": null,
+        "ANTHROPIC_BASE_URL": null,
+        "ANTHROPIC_AUTH_TOKEN": null,
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": null,
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": null,
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": null,
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": null,
+        "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": null,
+        "CLAUDE_CODE_AUTO_MODE_MODEL": null,
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": null
+      }
+    }
+  },
+  "agents": {
+    "execute": { "model": "github-copilot/gpt-6.1-sol" }
+  }
+}

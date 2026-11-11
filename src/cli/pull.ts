@@ -16,6 +16,7 @@ import { externalMCPNames } from '../core/external-mcp';
 import { confirm, validatePullSource } from './cli-helpers';
 import type { TargetName } from '../types';
 import type { BackupInfo } from '../core/rollback';
+import { readMachineProfile } from '../core/machine-profile';
 
 /** Pi files are lossy projections of canonical config; `pull -s all` skips them. */
 const PULL_ALL_SOURCES = ALL_TARGETS.filter((target) => target !== 'pi');
@@ -130,6 +131,7 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
     } catch { /* dir doesn't exist yet */ }
   }
 
+  const machine = await readMachineProfile(projectDir);
   const items: PullItem[] = [];
 
   // Collect items to pull (discovery pass)
@@ -155,7 +157,8 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
 
     const targetPath = join(projectDir, AGENTS_DIR, `${name}.md`);
 
-    if (!options.force && existingAgentNames.has(name)) {
+    // Installed copies carry this machine's overrides; pulling them would leak into shared configs.
+    if (machine?.agents[name] || (!options.force && existingAgentNames.has(name))) {
       items.push({ type: 'agent', name, action: 'skip', targetPath });
       continue;
     }
@@ -187,7 +190,7 @@ export async function runPull(options: PullOptions): Promise<OrchestratorPullRes
   }
 
   // Settings pull: compare installed settings to canonical, pull if drifted
-  if (caps.settings) {
+  if (caps.settings && !machine?.settings[options.source]) {
     const settingsPath = paths.getSettingsPath();
     const canonicalSettingsPath = join(projectDir, SETTINGS_DIR, settingsFileName(options.source));
 

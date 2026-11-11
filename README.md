@@ -50,6 +50,13 @@ The Codex provider choice is machine-local in `.metronome/codex-provider`
 (gitignored; default `tux`). `configs/settings/codex.json` holds only the
 `profile_files`; the active profile supplies `model` and `model_provider` at render time.
 
+Per-Mac overrides: put a profile name in `.metronome/machine` (gitignored), for example
+`echo personal > .metronome/machine`. `configs/machines/<name>.json` then overlays
+`settings` (keyed by target, deep-merged, `null` removes a key) and `agents` (frontmatter
+fields by agent name) at render time. Without the file, nothing is overridden. `metronome pull`
+skips overridden settings and agents, so machine values never land in shared configs.
+`personal` drops Tux, Foundry and the Merck certificate settings and uses GitHub Copilot models.
+
 ## Directory Layout
 
 ```

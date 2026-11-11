@@ -12,6 +12,7 @@ import type { ToolAdapter } from '../adapters/base';
 import type { TargetName, ItemType, CanonicalItem, CanonicalSettings, CanonicalHookConfig, MCPServer } from '../types';
 import type { SkillProjectionOperation } from '../core/skill-projection';
 import { codexProfile, DEFAULT_CODEX_PROVIDER, readCodexProviderState } from '../core/codex-provider-state';
+import { applyOverlay, readMachineProfile } from '../core/machine-profile';
 
 /** Repo root — resolved from module location so metronome works from any cwd */
 export const PROJECT_ROOT = resolve(import.meta.dir, '..', '..');
@@ -126,6 +127,7 @@ export async function readCanonicalAgents(
     return [];
   }
 
+  const machine = await readMachineProfile(projectDir);
   const items: CanonicalItem[] = [];
   for (const entry of entries) {
     if (!entry.endsWith('.md')) continue;
@@ -134,7 +136,8 @@ export async function readCanonicalAgents(
 
     const raw = await readFile(join(dir, entry), 'utf-8');
     const { data, content } = parseFrontmatter(raw);
-    items.push({ name, content, metadata: data });
+    const overlay = machine?.agents[name];
+    items.push({ name, content, metadata: overlay ? applyOverlay(data, overlay) : data });
   }
   return items;
 }
@@ -238,11 +241,16 @@ async function readSettingsFile(
   filePath: string,
   target: TargetName,
 ): Promise<CanonicalSettings | null> {
+  const machine = await readMachineProfile(projectDir);
+  const withMachine = (name: TargetName, value: Record<string, unknown>) => {
+    const overlay = machine?.settings[name];
+    return overlay ? applyOverlay(value, overlay) : value;
+  };
   try {
     const raw = await readFile(filePath, 'utf-8');
-    const keys = JSON.parse(raw) as Record<string, unknown>;
+    const keys = withMachine(target, JSON.parse(raw) as Record<string, unknown>);
     if (target === 'pi') {
-      const opencode = JSON.parse(await readFile(join(projectDir, SETTINGS_DIR, 'opencode.json'), 'utf-8')) as Record<string, unknown>;
+      const opencode = withMachine('opencode', JSON.parse(await readFile(join(projectDir, SETTINGS_DIR, 'opencode.json'), 'utf-8')) as Record<string, unknown>);
       keys._opencodeProviders = opencode.providers ?? {};
       keys._opencodePermissions = opencode.permissions ?? [];
       const agents = (await readCanonicalAgents(projectDir, () => false)).filter((agent) => isCanonicalAgentForTarget(agent, 'pi'));
