@@ -2,8 +2,12 @@
   "settings": {
     "opencode": {
       "model": "github-copilot/claude-opus-5.5#high",
-      "provider": { "foundry": null },
-      "providers": { "tux": null }
+      "provider": {
+        "foundry": null
+      },
+      "providers": {
+        "tux": null
+      }
     },
     "claude-code": {
       "env": {
@@ -20,9 +24,17 @@
         "CLAUDE_CODE_AUTO_MODE_MODEL": null,
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": null
       }
+    },
+    "codex": {
+      "model_providers": null,
+      "profile_files": {
+        "tux": null
+      }
     }
   },
   "agents": {
-    "execute": { "model": "github-copilot/gpt-6.1-sol" }
+    "execute": {
+      "model": "github-copilot/gpt-6.1-sol"
+    }
   }
 }
