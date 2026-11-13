@@ -18,6 +18,7 @@ read_when:
 
 - **Per-Mac profiles** — `.metronome/machine` names a profile in `configs/machines/` that overrides settings and agent fields on that Mac only. `personal` uses GitHub Copilot models and leaves out Tux, Foundry and the corporate certificates. `metronome pull` skips overridden items.
 - **Upstream skill sync works again** — `kepano/obsidian-skills` moved its skills to `plugins/obsidian/skills`; the registry follows, and the four auto-synced Obsidian skills pick up the upstream updates (Kanban views, sorting, property prefixes).
+- **Session export skips missing Claude files** — a Claude session file that cannot be opened, such as a link to another Mac's user folder, is now reported as a failure while every other session still reaches the search index.
 - **Per-Mac MCP servers** — a machine profile can leave out MCP servers (`"mcp": { "name": null }`). `personal` drops `palantir-mcp`, `tavily` and `uptimize-docs-ihub`, which need the corporate network.
 - **`metronome opencode use` honors per-Mac profiles** — it applied the shared OpenCode settings and kept canonical-only agent keys such as `targets`, so `metronome check` drifted after every profile switch.
 - **Fewer skills** — removed `design-critique`, `diagnosing-bugs`, `frontend-design`, `grill-with-docs`, `interface-design`, `screenshot-workflow`, `tdd`, `thermo-nuclear-code-quality-review` and `writing-plans`, plus the `design-critique` command. `metronome push` deletes their old copies. 23 skills remain.

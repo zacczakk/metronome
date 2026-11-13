@@ -341,7 +341,11 @@ def fts_index_claude():
         if path_str in indexed:
             continue
 
-        messages = claude_read_session(path_str)
+        try:
+            messages = claude_read_session(path_str)
+        except OSError as error:
+            print(str(error), file=sys.stderr)
+            continue
         # extract session id from first event
         sid = jsonl.stem
         try:
