@@ -985,9 +985,10 @@ def qmd_index(embed: bool = True):
         return False
     package = Path(executable).resolve().parent.parent
     runtime = "bun" if not (package / "package-lock.json").exists() and any((package / lock).exists() for lock in ("bun.lock", "bun.lockb")) else "node"
+    qmd = [runtime, str(Path(__file__).with_name("sessions-qmd.mjs")), str(package)]
     print("updating local sessions qmd index...")
     try:
-        r = run_process_group([runtime, str(Path(__file__).with_name("sessions-qmd.mjs")), str(package)], timeout=240)
+        r = run_process_group([*qmd, "update"], timeout=240)
     except subprocess.TimeoutExpired as error:
         output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or ""
         print(f"qmd update timed out after 240s; archive cleanup stays blocked\n{output[-2000:]}", file=sys.stderr)
@@ -1003,12 +1004,12 @@ def qmd_index(embed: bool = True):
     if embed:
         print("generating embeddings...")
         try:
-            r = run_process_group(["qmd", "embed"], timeout=240)
+            r = run_process_group([*qmd, "embed"], timeout=240)
         except subprocess.TimeoutExpired:
             print("qmd embed timed out after 240s; archive cleanup stays blocked", file=sys.stderr)
             return False
         if r.returncode != 0:
-            print(f"qmd embed failed: {r.stderr.strip()}", file=sys.stderr)
+            print(f"qmd embed failed: {r.stdout.strip()}\n{r.stderr.strip()[-2000:]}", file=sys.stderr)
             return False
         for line in r.stdout.strip().splitlines():
             if line.strip():

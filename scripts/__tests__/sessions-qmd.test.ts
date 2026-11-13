@@ -34,3 +34,26 @@ test.skipIf(!Bun.which("qmd"))("sessions index refreshes local history without r
     rmSync(root, { recursive: true });
   }
 }, 20_000);
+
+test.skipIf(!Bun.which("qmd"))("sessions index embeds local history and reports errors", () => {
+  const root = mkdtempSync(join(tmpdir(), "sessions-qmd-"));
+  try {
+    const home = join(root, "home");
+    const archive = join(home, ".local/share/sessions/archive");
+    const config = join(root, "qmd-config");
+    for (const path of [archive, config]) mkdirSync(path, { recursive: true });
+    writeFileSync(join(archive, "session.md"), "# Session\n\nEmbeddedsentinel transcript.\n");
+    writeFileSync(join(config, "index.yml"), `collections:
+  sessions:
+    path: ${JSON.stringify(archive)}
+    pattern: "**/*.md"
+`);
+    const env = { ...process.env, HOME: home, QMD_CONFIG_DIR: config, XDG_CACHE_HOME: join(process.env.HOME ?? "", ".cache"), INDEX_PATH: join(root, "index.sqlite") };
+    const index = Bun.spawnSync(["python3", join(import.meta.dir, "../sessions"), "index"], { env });
+    expect(index.stderr.toString()).toBe("");
+    expect(index.exitCode).toBe(0);
+    expect(index.stdout.toString()).toContain("from 1 documents; 0 errors");
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+}, 120_000);
