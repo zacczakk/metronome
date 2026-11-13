@@ -14,9 +14,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import os
 import re
 import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -954,6 +957,23 @@ def qmd_ensure_collection():
     return True
 
 
+def run_process_group(command: list[str], timeout: int) -> subprocess.CompletedProcess:
+    """Run a command in its own process group; on timeout, stop the whole group."""
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
 def qmd_index(embed: bool = True):
     """Update qmd index and optionally regenerate embeddings."""
     if not qmd_ensure_collection():
@@ -967,7 +987,7 @@ def qmd_index(embed: bool = True):
     runtime = "bun" if not (package / "package-lock.json").exists() and any((package / lock).exists() for lock in ("bun.lock", "bun.lockb")) else "node"
     print("updating local sessions qmd index...")
     try:
-        r = subprocess.run([runtime, str(Path(__file__).with_name("sessions-qmd.mjs")), str(package)], capture_output=True, text=True, timeout=240)
+        r = run_process_group([runtime, str(Path(__file__).with_name("sessions-qmd.mjs")), str(package)], timeout=240)
     except subprocess.TimeoutExpired as error:
         output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout or ""
         print(f"qmd update timed out after 240s; archive cleanup stays blocked\n{output[-2000:]}", file=sys.stderr)
@@ -983,7 +1003,7 @@ def qmd_index(embed: bool = True):
     if embed:
         print("generating embeddings...")
         try:
-            r = subprocess.run(["qmd", "embed"], capture_output=True, text=True, timeout=240)
+            r = run_process_group(["qmd", "embed"], timeout=240)
         except subprocess.TimeoutExpired:
             print("qmd embed timed out after 240s; archive cleanup stays blocked", file=sys.stderr)
             return False
