@@ -15,7 +15,7 @@
     },
     "kepano": {
       "repo": "https://github.com/kepano/obsidian-skills.git",
-      "basePath": "skills",
+      "basePath": "plugins/obsidian/skills",
       "skills": {
         "obsidian-cli": { "sync": "manual", "note": "Locally guarded: the executable launches the Electron app; never use for routine retrieval" },
         "defuddle": { "localName": "obsidian-defuddle", "sync": "auto" },
